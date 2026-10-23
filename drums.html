@@ -19,7 +19,7 @@
   color-scheme: light;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; padding-bottom: 110px; }
 #site { width: 720px; margin: 0 auto; zoom: 0.54; }
 a { color: inherit; }
 a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -58,7 +58,20 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
 .tun input[type=range] { width: 130px; accent-color: var(--fg); }
 .tun .val { min-width: 38px; font: 600 14px var(--sans); }
 .tun .sl { display: flex; align-items: center; gap: 8px; height: 42px; }
-#patSel { width: 140px; } #kitSel { width: 150px; } #styleSel { width: 150px; } #brkNum { min-width: 70px; text-align: center; font: 700 15px var(--sans); }
+#patSel { width: 130px; } #kitSel { width: 170px; } #styleSel { width: 150px; }
+
+/* the play bar: large and minimal, fixed to the bottom of the window */
+#bar { position: fixed; left: 0; right: 0; bottom: 16px; display: flex; justify-content: center; padding: 0 12px; pointer-events: none; z-index: 50; }
+#bar .pill { pointer-events: auto; display: flex; align-items: center; gap: 8px; width: min(560px, 100%); padding: 10px 14px; border-radius: 999px; background: var(--fg); color: var(--panel); box-shadow: 0 8px 30px rgba(0, 0, 0, .28); }
+#bar button { flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; display: grid; place-items: center; }
+#bar button svg { width: 26px; height: 26px; }
+#bar button:hover { background: rgba(255, 255, 255, .14); }
+#bar button:focus-visible { outline: 2px solid var(--panel); outline-offset: 2px; }
+#bar .go { width: 62px; height: 62px; background: var(--panel); color: var(--fg); }
+#bar .go:hover { background: #fff; }
+#bar .go svg { width: 30px; height: 30px; }
+#bar .go .i-stop, #bar .go[aria-pressed="true"] .i-play { display: none; } #bar .go[aria-pressed="true"] .i-stop { display: block; }
+#bar .name { flex: 1; min-width: 0; padding: 0 8px; text-align: center; font: 600 13px/1.3 var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* the grid: the synth's dark theme */
 .demo {
@@ -107,16 +120,11 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
   <section class="intro">
     <p class="label">Drum machine</p>
     <h1>Drums</h1>
-    <p class="lead">Press Play, click through the breaks, or paint your own pattern. Every sound is a recording from the Rex Audio drum synth.</p>
+    <p class="lead">Press play, click through the presets, or paint your own pattern. Every sound is a recording from the Rex Audio drum synth.</p>
   </section>
 
   <section class="sec">
     <div class="tun">
-      <div class="row">
-        <div class="field"><span class="label">&nbsp;</span><button class="play" id="playBtn" type="button" aria-pressed="false" title="Space">Play</button></div>
-        <div class="field"><span class="label">Break</span><div class="seg"><button class="arrow" id="bp" type="button" aria-label="Previous break">&lt;</button><span id="brkNum">#1</span><button class="arrow" id="bn" type="button" aria-label="Next break: a different pattern, kit, variation and filter move every click">&gt;</button><button id="bnew" type="button" title="Jump to a random break">New</button></div></div>
-        <div class="field"><span class="label">Style</span><select id="styleSel" aria-label="Style"><option value="dnb">DnB / Jungle</option><option value="sacred">Sacred</option><option value="classic">Classic</option><option value="all">Everything</option></select></div>
-      </div>
       <div class="row">
         <div class="field"><span class="label">Pattern</span><div class="seg"><button class="arrow" id="pp" type="button" aria-label="Previous pattern">&lt;</button><select id="patSel" aria-label="Pattern"></select><button class="arrow" id="pnx" type="button" aria-label="Next pattern">&gt;</button></div></div>
         <div class="field"><span class="label">Kit</span><div class="seg"><button class="arrow" id="kp" type="button" aria-label="Previous kit">&lt;</button><select id="kitSel" aria-label="Kit"></select><button class="arrow" id="kn" type="button" aria-label="Next kit">&gt;</button><button id="kdice" type="button" title="Random kit">Random</button></div></div>
@@ -129,10 +137,7 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
       <div class="row">
         <div class="field"><span class="label">Variation</span><div class="sl"><input id="rand" type="range" min="0" max="1" step="0.01" value="0.3" aria-label="Variation amount"><span class="val" id="randV">30%</span><button id="diceBtn" type="button" title="Roll a variation of the loaded pattern">Roll</button><button id="resetBtn" type="button" title="Back to the loaded pattern">Reset</button></div></div>
         <div class="field"><span class="label">Evolve</span><select id="evolveSel" aria-label="Evolve"><option>Off</option><option>Every bar</option><option>2 bars</option><option>4 bars</option></select></div>
-      </div>
-      <div class="row">
-        <div class="field"><span class="label">Filter</span><select id="busSel" aria-label="Filter sweep"><option>Off</option><option>Low-pass</option><option>High-pass</option><option>Band-pass</option></select></div>
-        <div class="field"><span class="label">Sweep</span><select id="sweepSel" aria-label="Sweep length"><option>2 bars</option><option selected>4 bars</option><option>8 bars</option><option>16 bars</option></select></div>
+        <div class="field"><span class="label">Dice style</span><select id="styleSel" aria-label="Style of the presets the bar's arrows and dice choose"><option value="dnb">DnB / Jungle</option><option value="sacred">Sacred</option><option value="classic">Classic</option><option value="all">Everything</option></select></div>
       </div>
     </div>
 
@@ -153,7 +158,7 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
     </div>
     <div class="notes">
       <p><b>Steps.</b> Click a step to turn it on, again for an accent, again for a quiet ghost note, and once more to clear it. Drag across a row to paint. Click a row to choose it, then set its level, pitch, choke group and motion underneath. M mutes a row, S solos it, and the arrow plays its sound.</p>
-      <p><b>Breaks.</b> The break arrows build a new pattern, kit, variation and filter move together, and the left arrow takes you back to the one before. Roll shakes up the loaded pattern by the Variation amount, and Evolve keeps doing it as the pattern plays.</p>
+      <p><b>Play bar.</b> The bar at the bottom of the page has play and stop, left and right arrows that cycle through presets (each one is a pattern and a kit together, and the left arrow takes you back to the one before), and a dice that jumps to a random preset. Dice style chooses which kinds of preset they pick. Roll shakes up the loaded pattern by the Variation amount, and Evolve keeps doing it as the pattern plays.</p>
       <p><b>Recordings.</b> The sounds are recordings, and pitch changes by speeding them up or slowing them down. They are &copy; 2026 Rex Audio and may not be copied, redistributed or reused: see the <a href="drums/COPYRIGHT.txt">copyright notice</a>.</p>
     </div>
   </section>
@@ -163,6 +168,13 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
     <nav><a href="drums/COPYRIGHT.txt">Drum recordings: copyright notice</a></nav>
   </footer>
 </div>
+<div id="bar"><div class="pill" role="group" aria-label="Player">
+  <button id="bp" type="button" aria-label="Previous preset" title="Previous preset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button class="go" id="playBtn" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button>
+  <button id="bn" type="button" aria-label="Next preset" title="Next preset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <span class="name" id="presetName" aria-live="polite"></span>
+  <button id="bnew" type="button" aria-label="Random preset" title="Random preset"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9" r="1.5" fill="currentColor"/><circle cx="15" cy="9" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="15" r="1.5" fill="currentColor"/><circle cx="15" cy="15" r="1.5" fill="currentColor"/></svg></button>
+</div></div>
 <script>
 const $ = s => document.querySelector(s);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -209,7 +221,7 @@ const CATS = ["Kick", "Snare", "Clap", "Hat", "Cymbal", "Perc", "FX"];
 
 // ---------- state ----------
 const rows = KITS[0].r.map((n, i) => ({ name: n, motion: "Sweep 4", hc: 0, level: LEVELS[i], mute: false, solo: false, pitch: 0, group: GROUPS[i], steps: new Array(NSTEPS).fill(0), base: new Array(NSTEPS).fill(0) }));
-const S = { len: 16, rand: .3, evolve: 0, count: 0, busMode: "Off", busBars: 4, bpm: 96, swing: .2, master: .7, playing: false, step: 0, next: 0, queue: [], timer: null, sel: 0, kit: 0, brk: 1, style: "dnb", patName: null };
+const S = { len: 16, rand: .3, evolve: 0, count: 0, bpm: 96, swing: .2, master: .7, playing: false, step: 0, next: 0, queue: [], timer: null, sel: 0, kit: 0, brk: 1, style: "dnb", patName: null };
 const stepDur = () => 60 / S.bpm / 4;
 const hasMv = r => !!(SOUNDS[r.name] && SOUNDS[r.name].v > 1);
 
@@ -244,23 +256,9 @@ const mnode = ctx.createGain(); mnode.gain.value = S.master;
 const sh = ctx.createWaveShaper(), cv = new Float32Array(4097);
 for (let i = 0; i < cv.length; i++) { const x = 2 * i / 4096 - 1, a = Math.abs(x), T = .7; cv[i] = (x < 0 ? -1 : 1) * (a <= T ? a : T + (1 - T) * Math.tanh((a - T) / (1 - T))); }   // soft limiter
 sh.curve = cv; sh.oversample = "2x"; mnode.connect(sh); sh.connect(ctx.destination);
-const bus = ctx.createBiquadFilter(); bus.type = "allpass"; bus.connect(mnode);
-const drumBus = ctx.createGain(); drumBus.connect(bus);
+const drumBus = ctx.createGain(); drumBus.connect(mnode);
 const rowGain = rows.map(r => { const g = ctx.createGain(); g.gain.value = r.level; g.connect(drumBus); return g; });
 const active = rows.map(() => new Set());
-function setBusMode(m) {
-  S.busMode = m;
-  bus.type = m === "Low-pass" ? "lowpass" : m === "High-pass" ? "highpass" : m === "Band-pass" ? "bandpass" : "allpass";
-  bus.Q.value = m === "Low-pass" ? 4 : m === "High-pass" ? 2.5 : 3;
-  if (m === "Off") bus.frequency.setValueAtTime(1000, ctx.currentTime);
-}
-function busUpdate(t) {   // a swept filter over the whole mix
-  if (S.busMode === "Off") return;
-  const ph = ((S.count / BAR) / S.busBars) % 1, tri = 1 - Math.abs(2 * ph - 1);
-  const f = S.busMode === "Low-pass" ? 220 * Math.pow(55, tri) : S.busMode === "High-pass" ? 30 * Math.pow(120, tri) : 260 * Math.pow(22, tri);
-  bus.frequency.setTargetAtTime(f, t, stepDur() * .5);
-}
-
 // ---------- playing the recordings ----------
 function pickVi(r, i) {   // which motion variant: slow triangle over N bars, random, or alternating
   const m = r.motion; if (!hasMv(r) || m === "Off") return -1;
@@ -299,7 +297,6 @@ function schedule() {
     const i = S.step;
     if (S.evolve && S.count > 0 && S.count % BAR === 0 && (S.count / BAR) % S.evolve === 0) mutate(S.rand);
     const t = S.next + (i % 2 ? S.swing * stepDur() * .66 : 0);
-    busUpdate(t);
     rows.forEach((r, k) => { const v = r.steps[i]; if (v) hit(k, t, v === 2 ? 1 : v === 3 ? .3 * (.85 + Math.random() * .3) : .62 * (.92 + Math.random() * .12)); });
     S.queue.push({ i, t }); S.count++; S.next += stepDur(); S.step = (S.step + 1) % S.len;
   }
@@ -307,12 +304,12 @@ function schedule() {
 async function play() {
   if (S.playing) return;
   await ctx.resume(); await loadKitSounds(rows.map(r => r.name)); if (loadFailed) return;
-  applyRowGains(); S.step = 0; S.count = 0; S.next = ctx.currentTime + .06; S.queue.length = 0; S.playing = true; $("#playBtn").setAttribute("aria-pressed", true); $("#playBtn").textContent = "Stop";
+  applyRowGains(); S.step = 0; S.count = 0; S.next = ctx.currentTime + .06; S.queue.length = 0; S.playing = true; $("#playBtn").setAttribute("aria-pressed", true); $("#playBtn").setAttribute("aria-label", "Stop");
   S.timer = setInterval(schedule, 25); schedule(); requestAnimationFrame(anim);
 }
 function stop() {
   S.playing = false; clearInterval(S.timer); S.queue.length = 0; paintNow(-1);
-  $("#playBtn").setAttribute("aria-pressed", false); $("#playBtn").textContent = "Play";
+  $("#playBtn").setAttribute("aria-pressed", false); $("#playBtn").setAttribute("aria-label", "Play");
   active.forEach(set => set.forEach(h => { try { h.s.stop(); } catch (e) {} }));
 }
 function anim() {
@@ -376,8 +373,9 @@ moS.onchange = () => { rows[S.sel].motion = moS.value; };
 const pnames = Object.keys(PATTERNS).filter(n => n !== "Empty").concat("Empty");
 const patSel = $("#patSel"), kitSel = $("#kitSel");
 patSel.innerHTML = pnames.map(n => `<option>${n}</option>`).join(""); kitSel.innerHTML = KITS.map((k, i) => `<option value="${i}">${k.n}</option>`).join("");
+const showName = () => { $("#presetName").textContent = (S.patName || "") + " \u00B7 " + KITS[S.kit].n; };
 function loadPattern(n) {
-  const pt = PATTERNS[n]; if (!pt) return; S.patName = n; patSel.value = n;
+  const pt = PATTERNS[n]; if (!pt) return; S.patName = n; patSel.value = n; showName();
   S.len = pt.len || 16; if (S.step >= S.len) S.step = 0;
   rows.forEach((r, i) => { const s = pt.p[i] || ""; for (let k = 0; k < NSTEPS; k++) r.steps[k] = k < S.len ? (s[k] === "X" ? 2 : s[k] === "x" ? 1 : s[k] === "o" ? 3 : 0) : 0; r.base = r.steps.slice(); });
   setBpm(pt.bpm); setSwing(pt.swing); applyLen(); paintAll();
@@ -386,7 +384,7 @@ let kitTok = 0;
 async function setKit(k, noAudition) {
   const tok = ++kitTok; kitSel.value = k; await ctx.resume().catch(() => {});
   await loadKitSounds(KITS[k].r); if (tok !== kitTok || loadFailed) return false;
-  S.kit = k; rows.forEach((r, i) => { r.name = KITS[k].r[i]; r.sel.value = r.name; }); syncStrip();
+  S.kit = k; showName(); rows.forEach((r, i) => { r.name = KITS[k].r[i]; r.sel.value = r.name; }); syncStrip();
   if (!S.playing && !noAudition) audition(0);
   return true;
 }
@@ -427,15 +425,14 @@ const kitIdx = f => KITS.map((k, i) => (f(k) ? i : -1)).filter(i => i >= 0);
 const KGROUP = { dnb: () => kitIdx(k => !/^(808|909|Lo-Fi|Sub & Tight)$/.test(k.n)), sacred: () => kitIdx(k => k.n.includes("·")), classic: () => kitIdx(k => !k.n.includes("·")), all: () => kitIdx(() => true) };
 let brkTok = 0;
 async function goBreak(n) {
-  S.brk = n; $("#brkNum").textContent = "#" + n;
+  S.brk = n;
   const rng = mulberry(Math.imul(n, 2654435761) ^ 0x9e3779b9), pick = arr => arr[Math.floor(rng() * arr.length)];
   const pats = (S.style === "all" ? Object.keys(PATTERNS).filter(x => x !== "Empty") : PGROUP[S.style]).filter(x => PATTERNS[x]), kits = KGROUP[S.style]();
-  const pn = pick(pats), ki = pick(kits), bm = pick(["Off", "Off", "Low-pass", "High-pass", "Band-pass"]), bars = pick([2, 4, 8]), jit = Math.round((rng() - .5) * 8), amt = Math.max(.12, S.rand);
+  const pn = pick(pats), ki = pick(kits), jit = Math.round((rng() - .5) * 8), amt = Math.max(.12, S.rand);
   const tok = ++brkTok, ok = await setKit(ki, true);
   if (!ok || tok !== brkTok) return;
   loadPattern(pn); setBpm(PATTERNS[pn].bpm + jit); mutate(amt, rng);
-  $("#busSel").value = bm; setBusMode(bm); S.busBars = bars; $("#sweepSel").value = bars + " bars";
-  S.count = 0; status(`${pn} · ${KITS[ki].n}${bm === "Off" ? "" : " · " + bm + " sweep"}`);
+  S.count = 0;
   if (!S.playing) audition(0);
 }
 
@@ -450,8 +447,6 @@ rdS.oninput = () => { S.rand = +rdS.value; $("#randV").textContent = Math.round(
 $("#diceBtn").onclick = () => { rolled = true; mutate(S.rand); };
 $("#resetBtn").onclick = () => { rows.forEach(r => { r.steps = r.base.slice(); }); paintAll(); };
 $("#evolveSel").onchange = e => { S.evolve = [0, 1, 2, 4][e.target.selectedIndex]; };
-$("#busSel").onchange = e => setBusMode(e.target.value);
-$("#sweepSel").onchange = e => { S.busBars = parseInt(e.target.value); };
 patSel.onchange = () => { loadPattern(patSel.value); };
 const stepPat = d => { loadPattern(pnames[(pnames.indexOf(S.patName) + d + pnames.length) % pnames.length]); };
 $("#pp").onclick = () => stepPat(-1); $("#pnx").onclick = () => stepPat(1);
@@ -460,7 +455,10 @@ $("#kp").onclick = () => setKit((S.kit + KITS.length - 1) % KITS.length); $("#kn
 $("#kdice").onclick = () => setKit(Math.floor(Math.random() * KITS.length));
 $("#bp").onclick = () => goBreak(S.brk - 1); $("#bn").onclick = () => goBreak(S.brk + 1); $("#bnew").onclick = () => goBreak(1 + Math.floor(Math.random() * 99999));
 $("#styleSel").onchange = e => { S.style = e.target.value; };
-[patSel, kitSel, $("#styleSel"), $("#evolveSel"), $("#busSel"), $("#sweepSel")].forEach(s => s.addEventListener("change", () => s.blur()));
+[patSel, kitSel, $("#styleSel"), $("#evolveSel")].forEach(s => s.addEventListener("change", () => s.blur()));
+
+// after a mouse or touch click the bar button lets go of focus, so Space plays and stops (keyboard users keep focus)
+$("#bar").addEventListener("click", e => { const b = e.target.closest("button"); if (b && e.detail) b.blur(); });
 
 // ---------- scale the panel to the page ----------
 const fit = () => { $("#sqapp").style.zoom = Math.min(1, $(".demo").clientWidth / 900); };
