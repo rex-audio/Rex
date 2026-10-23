@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="A pattern sequencer: place drums and pads in blocks of bars and play them together.">
+<title>Patterns | Rex Audio</title>
+<style>
+/* Same page frame as the other pages: a 720px "desktop" page scaled to the window. The grid keeps the dark theme of the drum machine. */
+:root {
+  --bg: #e4e7e9;
+  --panel: #f3f4f5;
+  --fg: #15181a;
+  --muted: #5a6166;
+  --line: #c3c9cc;
+  --focus: #c8321e;
+  --sans: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; padding-bottom: 100px; }
+#site { width: 720px; margin: 0 auto; zoom: 0.54; }
+a { color: inherit; }
+a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, p { margin: 0; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 26px 36px 0; }
+.brand { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+.top nav a:hover, .top nav a[aria-current] { border-bottom-color: var(--fg); }
+
+.intro { text-align: center; padding: 36px 36px 0; }
+.intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
+.sec { padding: 36px 36px 0; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--muted); }
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
+
+/* the play bar: large and minimal, fills the bottom of the window and never moves */
+#bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; }
+#bar .pill { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px max(16px, calc((100% - 680px) / 2)) calc(12px + env(safe-area-inset-bottom)); background: var(--fg); color: var(--panel); box-shadow: 0 -6px 24px rgba(0, 0, 0, .18); }
+#bar button { flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .14); color: inherit; cursor: pointer; display: grid; place-items: center; }
+#bar button svg { width: 26px; height: 26px; }
+#bar button:hover { background: rgba(255, 255, 255, .26); }
+#bar button:focus-visible { outline: 2px solid var(--panel); outline-offset: 2px; }
+#bar .go { width: 62px; height: 62px; background: var(--panel); color: var(--fg); }
+#bar .go:hover { background: #fff; }
+#bar .go svg { width: 30px; height: 30px; }
+#bar .go .i-stop, #bar .go[aria-pressed="true"] .i-play { display: none; } #bar .go[aria-pressed="true"] .i-stop { display: block; }
+#bar .name { flex: 1; min-width: 0; padding: 0 8px; text-align: center; font: 600 13px/1.3 var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* the grid: the drum machine's dark theme */
+.demo {
+  --bg:#070b0f; --win:#0d141b; --card:#121b24; --card2:#18232e; --line:#1f2e3b; --track:#243443;
+  --text:#dbe9f5; --muted:#6f879b; --acc:#6fd3ff; --acc2:#b7f5e4; --a3:#a99bff;
+  color-scheme: dark; color: var(--text); font-family: "Helvetica Neue", Inter, Arial, sans-serif; line-height: normal;
+}
+#sqapp { width: 900px; }
+.sp { border: 1px solid var(--line); border-radius: 6px; background: var(--win); padding: 14px 16px 14px; }
+.srow { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+.srow .rl { width: 84px; flex: none; font: 700 12px Arial; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.srow .bars { display: grid; grid-template-columns: repeat(16, 1fr); gap: 3px; flex: 1; min-width: 0; }
+.srow.hd { margin: 0 0 2px; } .srow.hd .bn { text-align: center; font: 600 10px ui-monospace, Menlo, monospace; color: var(--muted); } .srow.hd .bn.g { color: var(--text); } .srow.hd .bn.now { color: var(--acc); }
+.bc { position: relative; height: 46px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); cursor: pointer; touch-action: none; }
+.bc.g { background: var(--card2); }
+.bc.on { background: color-mix(in srgb, var(--rc) 78%, #0d141b); border-color: color-mix(in srgb, var(--rc) 78%, #0d141b); }
+.bc.on.cont { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.bc.on:not(.end) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.bc.cont { margin-left: -3px; }   /* a block's bars run into each other across the gap */
+.bc.on.sel { background: var(--rc); border-color: var(--rc); filter: brightness(1.18); }   /* the chosen block is brighter */
+.bc[data-label] { z-index: 2; }
+.bc[data-label]::after { content: attr(data-label); position: absolute; left: 7px; top: 50%; transform: translateY(-50%); font: 700 11px Arial; color: #071016; white-space: nowrap; pointer-events: none; }
+.bc.now { outline: 2px solid var(--text); outline-offset: -2px; z-index: 1; }
+.strip { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 20px; min-height: 54px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font: 700 11px Arial; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.strip[hidden], .strip [hidden] { display: none !important; }
+.strip b { color: var(--text); font-size: 13px; letter-spacing: 0; text-transform: none; min-width: 110px; }
+.strip label { display: flex; align-items: center; gap: 8px; }
+.strip .grp { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.strip select { height: 28px; font: 600 12px Arial; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 4px; max-width: 170px; }
+.strip button { height: 28px; min-width: 28px; padding: 0 10px; font: 700 12px Arial; color: var(--text); background: transparent; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
+.strip button:hover:not(:disabled) { border-color: var(--muted); } .strip button:disabled { opacity: .35; cursor: default; }
+.strip .len { display: flex; align-items: center; gap: 6px; } .strip .len span { min-width: 54px; text-align: center; color: var(--text); text-transform: none; font-size: 12px; }
+.strip select:focus-visible, .strip button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.hint { font: 500 12px Arial; letter-spacing: 0; text-transform: none; }
+</style>
+</head>
+<body>
+<div id="site">
+  <header class="top">
+    <a class="brand" href="index.html">Rex Audio</a>
+    <nav aria-label="Main">
+      <a href="shapes.html">Shapes</a>
+      <a href="tunings.html">Tunings</a>
+      <a href="drums.html">Drums</a>
+      <a href="colours.html">Colours</a>
+      <a href="patterns.html" aria-current="page">Patterns</a>
+    </nav>
+  </header>
+
+  <section class="intro">
+    <p class="label">Sequencer</p>
+    <h1>Patterns</h1>
+  </section>
+
+  <section class="sec">
+    <div class="demo">
+      <div id="sqapp">
+        <div class="sp">
+          <div id="grid"></div>
+          <div class="strip" id="strip">
+            <span class="hint" id="sHint">Drag across a row to place a block</span>
+            <div class="grp" id="sBody" hidden>
+              <b id="sInfo"></b>
+              <span class="len"><button id="bLess" type="button" aria-label="One bar shorter">&minus;</button><span id="sLen"></span><button id="bMore" type="button" aria-label="One bar longer">+</button></span>
+              <span class="grp" id="fDrums">
+                <label>Pattern <select id="bPat" aria-label="Pattern"></select></label>
+                <label>Kit <select id="bKit" aria-label="Kit"></select></label>
+                <label>Tempo <select id="bSpd" aria-label="Tempo"><option value="2">150 BPM</option><option value="1">75 BPM</option></select></label>
+              </span>
+              <span class="grp" id="fPads"><label>Pad <select id="bPad" aria-label="Pad"></select></label></span>
+              <button id="bDel" type="button">Remove</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 Rex Audio</span>
+    <nav><a href="drums/COPYRIGHT.txt">Drum recordings: copyright notice</a><a href="colours/COPYRIGHT.txt">Pad recordings: copyright notice</a></nav>
+  </footer>
+</div>
+<div id="bar"><div class="pill" role="group" aria-label="Player">
+  <button id="bp" type="button" aria-label="Previous arrangement" title="Previous arrangement"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button class="go" id="playBtn" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button>
+  <button id="bn" type="button" aria-label="Next arrangement" title="Next arrangement"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <span class="name" id="barName" aria-live="polite"></span>
+</div></div>
+<script>
+const $ = s => document.querySelector(s);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const DM = {"sampleRate":44100,"kits":[{"n":"Jungle 909","r":["909 Kick Hard","Fat Snare","909 Clap","909 Closed Hat","909 Open Hat","808 Tom","Conga","Rimshot 808"]},{"n":"DnB Tight","r":["Punch Kick","Tight Snare","Tight Clap","Tick Hat","Ride","Tom 2","Woodblock","Side Stick"]},{"n":"Flower of Life","r":["Flower Kick","Flower Snare","Flower Clap","Flower Closed Hat","Flower Open Hat","Flower Tom","Flower Bell","Flower Accent"]},{"n":"Pentagram","r":["Penta Kick","Penta Snare","Penta Clap","Penta Closed Hat","Penta Open Hat","Penta Tom","Penta Bell","Penta Accent"]},{"n":"Merkaba","r":["Merkaba Kick","Merkaba Snare","Merkaba Clap","Merkaba Closed Hat","Merkaba Open Hat","Merkaba Tom","Merkaba Bell","Merkaba Accent"]},{"n":"Vesica","r":["Vesica Kick","Vesica Snare","Vesica Clap","Vesica Closed Hat","Vesica Open Hat","Vesica Tom","Vesica Bell","Vesica Accent"]},{"n":"Fibonacci","r":["Fibo Kick","Fibo Snare","Fibo Clap","Fibo Closed Hat","Fibo Open Hat","Fibo Tom","Fibo Bell","Fibo Accent"]},{"n":"Sri Yantra","r":["Yantra Kick","Yantra Snare","Yantra Clap","Yantra Closed Hat","Yantra Open Hat","Yantra Tom","Yantra Bell","Yantra Accent"]},{"n":"Seed of Life","r":["Seed Kick","Seed Snare","Seed Clap","Seed Closed Hat","Seed Open Hat","Seed Tom","Seed Bell","Seed Accent"]},{"n":"808","r":["808 Kick","808 Snare","808 Clap","808 Closed Hat","808 Open Hat","808 Tom","808 Cowbell","Rimshot 808"]},{"n":"909","r":["909 Kick","909 Snare","909 Clap","909 Closed Hat","909 Open Hat","Tom 2","Claves","Side Stick"]},{"n":"Hard 909","r":["909 Kick Hard","Fat Snare","Tight Clap","909 Closed Hat","909 Open Hat","808 Tom","Timbale","Rimshot 808"]},{"n":"Electro","r":["Electro Kick","Electro Snare","Snap","Tick Hat","Wide Hat","Tom 2","808 Cowbell","Claves"]},{"n":"Sub & Tight","r":["Sub Kick","Tight Snare","Tight Clap","Pedal Hat","Ride","Conga","Woodblock","Side Stick"]},{"n":"Industrial","r":["Dist Kick","Industrial Snare","Crackle Clap","Chaos Hat","Clank","Industrial Hit","Zap","Noise Hit"]},{"n":"Chaos","r":["Dirty Kick","Chaos Snare","Wide Clap","Crackle Hat","Splash","Laser","Bell Kick","Buzz Snare"]},{"n":"Lo-Fi","r":["Lo-Fi Kick","Crackle Snare","Crackle Clap","Shaker","Tambourine","Conga","Maracas","Woodblock"]},{"n":"Punchy","r":["Punch Kick","Fat Snare","909 Clap","808 Closed Hat","808 Crash","808 Tom","Timbale","Rimshot 808"]}],"sounds":{"909 Kick Hard":{"cat":"Kick","v":1,"file":"909-kick-hard","base":false},"Fat Snare":{"cat":"Snare","v":1,"file":"fat-snare","base":false},"909 Clap":{"cat":"Clap","v":1,"file":"909-clap","base":false},"909 Closed Hat":{"cat":"Hat","v":1,"file":"909-closed-hat","base":false},"909 Open Hat":{"cat":"Hat","v":1,"file":"909-open-hat","base":false},"808 Tom":{"cat":"Perc","v":1,"file":"808-tom","base":false},"Conga":{"cat":"Perc","v":1,"file":"conga","base":false},"Rimshot 808":{"cat":"Snare","v":1,"file":"rimshot-808","base":false},"Punch Kick":{"cat":"Kick","v":1,"file":"punch-kick","base":false},"Tight Snare":{"cat":"Snare","v":1,"file":"tight-snare","base":false},"Tight Clap":{"cat":"Clap","v":1,"file":"tight-clap","base":false},"Tick Hat":{"cat":"Hat","v":1,"file":"tick-hat","base":false},"Ride":{"cat":"Cymbal","v":1,"file":"ride","base":false},"Woodblock":{"cat":"Perc","v":1,"file":"woodblock","base":false},"Side Stick":{"cat":"Snare","v":1,"file":"side-stick","base":false},"Flower Kick":{"cat":"Kick","v":5,"file":"flower-kick","base":true},"Flower Snare":{"cat":"Snare","v":5,"file":"flower-snare","base":true},"Flower Clap":{"cat":"Clap","v":5,"file":"flower-clap","base":true},"Flower Closed Hat":{"cat":"Hat","v":5,"file":"flower-closed-hat","base":true},"Flower Open Hat":{"cat":"Hat","v":5,"file":"flower-open-hat","base":true},"Flower Tom":{"cat":"Perc","v":5,"file":"flower-tom","base":true},"Flower Bell":{"cat":"Perc","v":5,"file":"flower-bell","base":true},"Flower Accent":{"cat":"Perc","v":5,"file":"flower-accent","base":true},"Penta Kick":{"cat":"Kick","v":5,"file":"penta-kick","base":true},"Penta Snare":{"cat":"Snare","v":5,"file":"penta-snare","base":true},"Penta Clap":{"cat":"Clap","v":5,"file":"penta-clap","base":true},"Penta Closed Hat":{"cat":"Hat","v":5,"file":"penta-closed-hat","base":true},"Penta Open Hat":{"cat":"Hat","v":5,"file":"penta-open-hat","base":true},"Penta Tom":{"cat":"Perc","v":5,"file":"penta-tom","base":true},"Penta Bell":{"cat":"Perc","v":5,"file":"penta-bell","base":true},"Penta Accent":{"cat":"Perc","v":5,"file":"penta-accent","base":true},"Merkaba Kick":{"cat":"Kick","v":5,"file":"merkaba-kick","base":true},"Merkaba Snare":{"cat":"Snare","v":5,"file":"merkaba-snare","base":true},"Merkaba Clap":{"cat":"Clap","v":5,"file":"merkaba-clap","base":true},"Merkaba Closed Hat":{"cat":"Hat","v":5,"file":"merkaba-closed-hat","base":true},"Merkaba Open Hat":{"cat":"Hat","v":5,"file":"merkaba-open-hat","base":true},"Merkaba Tom":{"cat":"Perc","v":5,"file":"merkaba-tom","base":true},"Merkaba Bell":{"cat":"Perc","v":5,"file":"merkaba-bell","base":true},"Merkaba Accent":{"cat":"Perc","v":5,"file":"merkaba-accent","base":true},"Vesica Kick":{"cat":"Kick","v":5,"file":"vesica-kick","base":true},"Vesica Snare":{"cat":"Snare","v":5,"file":"vesica-snare","base":true},"Vesica Clap":{"cat":"Clap","v":5,"file":"vesica-clap","base":true},"Vesica Closed Hat":{"cat":"Hat","v":5,"file":"vesica-closed-hat","base":true},"Vesica Open Hat":{"cat":"Hat","v":5,"file":"vesica-open-hat","base":true},"Vesica Tom":{"cat":"Perc","v":5,"file":"vesica-tom","base":true},"Vesica Bell":{"cat":"Perc","v":5,"file":"vesica-bell","base":true},"Vesica Accent":{"cat":"Perc","v":5,"file":"vesica-accent","base":true},"Fibo Kick":{"cat":"Kick","v":5,"file":"fibo-kick","base":true},"Fibo Snare":{"cat":"Snare","v":5,"file":"fibo-snare","base":true},"Fibo Clap":{"cat":"Clap","v":5,"file":"fibo-clap","base":true},"Fibo Closed Hat":{"cat":"Hat","v":5,"file":"fibo-closed-hat","base":true},"Fibo Open Hat":{"cat":"Hat","v":5,"file":"fibo-open-hat","base":true},"Fibo Tom":{"cat":"Perc","v":5,"file":"fibo-tom","base":true},"Fibo Bell":{"cat":"Perc","v":5,"file":"fibo-bell","base":true},"Fibo Accent":{"cat":"Perc","v":5,"file":"fibo-accent","base":true},"Yantra Kick":{"cat":"Kick","v":5,"file":"yantra-kick","base":true},"Yantra Snare":{"cat":"Snare","v":5,"file":"yantra-snare","base":true},"Yantra Clap":{"cat":"Clap","v":5,"file":"yantra-clap","base":true},"Yantra Closed Hat":{"cat":"Hat","v":5,"file":"yantra-closed-hat","base":true},"Yantra Open Hat":{"cat":"Hat","v":5,"file":"yantra-open-hat","base":true},"Yantra Tom":{"cat":"Perc","v":5,"file":"yantra-tom","base":true},"Yantra Bell":{"cat":"Perc","v":5,"file":"yantra-bell","base":true},"Yantra Accent":{"cat":"Perc","v":5,"file":"yantra-accent","base":true},"Seed Kick":{"cat":"Kick","v":5,"file":"seed-kick","base":true},"Seed Snare":{"cat":"Snare","v":5,"file":"seed-snare","base":true},"Seed Clap":{"cat":"Clap","v":5,"file":"seed-clap","base":true},"Seed Closed Hat":{"cat":"Hat","v":5,"file":"seed-closed-hat","base":true},"Seed Open Hat":{"cat":"Hat","v":5,"file":"seed-open-hat","base":true},"Seed Tom":{"cat":"Perc","v":5,"file":"seed-tom","base":true},"Seed Bell":{"cat":"Perc","v":5,"file":"seed-bell","base":true},"Seed Accent":{"cat":"Perc","v":5,"file":"seed-accent","base":true},"808 Kick":{"cat":"Kick","v":1,"file":"808-kick","base":false},"808 Snare":{"cat":"Snare","v":1,"file":"808-snare","base":false},"808 Clap":{"cat":"Clap","v":1,"file":"808-clap","base":false},"808 Closed Hat":{"cat":"Hat","v":1,"file":"808-closed-hat","base":false},"808 Open Hat":{"cat":"Hat","v":1,"file":"808-open-hat","base":false},"808 Cowbell":{"cat":"Perc","v":1,"file":"808-cowbell","base":false},"909 Kick":{"cat":"Kick","v":1,"file":"909-kick","base":false},"909 Snare":{"cat":"Snare","v":1,"file":"909-snare","base":false},"Claves":{"cat":"Perc","v":1,"file":"claves","base":false},"Timbale":{"cat":"Perc","v":1,"file":"timbale","base":false},"Electro Kick":{"cat":"Kick","v":1,"file":"electro-kick","base":false},"Electro Snare":{"cat":"Snare","v":1,"file":"electro-snare","base":false},"Snap":{"cat":"Clap","v":1,"file":"snap","base":false},"Sub Kick":{"cat":"Kick","v":1,"file":"sub-kick","base":false},"Pedal Hat":{"cat":"Hat","v":1,"file":"pedal-hat","base":false},"Industrial Snare":{"cat":"Snare","v":1,"file":"industrial-snare","base":false},"Crackle Clap":{"cat":"Clap","v":1,"file":"crackle-clap","base":false},"Chaos Hat":{"cat":"Hat","v":1,"file":"chaos-hat","base":false},"Industrial Hit":{"cat":"FX","v":1,"file":"industrial-hit","base":false},"Zap":{"cat":"FX","v":1,"file":"zap","base":false},"Noise Hit":{"cat":"FX","v":1,"file":"noise-hit","base":false},"Chaos Snare":{"cat":"Snare","v":1,"file":"chaos-snare","base":false},"Wide Clap":{"cat":"Clap","v":1,"file":"wide-clap","base":false},"Crackle Hat":{"cat":"Hat","v":1,"file":"crackle-hat","base":false},"Splash":{"cat":"Cymbal","v":1,"file":"splash","base":false},"Laser":{"cat":"FX","v":1,"file":"laser","base":false},"Bell Kick":{"cat":"Kick","v":1,"file":"bell-kick","base":false},"Lo-Fi Kick":{"cat":"Kick","v":1,"file":"lo-fi-kick","base":false},"Crackle Snare":{"cat":"Snare","v":1,"file":"crackle-snare","base":false},"Shaker":{"cat":"Hat","v":1,"file":"shaker","base":false},"Tambourine":{"cat":"Hat","v":1,"file":"tambourine","base":false},"Maracas":{"cat":"Hat","v":1,"file":"maracas","base":false},"808 Crash":{"cat":"Cymbal","v":1,"file":"808-crash","base":false},"Dist Kick":{"cat":"Kick","v":1,"file":"dist-kick","base":false},"Dirty Kick":{"cat":"Kick","v":1,"file":"dirty-kick","base":false},"Buzz Snare":{"cat":"Snare","v":1,"file":"buzz-snare","base":false},"Clank":{"cat":"FX","v":1,"file":"clank","base":false},"Tom 2":{"cat":"Perc","v":1,"file":"tom-2","base":false},"Wide Hat":{"cat":"Hat","v":1,"file":"wide-hat","base":false}}}, CM = {"pads":[{"n":"Warm chorus pad","file":"warm-chorus-pad"},{"n":"Glass pad","file":"glass-pad"},{"n":"Deep sea pad","file":"deep-sea-pad"},{"n":"Sunset strings","file":"sunset-strings"},{"n":"Forest air","file":"forest-air"},{"n":"Violet haze","file":"violet-haze"},{"n":"Brown velvet pad","file":"brown-velvet-pad"},{"n":"Singing glass pad","file":"singing-glass-pad"},{"n":"Ember growl pad","file":"ember-growl-pad"},{"n":"Vowel violet pad","file":"vowel-violet-pad"},{"n":"Deep sea resonance pad","file":"deep-sea-resonance-pad"},{"n":"Mossy forest floor","file":"mossy-forest-floor"},{"n":"Autumn leaves","file":"autumn-leaves"},{"n":"Lavender field","file":"lavender-field"},{"n":"Coral reef","file":"coral-reef"},{"n":"Northern lights","file":"northern-lights"},{"n":"Desert dusk","file":"desert-dusk"},{"n":"Glacier","file":"glacier"},{"n":"Cherry blossom","file":"cherry-blossom"},{"n":"Rainforest canopy","file":"rainforest-canopy"},{"n":"Bioluminescent bay","file":"bioluminescent-bay"},{"n":"Volcanic ember","file":"volcanic-ember"},{"n":"Misty moorland","file":"misty-moorland"},{"n":"Sunflower field","file":"sunflower-field"},{"n":"Moonlit meadow","file":"moonlit-meadow"},{"n":"Jungle humidity","file":"jungle-humidity"},{"n":"Fern grotto","file":"fern-grotto"},{"n":"Emerald canopy","file":"emerald-canopy"},{"n":"Swamp mist","file":"swamp-mist"},{"n":"Bamboo grove","file":"bamboo-grove"},{"n":"Olive grove","file":"olive-grove"},{"n":"Lime spring","file":"lime-spring"},{"n":"Deep jungle night","file":"deep-jungle-night"},{"n":"Red rock canyon","file":"red-rock-canyon"},{"n":"Crimson maple","file":"crimson-maple"},{"n":"Poppy meadow","file":"poppy-meadow"},{"n":"Ruby cavern","file":"ruby-cavern"},{"n":"Terracotta dusk","file":"terracotta-dusk"},{"n":"Sand dune wind","file":"sand-dune-wind"},{"n":"Mahogany hall","file":"mahogany-hall"},{"n":"Redwood bark","file":"redwood-bark"},{"n":"Green spectrum: lime to forest","file":"green-spectrum-lime-to-forest"},{"n":"Green spectrum: emerald depths","file":"green-spectrum-emerald-depths"},{"n":"Green spectrum: sea glass","file":"green-spectrum-sea-glass"},{"n":"Green spectrum: moss to jade","file":"green-spectrum-moss-to-jade"},{"n":"Red spectrum: scarlet to wine","file":"red-spectrum-scarlet-to-wine"},{"n":"Red spectrum: crimson glow","file":"red-spectrum-crimson-glow"},{"n":"Red spectrum: blood orange","file":"red-spectrum-blood-orange"},{"n":"Red spectrum: garnet depths","file":"red-spectrum-garnet-depths"},{"n":"Blue spectrum: ice to midnight","file":"blue-spectrum-ice-to-midnight"},{"n":"Blue spectrum: sky to cobalt","file":"blue-spectrum-sky-to-cobalt"},{"n":"Blue spectrum: indigo tide","file":"blue-spectrum-indigo-tide"},{"n":"Blue spectrum: teal blue lagoon","file":"blue-spectrum-teal-blue-lagoon"},{"n":"Black glass","file":"black-glass"},{"n":"Obsidian","file":"obsidian"},{"n":"Charcoal ember","file":"charcoal-ember"},{"n":"Black forest","file":"black-forest"},{"n":"Midnight void","file":"midnight-void"},{"n":"Dark chocolate","file":"dark-chocolate"}]};
+const KITS = DM.kits, SOUNDS = DM.sounds, PADS = CM.pads;
+  const euc = (k, n = 16, rot = 0) => { const a = new Array(n).fill("."); for (let j = 0; j < k; j++) a[(Math.floor(j * n / k) + rot) % n] = j === 0 ? "X" : "x"; return a.join(""); };
+  const at = (...ix) => { const a = new Array(16).fill("."); ix.forEach((k, j) => { a[k] = j === 0 ? "X" : "x"; }); return a.join(""); };
+  const PATTERNS = {
+    // 'X' accent, 'x' hit, 'o' ghost note. Two-bar patterns are 32 steps. The classic breaks are approximate transcriptions: edit the steps or roll the dice.
+    "Amen Break": { bpm: 165, swing: 0, len: 32, p: ["X.x.......x.....X.x.......xx....", "....X..o.o..X..o....X..o.o..X.oo", "", "x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.", "..............x.................", "", "", "X..............................."] },
+    "Amen (B bars)": { bpm: 165, swing: 0, len: 32, p: ["X.x.......x.....X.x.....x.x.....", "....X..o.o..X..o....X.o.X..oX.XX", "", "x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.", "......x.......x.......x.......x.", "", "", ""] },
+    "Think Break": { bpm: 160, swing: 0, len: 32, p: ["X.....x..x......X.....x...x.x...", "....X.o.o...X..o....X.o.o...X..o", "", "x.xxx.x.x.xxx.x.x.xxx.x.x.xxx.x.", "..............x.................", "", "", ""] },
+    "Two-Step DnB": { bpm: 172, swing: 0, len: 16, p: ["X.........x.....", "....X.......X...", "", "x.x.x.x.x.x.x.x.", "......x.......x.", "", "", "X..............."] },
+    "Jungle Roller": { bpm: 168, swing: 0, len: 32, p: ["X.x.....x.x.....X.x.....x.......", "....X..o.o..X...o...X..o.o..X.oo", "", "xoxoxoxoxoxoxoxoxoxoxoxoxoxoxoxo", "..............x.................", "..........x.....................", "", "X..............................."] },
+    "Ragga Jungle": { bpm: 160, swing: 0, len: 16, p: ["X..x..x...x.....", "....X.....o.X.o.", "", "x.x.x.x.x.x.x.xo", "......x.........", "............o.x.", "", "X..............."] },
+    "Neurofunk": { bpm: 174, swing: 0, len: 16, p: ["X.....x...x.....", "....X.......X...", "", "xoxoxoxoxoxoxoxo", "....o.......o...", "", "..o.......o.....", ""] },
+    "Liquid DnB": { bpm: 172, swing: .08, len: 16, p: ["X.........x.x...", "....X.......X..o", "", "x.x.x.x.x.x.x.xo", "", "", "..o.....o.......", ""] },
+    "Halftime DnB": { bpm: 172, swing: 0, len: 16, p: ["X.......x.x.....", "........X......o", "........x.......", "x.x.x.x.x.x.x.x.", "......x.......x.", "", "", ""] },
+    "Breakcore": { bpm: 190, swing: 0, len: 16, p: ["X.x.X.x.X.x.X.x.", "..o.X.o.o.X.o.XX", "", "xxxxxxxxxxxxxxxx", "", "..x...x...x...x.", "", "X..............."] },
+    "Fibonacci 3·5·8": { bpm: 112, swing: 0, p: [euc(3), euc(5, 16, 4), euc(5, 16, 7), euc(8), euc(2, 16, 6), euc(3, 16, 5), euc(5, 16, 9), euc(1, 16, 15)] },
+    "Golden Spiral": { bpm: 100, swing: .06, p: [at(0, 1, 4, 7, 12), at(4, 12), at(12, 3), euc(8, 16, 1), at(6, 14), at(2, 8, 13), at(5, 10), at(15)] },
+    "Pentagram 5": { bpm: 118, swing: 0, p: [euc(5), euc(5, 16, 2), euc(5, 16, 3), euc(10, 16, 1), euc(3, 16, 7), euc(5, 16, 1), euc(5, 16, 4), euc(1, 16, 10)] },
+    "Hexagram 6": { bpm: 124, swing: .04, p: [euc(6), euc(6, 16, 3), euc(3, 16, 1), euc(12), euc(2, 16, 5), euc(4, 16, 2), euc(6, 16, 8), euc(1, 16, 13)] },
+    "Seed 7": { bpm: 108, swing: .1, p: [euc(7), euc(4, 16, 3), euc(7, 16, 2), euc(11, 16, 1), euc(3, 16, 9), euc(7, 16, 5), euc(5, 16, 11), euc(2, 16, 14)] },
+    "Vesica 2:3": { bpm: 96, swing: .12, p: [at(0, 6, 10), at(4, 12), at(12), euc(6, 16, 1), at(14), at(3, 7, 9), at(2, 11), at(8)] },
+    "Yantra 9": { bpm: 128, swing: 0, p: [euc(9), euc(3, 16, 4), euc(3, 16, 5), euc(16), euc(4, 16, 2), euc(9, 16, 3), euc(3, 16, 11), euc(1, 16, 15)] },
+    "Boom Bap": { bpm: 90, swing: .22, p: ["X.....x..xx.....", "....X.......X...", "....x.......x...", "x.x.x.x.x.x.x.x.", "..............x.", "", "", "......x........."] },
+    "Four on the Floor": { bpm: 124, swing: 0, p: ["X...X...X...X...", "", "....X.......X...", "x.xxx.xxx.xxx.xx", "..x...x...x...x.", "", "", ""] },
+    "Breakbeat": { bpm: 132, swing: .1, p: ["X.......x.x.....", "....X..x.x..X...", "", "x.x.x.x.x.x.x.x.", "......x.......x.", "", "", ""] },
+    "Electro": { bpm: 120, swing: 0, p: ["X..x..x...X..x..", "....X.......X...", "....x.......x...", "x.x.x.x.x.x.x.x.", "", "", "..x.......x.....", "...x.....x.....x"] },
+    "Trap": { bpm: 70, swing: 0, p: ["X.....x...X.....", "........X.......", "........x.......", "x.x.x.xxx.x.xxxx", "..............x.", "", "", ""] },
+    "Funk": { bpm: 104, swing: .15, p: ["X..x..x...x.x...", "....X..x.x..X..x", "", "xxxxxxxxxxxxxxxx", "..x.......x.....", "", "", "...x......x....."] },
+    "Techno": { bpm: 132, swing: 0, p: ["X...X...X...X...", "", "....x.......x...", "..x...x...x...x.", "x...x...x...x...", "", "...x.......x....", ""] },
+    "Drum & Bass": { bpm: 172, swing: 0, p: ["X.........x.....", "....X.......X...", "", "x.x.x.x.x.x.x.x.", "", "", "", "..x.....x......."] },
+    "Halftime": { bpm: 76, swing: .12, p: ["X.......X.x.....", "........X.......", "........x.......", "x.x.x.x.x.x.x.x.", "......x.......x.", "", "", "....x.......x..."] },
+    "Dub": { bpm: 78, swing: .08, p: ["X.......X.......", "........X...x...", "", "..x...x...x...x.", "", "x...............", "......x.........", "x.....x......x.."] },
+    "Empty": { bpm: 96, swing: 0, p: ["", "", "", "", "", "", "", ""] }
+  };
+
+const PNAMES = Object.keys(PATTERNS).filter(n => n !== "Empty");
+
+// ---------- the grid: each cell is a bar; a block is a run of bars that play one thing ----------
+const NB = 16, BAR_S = 3.2, TPB = 32, TICK = BAR_S / TPB;   // 75 BPM: a bar is 3.2 s, the length of one pad chord
+const LANES = [{ type: "drums", label: "Drums", col: "var(--acc)" }, { type: "drums", label: "Drums", col: "var(--acc2)" }, { type: "pads", label: "Pads", col: "var(--a3)" }, { type: "pads", label: "Pads", col: "var(--a3)" }];
+const cells = LANES.map(() => new Array(NB).fill(null));   // cells[lane][bar] = a block object, shared by every bar of that block
+const LEVELS = [.95, .85, .75, .6, .6, .75, .55, .6], KEEP = { drums: { pat: "Amen Break", kit: 0, speed: 2 }, pads: { pad: 0 } };
+const S = { playing: false, tick: 0, bar: 0, next: 0, loopBars: 1, timer: 0, queue: [], count: 0, sel: null, name: "", prev: LANES.map(() => null) };
+const newBlock = type => Object.assign({ type }, KEEP[type]);
+const spanOf = (lane, bar) => {
+  const blk = cells[lane][bar]; if (!blk) return null;
+  let a = bar, b = bar; while (a > 0 && cells[lane][a - 1] === blk) a--; while (b < NB - 1 && cells[lane][b + 1] === blk) b++;
+  return { blk, a, b };
+};
+const lastBar = () => { let m = -1; cells.forEach(r => r.forEach((c, i) => { if (c && i > m) m = i; })); return m; };
+const findLane = blk => cells.findIndex(r => r.includes(blk));
+
+// ---------- the recordings ----------
+const ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
+const SND = {}, PAD = {}, pending = new Map();
+const loadBuf = url => {
+  if (!pending.has(url)) pending.set(url, fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(a => new Promise((ok, no) => ctx.decodeAudioData(a, ok, no))).catch(() => null));
+  return pending.get(url);
+};
+async function ensureSound(name) {
+  if (SND[name]) return SND[name];
+  const s = SOUNDS[name], m = new Map();
+  if (s.v > 1) {
+    const [b, ...vs] = await Promise.all([loadBuf("drums/" + s.file + "-b.flac")].concat([0, 1, 2, 3, 4].map(v => loadBuf("drums/" + s.file + "-" + v + ".flac"))));
+    if (b) m.set(-1, b); vs.forEach((x, v) => { if (x) m.set(v, x); });
+  } else { const b = await loadBuf("drums/" + s.file + "-0.flac"); if (b) m.set(-1, b); }
+  return (SND[name] = m);
+}
+const ensurePad = async i => PAD[i] || (PAD[i] = await loadBuf("colours/" + PADS[i].file + ".mp3"));
+let loadFailed = false;
+async function loadFor(blocks) {
+  const jobs = [];
+  blocks.forEach(b => { if (b.type === "drums") KITS[b.kit].r.forEach(n => jobs.push(ensureSound(n))); else jobs.push(ensurePad(b.pad)); });
+  setName("Loading..."); await Promise.all(jobs);
+  loadFailed = blocks.length > 0 && blocks.every(b => b.type === "drums" ? KITS[b.kit].r.every(n => !SND[n] || !SND[n].size) : !PAD[b.pad]);
+  setName(loadFailed ? "The recordings only play from the website" : S.name);
+}
+const allBlocks = () => [...new Set(cells.flat().filter(Boolean))];
+
+// ---------- audio ----------
+const mnode = ctx.createGain(); mnode.gain.value = .7;
+const sh = ctx.createWaveShaper(), cv = new Float32Array(4097);
+for (let i = 0; i < cv.length; i++) { const x = 2 * i / 4096 - 1, a = Math.abs(x), T = .7; cv[i] = (x < 0 ? -1 : 1) * (a <= T ? a : T + (1 - T) * Math.tanh((a - T) / (1 - T))); }   // soft limiter
+sh.curve = cv; sh.oversample = "2x"; mnode.connect(sh); sh.connect(ctx.destination);
+const laneGain = LANES.map(l => { const g = ctx.createGain(); g.gain.value = l.type === "drums" ? .9 : 1.4; g.connect(mnode); return g; });
+const active = LANES.map(() => new Set()), rowOut = LANES.map((l, i) => l.type === "drums" ? LEVELS.map(lv => { const g = ctx.createGain(); g.gain.value = lv; g.connect(laneGain[i]); return g; }) : null);
+const stepsOf = {};   // a pattern as numbers: 0 off, 1 hit, 2 accent, 3 ghost
+const patSteps = n => stepsOf[n] || (stepsOf[n] = PATTERNS[n].p.map(s => Array.from({ length: PATTERNS[n].len || 16 }, (_, k) => s[k] === "X" ? 2 : s[k] === "x" ? 1 : s[k] === "o" ? 3 : 0)));
+const NV = 5;
+function pickVi(sound, row, lane) {   // the sound moves between its recorded variants over 4 bars, like the drum machine's Sweep 4
+  if (!SOUNDS[sound] || SOUNDS[sound].v < 2) return -1;
+  const ph = ((S.count / 4) + row * .19 + lane * .07) % 1; return Math.round((1 - Math.abs(2 * ph - 1)) * (NV - 1));
+}
+function bufOf(sound, vi) {
+  const m = SND[sound]; if (!m) return null; let b = m.get(vi);
+  for (let d = 1; d < NV && !b; d++) b = m.get(vi + d) || m.get(vi - d);
+  return b || m.get(-1) || null;
+}
+function drumHit(lane, row, sound, t, vel) {
+  const b = bufOf(sound, pickVi(sound, row, lane)); if (!b) return;
+  if (row === 3 || row === 4) [3, 4].forEach(r => active[lane].forEach(h => { if (h.row === r) { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, .004); try { h.s.stop(t + .04); } catch (e) {} } }));   // hats cut each other
+  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vel; s.connect(g); g.connect(rowOut[lane][row]);
+  const h = { s, g, row }; active[lane].add(h); s.onended = () => active[lane].delete(h); s.start(t);
+}
+function drumStep(lane, bar, tib, t) {
+  const sp = spanOf(lane, bar), blk = sp.blk, pat = PATTERNS[blk.pat], len = pat.len || 16, steps = patSteps(blk.pat), sound = KITS[blk.kit].r;
+  let step;
+  if (blk.speed === 2) step = len === 16 ? tib % 16 : tib;
+  else { if (tib % 2) return; const st = tib / 2; step = len === 16 ? st : ((bar - sp.a) % 2) * 16 + st; }
+  const odd = step % 2, stepDur = TICK * (blk.speed === 2 ? 1 : 2), tt = t + (odd ? (pat.swing || 0) * stepDur * .66 : 0);
+  steps.forEach((row, r) => { const v = row[step]; if (v) drumHit(lane, r, sound[r], tt, v === 2 ? 1 : v === 3 ? .3 * (.85 + Math.random() * .3) : .62 * (.92 + Math.random() * .12)); });
+}
+function fadePads(lane, t, tc = .15) {
+  active[lane].forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, tc); try { h.s.stop(t + tc * 8); } catch (e) {} });
+}
+function padBar(lane, bar, t) {   // at the start of a bar: start a pad, restart it every 4 bars, or fade it when its block ends
+  const cur = cells[lane][bar], prev = S.prev[lane], kb = cur ? bar - spanOf(lane, bar).a : 0;
+  if (prev && prev !== cur) fadePads(lane, t);
+  if (cur && (prev !== cur || kb % 4 === 0)) {
+    const b = PAD[cur.pad]; if (b) { const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; s.connect(g); g.connect(laneGain[lane]); const h = { s, g }; active[lane].add(h); s.onended = () => active[lane].delete(h); s.start(t); }
+  }
+  S.prev[lane] = cur;
+}
+
+// ---------- transport ----------
+function schedule() {
+  while (S.next < ctx.currentTime + .45) {
+    const t = S.next, tib = S.tick % TPB;
+    if (tib === 0) {
+      if (S.tick > 0) S.bar = (S.bar + 1) % S.loopBars;
+      S.loopBars = Math.max(1, lastBar() + 1); if (S.bar >= S.loopBars) S.bar = 0;
+      if (S.bar === 0 && S.tick > 0) S.count++;
+      LANES.forEach((l, i) => { if (l.type === "pads") padBar(i, S.bar, t); });
+    }
+    LANES.forEach((l, i) => { if (l.type === "drums" && cells[i][S.bar]) drumStep(i, S.bar, tib, t); });
+    S.queue.push({ bar: S.bar, t }); S.tick++; S.next += TICK;
+  }
+}
+async function play() {
+  if (S.playing) return;
+  if (lastBar() < 0) { setName("Place a block first"); setTimeout(() => setName(S.name), 1800); return; }
+  await ctx.resume(); await loadFor(allBlocks()); if (loadFailed) return;
+  S.tick = 0; S.bar = 0; S.count = 0; S.loopBars = Math.max(1, lastBar() + 1); S.prev = LANES.map(() => null); S.queue.length = 0; S.next = ctx.currentTime + .08; S.playing = true;
+  setPlaying(true); S.timer = setInterval(schedule, 25); schedule(); requestAnimationFrame(anim);
+}
+function stop() {
+  S.playing = false; clearInterval(S.timer); S.queue.length = 0; paintNow(-1); setPlaying(false);
+  LANES.forEach((l, i) => { active[i].forEach(h => { try { h.g.gain.cancelScheduledValues(ctx.currentTime); h.g.gain.setTargetAtTime(0, ctx.currentTime, .03); h.s.stop(ctx.currentTime + .3); } catch (e) {} }); });
+}
+function anim() {
+  if (!S.playing) return;
+  const t = ctx.currentTime; let cur = null; while (S.queue.length && S.queue[0].t <= t) cur = S.queue.shift();
+  if (cur) paintNow(cur.bar);
+  requestAnimationFrame(anim);
+}
+const playBtn = $("#playBtn");
+function setPlaying(on) { playBtn.setAttribute("aria-pressed", on); playBtn.setAttribute("aria-label", on ? "Stop" : "Play"); }
+playBtn.onclick = () => S.playing ? stop() : play();
+const nameEl = $("#barName");
+function setName(t) { nameEl.textContent = t; }
+
+// ---------- drawing the grid ----------
+const grid = $("#grid"), cellEls = [], rowEls = [];
+const head = document.createElement("div"); head.className = "srow hd"; head.innerHTML = '<div class="rl"></div><div class="bars"></div>';
+for (let b = 0; b < NB; b++) { const n = document.createElement("div"); n.className = "bn" + (b % 4 === 0 ? " g" : ""); n.textContent = b + 1; head.lastChild.appendChild(n); }
+grid.appendChild(head);
+LANES.forEach((ln, i) => {
+  const el = document.createElement("div"); el.className = "srow"; el.style.setProperty("--rc", ln.col); rowEls.push(el);
+  const rl = document.createElement("div"); rl.className = "rl"; rl.textContent = ln.label;
+  const bars = document.createElement("div"); bars.className = "bars"; cellEls[i] = [];
+  for (let b = 0; b < NB; b++) { const c = document.createElement("div"); c.className = "bc" + (b % 4 === 0 ? " g" : ""); c.dataset.b = b; bars.appendChild(c); cellEls[i].push(c); }
+  el.append(rl, bars); grid.appendChild(el);
+});
+function paint() {
+  cells.forEach((row, i) => row.forEach((blk, b) => {
+    const c = cellEls[i][b], cont = blk && b > 0 && row[b - 1] === blk, end = blk && !(b < NB - 1 && row[b + 1] === blk);
+    c.className = "bc" + (b % 4 === 0 ? " g" : "") + (blk ? " on" : "") + (cont ? " cont" : "") + (end ? " end" : "") + (blk && blk === S.sel ? " sel" : "");
+    if (blk && !cont) c.dataset.label = LANES[i].label; else delete c.dataset.label;
+  }));
+}
+let nowB = -1;
+function paintNow(b) { cellEls.forEach(row => { if (nowB >= 0) row[nowB].classList.remove("now"); if (b >= 0) row[b].classList.add("now"); }); head.querySelectorAll(".bn").forEach((n, k) => n.classList.toggle("now", k === b)); nowB = b; }
+
+// ---------- placing, selecting and editing blocks ----------
+let drag = null;
+const barAt = (e, lane) => { const r = cellEls[lane][0].parentNode.getBoundingClientRect(); return clamp(Math.floor((e.clientX - r.left) / r.width * NB), 0, NB - 1); };
+grid.addEventListener("pointerdown", e => {
+  const c = e.target.closest(".bc"); if (!c) return; const row = c.closest(".srow"), lane = rowEls.indexOf(row), b = +c.dataset.b; e.preventDefault();
+  const blk = cells[lane][b];
+  if (blk) { select(blk); return; }
+  const left = b > 0 ? cells[lane][b - 1] : null, nb = left || newBlock(LANES[lane].type);   // starting right after a block extends it
+  cells[lane][b] = nb; drag = { lane, blk: nb, last: b }; select(nb); changed();
+});
+grid.addEventListener("pointermove", e => {
+  if (!drag) return; const b = barAt(e, drag.lane); if (b === drag.last) return;
+  const step = b > drag.last ? 1 : -1;
+  for (let k = drag.last + step; step > 0 ? k <= b : k >= b; k += step) { if (cells[drag.lane][k]) break; cells[drag.lane][k] = drag.blk; drag.last = k; }
+  changed();
+});
+addEventListener("pointerup", () => { if (drag) { loadFor([drag.blk]); drag = null; } });
+function changed() { S.name = "Custom"; if (!loadFailed) setName("Custom"); paint(); syncStrip(); }
+
+const strip = $("#strip"), selPat = $("#bPat"), selKit = $("#bKit"), selSpd = $("#bSpd"), selPad = $("#bPad");
+selPat.innerHTML = PNAMES.map(n => `<option>${n}</option>`).join(""); selKit.innerHTML = KITS.map((k, i) => `<option value="${i}">${k.n}</option>`).join(""); selPad.innerHTML = PADS.map((p, i) => `<option value="${i}">${p.n}</option>`).join("");
+function select(blk) { S.sel = blk; paint(); syncStrip(); }
+function syncStrip() {
+  const blk = S.sel, lane = blk ? findLane(blk) : -1;
+  if (!blk || lane < 0) { S.sel = null; $("#sHint").hidden = false; $("#sBody").hidden = true; return; }
+  $("#sHint").hidden = true; $("#sBody").hidden = false;
+  const sp = spanOf(lane, cells[lane].indexOf(blk)), n = sp.b - sp.a + 1;
+  $("#sInfo").textContent = LANES[lane].label + " \u00B7 bar" + (n > 1 ? "s " + (sp.a + 1) + "\u2013" + (sp.b + 1) : " " + (sp.a + 1));
+  $("#sLen").textContent = n + (n > 1 ? " bars" : " bar");
+  const dr = blk.type === "drums"; $("#fDrums").hidden = !dr; $("#fPads").hidden = dr;
+  if (dr) { selPat.value = blk.pat; selKit.value = blk.kit; selSpd.value = blk.speed; } else selPad.value = blk.pad;
+  $("#bLess").disabled = n <= 1; $("#bMore").disabled = sp.b >= NB - 1 || !!cells[lane][sp.b + 1];
+}
+const edit = (k, v) => { const b = S.sel; if (!b) return; b[k] = v; KEEP[b.type][k] = v; S.name = "Custom"; setName("Custom"); loadFor([b]); };
+selPat.onchange = () => { edit("pat", selPat.value); selPat.blur(); }; selKit.onchange = () => { edit("kit", +selKit.value); selKit.blur(); };
+selSpd.onchange = () => { edit("speed", +selSpd.value); selSpd.blur(); }; selPad.onchange = () => { edit("pad", +selPad.value); selPad.blur(); };
+$("#bMore").onclick = () => { const b = S.sel, lane = findLane(b), sp = spanOf(lane, cells[lane].indexOf(b)); if (sp.b < NB - 1 && !cells[lane][sp.b + 1]) { cells[lane][sp.b + 1] = b; changed(); } };
+$("#bLess").onclick = () => { const b = S.sel, lane = findLane(b), sp = spanOf(lane, cells[lane].indexOf(b)); if (sp.b > sp.a) { cells[lane][sp.b] = null; changed(); } };
+const removeSel = () => { const b = S.sel; if (!b) return; cells.forEach(r => r.forEach((c, i) => { if (c === b) r[i] = null; })); S.sel = null; changed(); };
+$("#bDel").onclick = removeSel;
+addEventListener("keydown", e => {
+  if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.code === "Space" && e.target.tagName !== "BUTTON") { e.preventDefault(); S.playing ? stop() : play(); }
+  else if ((e.key === "Delete" || e.key === "Backspace") && S.sel) { e.preventDefault(); removeSel(); }
+});
+
+// ---------- starting arrangements: the arrows cycle through them ----------
+const D = (pat, kit, speed = 2) => ({ type: "drums", pat, kit: KITS.findIndex(k => k.n === kit), speed }), P = pad => ({ type: "pads", pad: PADS.findIndex(p => p.n === pad) });
+const ARR = [
+  { n: "Four bars and eight", b: [[0, 0, 4, D("Amen Break", "Jungle 909")], [2, 0, 8, P("Warm chorus pad")], [0, 8, 8, D("Two-Step DnB", "DnB Tight")], [2, 8, 8, P("Glass pad")]] },
+  { n: "Slow build", b: [[2, 0, 8, P("Deep sea pad")], [0, 4, 12, D("Halftime DnB", "Sub & Tight")], [3, 8, 8, P("Violet haze")], [1, 12, 4, D("Breakbeat", "Hard 909")]] },
+  { n: "Break and back", b: [[0, 0, 4, D("Boom Bap", "808", 1)], [2, 0, 4, P("Sunset strings")], [0, 4, 4, D("Jungle Roller", "Punchy")], [1, 4, 4, D("Think Break", "Electro")], [2, 4, 8, P("Northern lights")], [0, 8, 8, D("Neurofunk", "Industrial")], [2, 12, 4, P("Obsidian")]] },
+  { n: "Pads and a pulse", b: [[2, 0, 16, P("Forest air")], [0, 0, 16, D("Four on the Floor", "909", 1)], [1, 8, 8, D("Funk", "Lo-Fi", 1)], [3, 4, 12, P("Moonlit meadow")]] }
+];
+let ai = 0;
+function loadArr(i) {
+  if (S.playing) stop();
+  ai = (i + ARR.length) % ARR.length; cells.forEach(r => r.fill(null)); S.sel = null;
+  ARR[ai].b.forEach(([lane, a, n, c]) => { const blk = Object.assign({}, c); for (let k = a; k < a + n; k++) cells[lane][k] = blk; });
+  S.name = ARR[ai].n; setName(S.name); paint(); syncStrip();
+}
+$("#bp").onclick = () => loadArr(ai - 1); $("#bn").onclick = () => loadArr(ai + 1);
+$("#bar").addEventListener("click", e => { const b = e.target.closest("button"); if (b && e.detail) b.blur(); });
+
+// ---------- scale the panel to the page ----------
+const fit = () => { $("#sqapp").style.zoom = Math.min(1, $(".demo").clientWidth / 900); };
+const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); fit(); };
+fitSite(); addEventListener("resize", fitSite);
+loadArr(0);
+</script>
+</body>
+</html>
