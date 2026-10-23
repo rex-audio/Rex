@@ -19,7 +19,7 @@
   color-scheme: light;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; padding-bottom: 110px; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; padding-bottom: 100px; }
 #site { width: 720px; margin: 0 auto; zoom: 0.54; }
 a { color: inherit; }
 a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -60,9 +60,9 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
 .tun .sl { display: flex; align-items: center; gap: 8px; height: 42px; }
 #patSel { width: 130px; } #kitSel { width: 170px; } #styleSel { width: 150px; }
 
-/* the play bar: large and minimal, fixed to the bottom of the window */
-#bar { position: fixed; left: 0; right: 0; bottom: 16px; display: flex; justify-content: center; padding: 0 12px; pointer-events: none; z-index: 50; }
-#bar .pill { pointer-events: auto; display: flex; align-items: center; gap: 8px; width: min(560px, 100%); padding: 10px 14px; border-radius: 999px; background: var(--fg); color: var(--panel); box-shadow: 0 8px 30px rgba(0, 0, 0, .28); }
+/* the play bar: large and minimal, fills the bottom of the window and never moves */
+#bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; }
+#bar .pill { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px max(16px, calc((100% - 680px) / 2)) calc(12px + env(safe-area-inset-bottom)); background: var(--fg); color: var(--panel); box-shadow: 0 -6px 24px rgba(0, 0, 0, .18); }
 #bar button { flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; display: grid; place-items: center; }
 #bar button svg { width: 26px; height: 26px; }
 #bar button:hover { background: rgba(255, 255, 255, .14); }
