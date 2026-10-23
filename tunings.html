@@ -19,7 +19,7 @@
   color-scheme: light;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; padding-bottom: 100px; }
 #site { width: 720px; margin: 0 auto; zoom: 0.54; }
 a { color: inherit; }
 a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -41,6 +41,19 @@ h1, h2, p { margin: 0; }
 .notes p + p { margin-top: 8px; }
 footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; font-size: 14px; color: var(--muted); }
 
+/* the play bar: large and minimal, fills the bottom of the window and never moves */
+#bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; }
+#bar .pill { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px max(16px, calc((100% - 680px) / 2)) calc(12px + env(safe-area-inset-bottom)); background: var(--fg); color: var(--panel); box-shadow: 0 -6px 24px rgba(0, 0, 0, .18); }
+#bar button { flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; display: grid; place-items: center; }
+#bar button svg { width: 26px; height: 26px; }
+#bar button:hover { background: rgba(255, 255, 255, .14); }
+#bar button:focus-visible { outline: 2px solid var(--panel); outline-offset: 2px; }
+#bar .go { width: 62px; height: 62px; background: var(--panel); color: var(--fg); }
+#bar .go:hover { background: #fff; }
+#bar .go svg { width: 30px; height: 30px; }
+#bar .go .i-stop, #bar .go[aria-pressed="true"] .i-play { display: none; } #bar .go[aria-pressed="true"] .i-stop { display: block; }
+#bar .name { flex: 1; min-width: 0; padding: 0 8px; text-align: center; font: 600 13px/1.3 var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* the controls: plain page styling */
 .tun { display: grid; gap: 22px; }
 .row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px 26px; }
@@ -52,8 +65,6 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
 .tun button:focus-visible, .tun select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .tun button[aria-pressed="true"] { background: var(--fg); color: var(--panel); border-color: var(--fg); }
 .tun .arrow { width: 42px; padding: 0; font-size: 18px; }
-.tun .play { padding: 0 26px; background: var(--fg); color: var(--panel); border-color: var(--fg); }
-.tun .play[aria-pressed="true"] { background: transparent; color: var(--fg); }
 #tsPreset { width: 250px; } #keySel { width: 110px; } #scaleSel { width: 170px; } #patSel { width: 170px; }
 .asp { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 16px 20px 18px; }
 .asp[hidden] { display: none; }
@@ -151,7 +162,6 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
         <div class="asact"><button id="asReset" type="button">Reset to defaults</button><button id="asBack" type="button">Done</button></div>
       </div>
       <div class="row">
-        <div class="field"><span class="label">&nbsp;</span><button class="play" id="playBtn" type="button" aria-pressed="false">Play</button></div>
         <div class="field"><span class="label">Scale</span><div class="seg"><button class="arrow" id="scp" type="button" aria-label="Previous scale">&lt;</button><select id="scaleSel" aria-label="Scale"></select><button class="arrow" id="scn" type="button" aria-label="Next scale">&gt;</button></div></div>
         <div class="field"><span class="label">Play as</span><select id="patSel" aria-label="Play as"></select></div>
       </div>
@@ -179,7 +189,7 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
       <p><b>Playing.</b> Click or touch the keys, or use the computer keyboard: A W S E D F T G Y H U J play C to B, K O L P ; ' carry on up, and Z / X shift the octave. To use a real MIDI keyboard, press Connect MIDI (Chrome and Edge support this).</p>
       <p><b>Choosing a tuning.</b> Pick a tuning system and key above, or use the controls on the keyboard. By default knob 1 (CC 74) steps through the tuning systems, knob 2 (CC 71) and the mod wheel pick the key, and pushing the pitch wheel up or down moves to the next or previous tuning system. Press Assign to change what each one does, or to teach it a knob on your own keyboard.</p>
       <p><b>Anchor.</b> With Anchor C the keys are laid out as if you were in C and only the sound moves to the chosen key; Anchor A does the same with the white keys as A minor. Press the active anchor again, or None, to play the notes you press.</p>
-      <p><b>Play.</b> Choose a scale (use the arrows to click through them) and how to play it: as an arpeggio, chord tones, chords, a melody or a little tune. The scale starts on the anchor note (or the key), and each key lights as it sounds. Change the tuning while it plays to hear the difference.</p>
+      <p><b>Play bar.</b> The bar at the bottom of the page plays and stops the scale chosen above. Choose a scale (use the arrows to click through them) and how to play it: as an arpeggio, chord tones, chords, a melody or a little tune. The scale starts on the anchor note (or the key), and each key lights as it sounds. The bar's left and right arrows move to the previous or next tuning system and its dice picks a random one, so you can change the tuning while it plays and hear the difference.</p>
     </div>
   </section>
 
@@ -187,6 +197,13 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
     <span>&copy; 2026 Rex Audio</span>
   </footer>
 </div>
+<div id="bar"><div class="pill" role="group" aria-label="Player">
+  <button id="bp" type="button" aria-label="Previous tuning" title="Previous tuning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button class="go" id="playBtn" type="button" aria-pressed="false" aria-label="Play" title="Play / stop the scale chosen above"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button>
+  <button id="bn" type="button" aria-label="Next tuning" title="Next tuning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <span class="name" id="barName" aria-live="polite"></span>
+  <button id="bnew" type="button" aria-label="Random tuning" title="Random tuning"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9" r="1.5" fill="currentColor"/><circle cx="15" cy="9" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="15" r="1.5" fill="currentColor"/><circle cx="15" cy="15" r="1.5" fill="currentColor"/></svg></button>
+</div></div>
 <script>
 const $ = s => document.querySelector(s);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -371,13 +388,20 @@ function playTick() {
 function stopPlay() {
   play.on = false; clearTimeout(play.t); play.ts.forEach(clearTimeout); play.ts = [];
   backing.forEach(stopVoice); backing.clear(); release("play");
-  playBtn.setAttribute("aria-pressed", false); playBtn.textContent = "Play";
+  playBtn.setAttribute("aria-pressed", false); playBtn.setAttribute("aria-label", "Play");
 }
 playBtn.onclick = () => {
   if (play.on) { stopPlay(); return; }
   ensureAudio(); play.on = true; play.i = 0; play.walk = 0;
-  playBtn.setAttribute("aria-pressed", true); playBtn.textContent = "Stop"; playTick();
+  playBtn.setAttribute("aria-pressed", true); playBtn.setAttribute("aria-label", "Stop"); playTick();
 };
+
+// ---------- the play bar: play / stop, previous / next tuning, a random tuning ----------
+const barName = $("#barName");
+$("#bp").onclick = () => setPreset((S.preset + PRESETS.length - 1) % PRESETS.length);
+$("#bn").onclick = () => setPreset((S.preset + 1) % PRESETS.length);
+$("#bnew").onclick = () => { let i; do { i = Math.floor(Math.random() * PRESETS.length); } while (i === S.preset); setPreset(i); };
+$("#bar").addEventListener("click", e => { const b = e.target.closest("button"); if (b && e.detail) b.blur(); });   // after a click the button lets go of focus, so the computer keys keep playing notes
 
 // ---------- tuning knob, key knob, mod wheel, pitch wheel ----------
 const LIST = { info: () => ({ n: PRESETS.length, idx: S.preset }), apply: i => { i = clamp(i, 0, PRESETS.length - 1); if (i !== S.preset) setPreset(i); }, step: n => LIST.apply(S.preset + n) };
@@ -468,7 +492,7 @@ ccLabels();
 
 // ---------- refresh ----------
 function refresh() {
-  ts.value = S.preset; keySel.value = S.key;
+  ts.value = S.preset; keySel.value = S.key; barName.textContent = PRESETS[S.preset].name;
   ancBtns.forEach(b => b.setAttribute("aria-pressed", +b.dataset.anc < 0 ? !S.anchor : S.anchor && S.ancN === +b.dataset.anc));
   const fr = src => { const i = src.info(); return i.n > 1 ? i.idx / (i.n - 1) : 0; }, s1 = srcFor(ASSIGN.k1.fn), s2 = srcFor(ASSIGN.k2.fn), sw = srcFor(ASSIGN.mod.fn), f1 = fr(s1), f2 = fr(s2), fw = fr(sw);
   $("#knob i").style.transform = `rotate(${-135 + 270 * f1}deg)`; $("#knob2 i").style.transform = `rotate(${-135 + 270 * f2}deg)`;
