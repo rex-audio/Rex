@@ -224,6 +224,8 @@ const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 // each tuning: 12 steps above the tonic, as [n, d] ratios or cents
 const fifths = f => [0,7,2,-3,4,-1,6,1,8,3,-2,5].map(k => ((k * f) % 1200 + 1200) % 1200);   // meantone: a chain of equal fifths
 const GROUPS = [
+  { name: "Equal", items: [
+    { name: "12-TET", s: [0,100,200,300,400,500,600,700,800,900,1000,1100] } ] },
   { name: "Just intonation", items: [
     { name: "5-Limit JI", s: [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[45,32],[3,2],[8,5],[5,3],[9,5],[15,8]] },
     { name: "5-Limit JI (16/9 seventh)", s: [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[45,32],[3,2],[8,5],[5,3],[16,9],[15,8]] },
@@ -236,9 +238,7 @@ const GROUPS = [
   { name: "Well temperaments", items: [
     { name: "Werckmeister III", s: [0, 90.225, 192.180, 294.135, 390.225, 498.045, 588.270, 696.090, 792.180, 888.270, 996.090, 1092.180] },
     { name: "Kirnberger III", s: [0, 90.225, 193.157, 294.135, 386.314, 498.045, 590.224, 696.578, 792.180, 889.735, 996.090, 1088.269] },
-    { name: "Vallotti", s: [0, 94.135, 196.090, 298.045, 392.180, 501.955, 592.180, 698.045, 796.090, 894.135, 1000.000, 1090.225] } ] },
-  { name: "Equal", items: [
-    { name: "12-TET", s: [0,100,200,300,400,500,600,700,800,900,1000,1100] } ] }
+    { name: "Vallotti", s: [0, 94.135, 196.090, 298.045, 392.180, 501.955, 592.180, 698.045, 796.090, 894.135, 1000.000, 1090.225] } ] }
 ];
 const PRESETS = GROUPS.flatMap(g => g.items);
 const stepCents = st => Array.isArray(st) ? 1200 * Math.log2(st[0] / st[1]) : st;
@@ -249,7 +249,7 @@ const LOW = 48;
 
 // Anchor C (or A): the keyboard is laid out as if the key were that note, and only the sound is transposed to the chosen key. No anchor: the keys play the notes you press.
 const K = () => S.anchor ? S.ancN : S.key;
-const S = { pb: 0, preset: 0, key: 0, on: true, anchor: true, ancN: 0 };
+const S = { pb: 0, preset: 0, key: 0, on: true, anchor: false, ancN: 0 };   // starts in 12-TET with no anchor
 const keyName = () => SHARP[S.key].length > 1 ? SHARP[S.key] + "/" + FLAT[S.key] : SHARP[S.key];
 const shiftNow = () => { if (!S.anchor) return 0; const d = ((S.key - S.ancN) % 12 + 12) % 12; return d > 6 ? d - 12 : d; };
 const zoom = () => (parseFloat($("#app").style.zoom) || 1) * (parseFloat($("#site").style.zoom) || 1);
