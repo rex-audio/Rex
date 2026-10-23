@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<meta name="description" content="Stack loops of drums and pads and play them together.">
+<meta name="description" content="Layer loops of drums and pads and play them together.">
 <title>Loops | Rex Audio</title>
 <style>
 /* Same page frame as the other pages: a 720px "desktop" page scaled to the window. */
@@ -45,8 +45,8 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
 .go2 svg { width: 30px; height: 30px; }
 .go2 .i-stop, .go2[aria-pressed="true"] .i-play { display: none; } .go2[aria-pressed="true"] .i-stop { display: block; }
 
-/* the stack of loops: just names that pile up, each one filling as its loop plays */
-#stack { display: grid; gap: 10px; }
+/* the loops: just names that pile up, each one filling as its loop plays */
+#loops { display: grid; gap: 10px; }
 .loop { --lc: #2f86b8; position: relative; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 12px 0 20px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
 .loop.pads { --lc: #7b6cd0; }
 .lbar { position: absolute; inset: 0; background: color-mix(in srgb, var(--lc) 24%, transparent); transform-origin: left; transform: scaleX(0); }
@@ -95,13 +95,13 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
   </header>
 
   <section class="intro">
-    <p class="label">Stack</p>
+    <p class="label">Layers</p>
     <h1>Loops</h1>
   </section>
 
   <section class="sec">
     <div class="topplay"><button class="go2" id="playTop" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
-    <div id="stack"></div>
+    <div id="loops"></div>
     <p id="empty" hidden>Add a loop</p>
     <div class="addrow"><button id="add" type="button">+ Add a loop</button><button id="clear" type="button">Clear</button></div>
   </section>
@@ -158,12 +158,12 @@ const KITS = DM.kits, SOUNDS = DM.sounds, PADS = CM.pads;
 
 const PNAMES = Object.keys(PATTERNS).filter(n => n !== "Empty");
 
-// ---------- the stack: every loop plays in time with the others ----------
+// ---------- the loops: every one plays in time with the others ----------
 const BAR_S = 3.2, TPB = 32, TICK = BAR_S / TPB, MAXL = 6;   // 75 BPM: a bar is 3.2 s, the length of one pad chord
 const LEVELS = [.95, .85, .75, .6, .6, .75, .55, .6], NV = 5;
 const S = { playing: false, tick: 0, next: 0, t0: 0, timer: 0, name: "" };
 let layers = [], uid = 0;
-const nextBar = () => Math.ceil(S.tick / TPB) * TPB;   // a loop that starts while the stack plays waits for the next bar
+const nextBar = () => Math.ceil(S.tick / TPB) * TPB;   // a loop that starts while the others play waits for the next bar
 const loopTicks = l => l.type === "pads" ? TPB * 4 : (PATTERNS[l.pat].len || 16) * (l.speed === 2 ? 1 : 2);
 
 // ---------- the recordings ----------
@@ -268,8 +268,8 @@ function showProgress() {   // each loop shows where it is in its own cycle; a l
 }
 function anim() { if (!S.playing) return; showProgress(); requestAnimationFrame(anim); }
 
-// ---------- the stack on the page: just add loops on top of each other ----------
-const stack = $("#stack");
+// ---------- the loops on the page: just add loops on top of each other ----------
+const pile = $("#loops");
 const KIT = n => KITS.findIndex(k => k.n === n), PADI = n => PADS.findIndex(p => p.n === n);
 const BR = (pat, kit, speed) => ({ role: "Break", type: "drums", pat, kit: KIT(kit), speed, detail: pat + " · " + kit }),
   HT = (pat, kit, speed, rows) => ({ role: "Hats", type: "drums", pat, kit: KIT(kit), speed, rows, detail: pat + " · " + kit }),
@@ -289,9 +289,9 @@ function build(l) {
   el.innerHTML = '<div class="lbar"></div><i class="ld"></i><b class="lt"></b><span class="lm"></span><button class="lx" type="button" aria-label="Remove this loop" title="Remove">&times;</button>';
   el.querySelector(".lt").textContent = l.role; el.querySelector(".lm").textContent = l.detail; l.bar = el.querySelector(".lbar");
   el.querySelector(".lx").onclick = () => { fade(l, ctx.currentTime, .05); layers = layers.filter(q => q !== l); el.remove(); refresh(); custom(); };
-  stack.appendChild(el);
+  pile.appendChild(el);
 }
-function addLoop() {   // the first loop of the set that is not in the stack yet
+function addLoop() {   // the first loop of the set that is not playing yet
   const set = SETS[si].l, i = set.findIndex((_, k) => !layers.some(l => l.k === k)); if (i < 0) return null;
   const l = Object.assign({ id: ++uid, k: i, start: S.playing ? nextBar() : 0 }, set[i]);
   wire(l); layers.push(l); build(l); refresh(); loadFor([l]); return l;
