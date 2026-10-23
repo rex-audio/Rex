@@ -137,7 +137,11 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
   #dock .dk.anc { background:#8fcdf0; } #dock .dk.anc:not(.down) { color:#0d4565; } #dock .bk.anc:not(.down) { background:#2f7ea8; }
   @keyframes ancflash { 0% { box-shadow:inset 0 0 0 200px transparent; } 18% { box-shadow:inset 0 0 0 200px color-mix(in srgb, var(--acc) 75%, transparent); } 100% { box-shadow:inset 0 0 0 200px transparent; } }
   #dock .dk.flash { background:#8fcdf0; color:#0d4565; }
-  .mb { grid-template-columns:1fr 2.2fr auto; }
+  .mb { grid-template-columns:1fr 2.6fr; }
+  .arow { grid-column:1 / -1; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px 28px; }
+  .agrp { display:flex; align-items:center; gap:10px; }
+  .arow .hbtn#scaleBtn { height:42px; padding:0 16px; font-size:15px; }
+  #dock .dk.anc.down { background:var(--acc); color:var(--bg); box-shadow:inset 0 0 0 3px #0d4565; } #dock .bk.anc.down { background:var(--acc); box-shadow:inset 0 0 0 3px #0d4565; }
   #win, .mod { border:0; background:transparent; border-radius:0; }
   .body { padding:4px 4px 6px; }
   .anc { display:flex; gap:6px; } .anc .hbtn { height:42px; padding:0 14px; font-size:15px; }
@@ -181,7 +185,7 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
                     <div class="tsrow"><button class="hbtn" id="kp" type="button" aria-label="Previous key">&lt;</button><div class="ddw"><div class="dd" id="dd"><button class="ddb" id="ddb" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="ddv">C</span></button><div class="ddl" id="ddl" role="listbox"></div></div></div><button class="hbtn" id="kn" type="button" aria-label="Next key">&gt;</button></div>
                   </div>
                   <div class="fld tsf"><span class="fl">Tuning system</span><div class="tsrow"><button class="hbtn" id="pp" type="button" aria-label="Previous tuning">&lt;</button><div class="tsys"><select id="tsPreset" aria-label="Tuning system"></select></div><button class="hbtn" id="pnx" type="button" aria-label="Next tuning">&gt;</button></div></div>
-                  <div class="fld"><span class="fl">Anchor</span><div class="anc" role="group" aria-label="Anchor"><button class="hbtn" type="button" aria-pressed="false" data-anc="0" title="Anchor C: play as if in C, transposed to the chosen key. Press again to turn the anchor off">C</button><button class="hbtn" type="button" aria-pressed="false" data-anc="9" title="Anchor A: play as if in A (the white keys are A minor). Press again to turn the anchor off">A</button><button class="hbtn" type="button" aria-pressed="false" data-anc="-1" title="No anchor: the keys play the notes you press">None</button></div></div>
+                  <div class="arow"><div class="agrp"><span class="fl">Anchor</span><div class="anc" role="group" aria-label="Anchor"><button class="hbtn" type="button" aria-pressed="false" data-anc="0" title="Anchor C: play as if in C, transposed to the chosen key. Press again to turn the anchor off">C</button><button class="hbtn" type="button" aria-pressed="false" data-anc="9" title="Anchor A: play as if in A (the white keys are A minor). Press again to turn the anchor off">A</button><button class="hbtn" type="button" aria-pressed="false" data-anc="-1" title="No anchor: the keys play the notes you press">None</button></div></div><button class="hbtn" id="scaleBtn" type="button" aria-pressed="false" title="Play the chromatic scale from the anchor note up an octave, lighting each key as it sounds">Play chromatic scale</button></div>
                 </div>
               </div>
             </div>
@@ -206,7 +210,7 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
     </div>
     <div class="notes">
       <p><b>Playing.</b> Click or touch the keys, or use the computer keyboard: A W S E D F T G Y H U J play C to B, K O L P ; ' carry on up, and Z / X shift the octave. To use a real MIDI keyboard, press Connect MIDI (Chrome and Edge support this).</p>
-      <p><b>Choosing a tuning.</b> Pick one on the desktop, or use the controls on the keyboard. Knob 1 (CC 74) steps through the tuning systems, knob 2 (CC 71) and the mod wheel pick the key, and pushing the pitch wheel up or down moves to the next or previous tuning system. <b>Anchor.</b> With Anchor C the keys are laid out as if you were in C and only the sound moves to the chosen key; Anchor A does the same with the white keys as A minor. Press the active anchor again, or None, to play the notes you press.</p>
+      <p><b>Choosing a tuning.</b> Pick one on the desktop, or use the controls on the keyboard. Knob 1 (CC 74) steps through the tuning systems, knob 2 (CC 71) and the mod wheel pick the key, and pushing the pitch wheel up or down moves to the next or previous tuning system. <b>Anchor.</b> With Anchor C the keys are laid out as if you were in C and only the sound moves to the chosen key; Anchor A does the same with the white keys as A minor. Press the active anchor again, or None, to play the notes you press. <b>Play chromatic scale</b> plays the twelve notes from the anchor up an octave in the chosen tuning, lighting each key as it sounds.</p>
     </div>
   </section>
 
@@ -286,7 +290,7 @@ const ancBtns = [...document.querySelectorAll(".anc .hbtn")];
 ancBtns.forEach(b => b.onclick = () => {   // C or A switches the anchor on; the one that is already on switches it off
   const n = +b.dataset.anc;
   S.anchor = n >= 0 && !(S.anchor && S.ancN === n); if (n >= 0) S.ancN = n;
-  [...held.keys()].forEach(release); refresh(); if (S.anchor) flashWhites();
+  stopScale(); [...held.keys()].forEach(release); refresh(); if (S.anchor) flashWhites();
 });
 
 // ---------- tuning (what the MPE output would send) ----------
@@ -371,6 +375,24 @@ addEventListener("keydown", e => {
   if (k in KM) press("k" + k, LOW + 12 * oct + KM[k]);
 });
 addEventListener("keyup", e => release("k" + e.key.toLowerCase()));
+
+// ---------- chromatic scale: from the anchor note (or the key) up an octave, lighting each key as it sounds ----------
+const scale = { on: false, t: 0, i: 0, m0: 0 }, scaleBtn = $("#scaleBtn");
+function scaleTick() {
+  if (!scale.on) return;
+  if (scale.i > 12) { stopScale(); return; }
+  press("scale", scale.m0 + scale.i++);   // press releases the previous note, which lets go as the next one starts
+  scale.t = setTimeout(scaleTick, 380);
+}
+function stopScale() {
+  scale.on = false; clearTimeout(scale.t); release("scale");
+  scaleBtn.setAttribute("aria-pressed", false); scaleBtn.textContent = "Play chromatic scale";
+}
+scaleBtn.onclick = () => {
+  if (scale.on) { stopScale(); return; }
+  scale.on = true; scale.i = 0; scale.m0 = LOW + K();
+  scaleBtn.setAttribute("aria-pressed", true); scaleBtn.textContent = "Stop"; scaleTick();
+};
 
 // ---------- tuning knob, key knob, mod wheel, pitch wheel ----------
 const LIST = { info: () => ({ n: PRESETS.length, idx: S.preset }), apply: i => { i = clamp(i, 0, PRESETS.length - 1); if (i !== S.preset) setPreset(i); }, step: n => LIST.apply(S.preset + n) };
