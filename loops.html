@@ -71,6 +71,7 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
 .addrow { display: flex; gap: 12px; margin-top: 14px; }
 .addrow #add { flex: 1; height: 60px; border: 2px dashed var(--line); border-radius: 14px; background: transparent; color: var(--fg); font: 700 16px var(--sans); cursor: pointer; }
 .addrow #add:hover:not(:disabled) { border-color: var(--fg); } .addrow #add:disabled { opacity: .45; cursor: default; }
+.addrow #pick { flex: none; height: 60px; padding: 0 20px; border: 2px solid var(--line); border-radius: 14px; background: transparent; color: var(--fg); font: 700 15px var(--sans); cursor: pointer; } .addrow #pick:hover:not(:disabled) { border-color: var(--fg); } .addrow #pick:disabled { opacity: .45; cursor: default; }
 .addrow #clear { flex: none; height: 60px; padding: 0 20px; border: 0; background: transparent; color: var(--muted); font: 600 15px var(--sans); cursor: pointer; }
 .addrow #clear:hover { color: var(--fg); } .addrow #clear[hidden] { display: none; }
 
@@ -111,7 +112,7 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
     <div class="topplay"><button class="go2" id="playTop" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
     <div id="loops"></div>
     <p id="empty" hidden>Add a loop</p>
-    <div class="addrow"><button id="add" type="button">+ Add a loop</button><button id="clear" type="button">Clear</button></div>
+    <div class="addrow"><button id="add" type="button">+ Add a loop</button><button id="pick" type="button">Choose type</button><button id="clear" type="button">Clear</button></div>
     <div id="types" hidden></div>
   </section>
 
@@ -312,14 +313,21 @@ function build(l) {
   el.querySelector(".lx").onclick = () => { fade(l, ctx.currentTime, .05); layers = layers.filter(q => q !== l); el.remove(); refresh(); };
   pile.appendChild(el); applyItem(l);
 }
-function addLoop(type) {   // starts on the next bar if the others are playing; each new one begins on a different recording
+const DEFAULT = [["drums", 0], ["pads", 0], ["drums", 5], ["pads", 1], ["drums", 10]];   // the usual order: break, pad, hats, another pad, percussion
+function addNext() {
+  const k = DEFAULT.findIndex((_, i) => !layers.some(l => l.k === i));
+  if (k < 0) { $("#types").hidden = !$("#types").hidden; return; }
+  addLoop(DEFAULT[k][0], DEFAULT[k][1], k);
+}
+function addLoop(type, v, k) {   // starts on the next bar if the others are playing; each new one begins on a different recording
   const same = layers.filter(l => l.type === type).length;
-  const l = { id: ++uid, type, v: same * (type === "drums" ? 5 : 1), start: S.playing ? nextBar() : 0 };
+  const l = { id: ++uid, type, v: v === undefined ? same * (type === "drums" ? 5 : 1) : v, k, start: S.playing ? nextBar() : 0 };
   wire(l); layers.push(l); build(l); refresh(); loadFor([l]); return l;
 }
-function refresh() { const full = layers.length >= MAXL; $("#add").disabled = full; $("#add").textContent = full ? "That is plenty of loops" : "+ Add a loop"; $("#types").hidden = true; $("#empty").hidden = layers.length > 0; $("#clear").hidden = layers.length === 0; }
+function refresh() { const full = layers.length >= MAXL; $("#add").disabled = full; $("#add").textContent = full ? "That is plenty of loops" : "+ Add a loop"; $("#pick").disabled = full; $("#types").hidden = true; $("#empty").hidden = layers.length > 0; $("#clear").hidden = layers.length === 0; }
 function clear() { layers.forEach(l => { fade(l, ctx.currentTime, .03); l.el.remove(); }); layers = []; }
-$("#add").onclick = () => { $("#types").hidden = !$("#types").hidden; };
+$("#add").onclick = addNext;
+$("#pick").onclick = () => { $("#types").hidden = !$("#types").hidden; };
 $("#types").innerHTML = TYPES.map(t => '<button type="button" class="ty ' + t[0] + '" data-t="' + t[0] + '"><i></i>' + t[1] + '</button>').join("");
 $("#types").onclick = e => { const b = e.target.closest("button"); if (b) { addLoop(b.dataset.t); $("#types").hidden = true; } };
 $("#clear").onclick = () => { if (S.playing) stop(); clear(); refresh(); };
@@ -337,7 +345,7 @@ $("#bp").onclick = () => setHarm(hi - 1); $("#bn").onclick = () => setHarm(hi + 
 
 const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); };
 fitSite(); addEventListener("resize", fitSite);
-S.name = "Key: " + HARM[hi]; setName(S.name); addLoop("drums");
+S.name = "Key: " + HARM[hi]; setName(S.name); addNext();
 </script>
 </body>
 </html>
