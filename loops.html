@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<meta name="description" content="A timeline: place drums and pads in blocks of bars and play them together.">
-<title>Timeline | Rex Audio</title>
+<meta name="description" content="Stack loops of drums and pads and play them together.">
+<title>Loops | Rex Audio</title>
 <style>
-/* Same page frame as the other pages: a 720px "desktop" page scaled to the window. The grid keeps the dark theme of the drum machine. */
+/* Same page frame as the other pages: a 720px "desktop" page scaled to the window. */
 :root {
   --bg: #e4e7e9;
   --panel: #f3f4f5;
@@ -35,14 +35,41 @@ h1, h2, p { margin: 0; }
 .intro { text-align: center; padding: 36px 36px 0; }
 .intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
 .sec { padding: 36px 36px 0; }
-.topplay { display: flex; justify-content: center; margin-bottom: 22px; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--muted); }
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
+
+.topplay { display: flex; justify-content: center; margin-bottom: 26px; }
 .go2 { width: 62px; height: 62px; padding: 0; border: 0; border-radius: 50%; background: var(--fg); color: var(--panel); cursor: pointer; display: grid; place-items: center; }
 .go2:hover { background: #000; }
 .go2:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 .go2 svg { width: 30px; height: 30px; }
 .go2 .i-stop, .go2[aria-pressed="true"] .i-play { display: none; } .go2[aria-pressed="true"] .i-stop { display: block; }
-footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--muted); }
-footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
+
+/* the stack of loops */
+.loop { --lc: #2f86b8; position: relative; background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--lc); border-radius: 12px; padding: 14px 18px 16px 16px; margin-bottom: 12px; transition: opacity .15s; }
+.loop.pads { --lc: #7b6cd0; }
+.loop.off { opacity: .5; }
+.lrow { display: flex; align-items: center; gap: 12px; }
+.lon { flex: none; width: 36px; height: 36px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: transparent; cursor: pointer; display: grid; place-items: center; }
+.lon i { width: 16px; height: 16px; border-radius: 50%; background: var(--lc); opacity: .25; }
+.lon[aria-pressed="true"] i { opacity: 1; }
+.lon:hover { border-color: var(--fg); }
+.lt { flex: none; width: 58px; font-size: 16px; }
+.lf { display: flex; flex-wrap: wrap; gap: 8px 14px; flex: 1; min-width: 0; }
+.lf label { display: flex; align-items: center; gap: 6px; font: 700 11px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.lf select { height: 36px; max-width: 150px; font: 600 14px var(--sans); color: var(--fg); background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 0 6px; cursor: pointer; }
+.lf select:hover, .lx:hover { border-color: var(--fg); }
+.lx { flex: none; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; }
+.lx:hover { color: var(--fg); }
+.loop button:focus-visible, .loop select:focus-visible, .addrow button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ltr { margin-top: 12px; height: 8px; border-radius: 4px; background: rgba(21, 24, 26, .09); overflow: hidden; }
+.lbar { height: 100%; background: var(--lc); transform-origin: left; transform: scaleX(0); }
+.loop.wait .ltr { animation: pulse .9s ease-in-out infinite alternate; }
+@keyframes pulse { from { background: rgba(21, 24, 26, .09); } to { background: color-mix(in srgb, var(--lc) 45%, transparent); } }
+#empty { text-align: center; color: var(--muted); font-size: 15px; padding: 18px 0 22px; }
+.addrow { display: flex; gap: 12px; margin-top: 4px; }
+.addrow button { flex: 1; height: 52px; border: 2px dashed var(--line); border-radius: 12px; background: transparent; color: var(--fg); font: 700 15px var(--sans); cursor: pointer; }
+.addrow button:hover:not(:disabled) { border-color: var(--fg); } .addrow button:disabled { opacity: .4; cursor: default; }
 
 /* the play bar: large and minimal, fills the bottom of the window and never moves */
 #bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; }
@@ -57,39 +84,6 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
 #bar .go .i-stop, #bar .go[aria-pressed="true"] .i-play { display: none; } #bar .go[aria-pressed="true"] .i-stop { display: block; }
 #bar .name { flex: 1; min-width: 0; padding: 0 8px; text-align: center; font: 600 13px/1.3 var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* the grid: the drum machine's dark theme */
-.demo {
-  --bg:#070b0f; --win:#0d141b; --card:#121b24; --card2:#18232e; --line:#1f2e3b; --track:#243443;
-  --text:#dbe9f5; --muted:#6f879b; --acc:#6fd3ff; --acc2:#b7f5e4; --a3:#a99bff;
-  color-scheme: dark; color: var(--text); font-family: "Helvetica Neue", Inter, Arial, sans-serif; line-height: normal;
-}
-#sqapp { width: 900px; }
-.sp { border: 1px solid var(--line); border-radius: 6px; background: var(--win); padding: 14px 16px 14px; }
-.srow { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
-.srow .rl { width: 84px; flex: none; font: 700 12px Arial; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.srow .bars { display: grid; grid-template-columns: repeat(16, 1fr); gap: 3px; flex: 1; min-width: 0; }
-.srow.hd { margin: 0 0 2px; } .srow.hd .bn { text-align: center; font: 600 10px ui-monospace, Menlo, monospace; color: var(--muted); } .srow.hd .bn.g { color: var(--text); } .srow.hd .bn.now { color: var(--acc); }
-.bc { position: relative; height: 46px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); cursor: pointer; touch-action: none; }
-.bc.g { background: var(--card2); }
-.bc.on { background: color-mix(in srgb, var(--rc) 78%, #0d141b); border-color: color-mix(in srgb, var(--rc) 78%, #0d141b); }
-.bc.on.cont { border-top-left-radius: 0; border-bottom-left-radius: 0; }
-.bc.on:not(.end) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.bc.cont { margin-left: -3px; }   /* a block's bars run into each other across the gap */
-.bc.on.sel { background: var(--rc); border-color: var(--rc); filter: brightness(1.18); }   /* the chosen block is brighter */
-.bc[data-label] { z-index: 2; }
-.bc[data-label]::after { content: attr(data-label); position: absolute; left: 7px; top: 50%; transform: translateY(-50%); font: 700 11px Arial; color: #071016; white-space: nowrap; pointer-events: none; }
-.bc.now { outline: 2px solid var(--text); outline-offset: -2px; z-index: 1; }
-.strip { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 20px; min-height: 54px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font: 700 11px Arial; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
-.strip[hidden], .strip [hidden] { display: none !important; }
-.strip b { color: var(--text); font-size: 13px; letter-spacing: 0; text-transform: none; min-width: 110px; }
-.strip label { display: flex; align-items: center; gap: 8px; }
-.strip .grp { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-.strip select { height: 28px; font: 600 12px Arial; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 4px; max-width: 170px; }
-.strip button { height: 28px; min-width: 28px; padding: 0 10px; font: 700 12px Arial; color: var(--text); background: transparent; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
-.strip button:hover:not(:disabled) { border-color: var(--muted); } .strip button:disabled { opacity: .35; cursor: default; }
-.strip .len { display: flex; align-items: center; gap: 6px; } .strip .len span { min-width: 54px; text-align: center; color: var(--text); text-transform: none; font-size: 12px; }
-.strip select:focus-visible, .strip button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
-.hint { font: 500 12px Arial; letter-spacing: 0; text-transform: none; }
 </style>
 </head>
 <body>
@@ -101,38 +95,20 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
       <a href="tunings.html">Tunings</a>
       <a href="drums.html">Drums</a>
       <a href="colours.html">Colours</a>
-      <a href="timeline.html" aria-current="page">Timeline</a>
+      <a href="loops.html" aria-current="page">Loops</a>
     </nav>
   </header>
 
   <section class="intro">
-    <p class="label">Sequencer</p>
-    <h1>Timeline</h1>
+    <p class="label">Stack</p>
+    <h1>Loops</h1>
   </section>
 
   <section class="sec">
     <div class="topplay"><button class="go2" id="playTop" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
-    <div class="demo">
-      <div id="sqapp">
-        <div class="sp">
-          <div id="grid"></div>
-          <div class="strip" id="strip">
-            <span class="hint" id="sHint">Drag across a row to place a block</span>
-            <div class="grp" id="sBody" hidden>
-              <b id="sInfo"></b>
-              <span class="len"><button id="bLess" type="button" aria-label="One bar shorter">&minus;</button><span id="sLen"></span><button id="bMore" type="button" aria-label="One bar longer">+</button></span>
-              <span class="grp" id="fDrums">
-                <label>Pattern <select id="bPat" aria-label="Pattern"></select></label>
-                <label>Kit <select id="bKit" aria-label="Kit"></select></label>
-                <label>Tempo <select id="bSpd" aria-label="Tempo"><option value="2">150 BPM</option><option value="1">75 BPM</option></select></label>
-              </span>
-              <span class="grp" id="fPads"><label>Pad <select id="bPad" aria-label="Pad"></select></label></span>
-              <button id="bDel" type="button">Remove</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div id="stack"></div>
+    <p id="empty" hidden>Add a loop below</p>
+    <div class="addrow"><button id="addDrums" type="button">+ Drums</button><button id="addPads" type="button">+ Pads</button></div>
   </section>
 
   <footer>
@@ -141,9 +117,9 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
   </footer>
 </div>
 <div id="bar"><div class="pill" role="group" aria-label="Player">
-  <button id="bp" type="button" aria-label="Previous arrangement" title="Previous arrangement"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button id="bp" type="button" aria-label="Previous stack" title="Previous stack"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <button class="go" id="playBtn" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button>
-  <button id="bn" type="button" aria-label="Next arrangement" title="Next arrangement"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button id="bn" type="button" aria-label="Next stack" title="Next stack"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <span class="name" id="barName" aria-live="polite"></span>
 </div></div>
 <script>
@@ -187,20 +163,14 @@ const KITS = DM.kits, SOUNDS = DM.sounds, PADS = CM.pads;
 
 const PNAMES = Object.keys(PATTERNS).filter(n => n !== "Empty");
 
-// ---------- the grid: each cell is a bar; a block is a run of bars that play one thing ----------
-const NB = 16, BAR_S = 3.2, TPB = 32, TICK = BAR_S / TPB;   // 75 BPM: a bar is 3.2 s, the length of one pad chord
-const LANES = [{ type: "drums", label: "Drums", col: "var(--acc)" }, { type: "drums", label: "Drums", col: "var(--acc2)" }, { type: "pads", label: "Pads", col: "var(--a3)" }, { type: "pads", label: "Pads", col: "var(--a3)" }];
-const cells = LANES.map(() => new Array(NB).fill(null));   // cells[lane][bar] = a block object, shared by every bar of that block
-const LEVELS = [.95, .85, .75, .6, .6, .75, .55, .6], KEEP = { drums: { pat: "Amen Break", kit: 0, speed: 2 }, pads: { pad: 0 } };
-const S = { playing: false, tick: 0, bar: 0, next: 0, loopBars: 1, timer: 0, queue: [], count: 0, sel: null, name: "", prev: LANES.map(() => null) };
-const newBlock = type => Object.assign({ type }, KEEP[type]);
-const spanOf = (lane, bar) => {
-  const blk = cells[lane][bar]; if (!blk) return null;
-  let a = bar, b = bar; while (a > 0 && cells[lane][a - 1] === blk) a--; while (b < NB - 1 && cells[lane][b + 1] === blk) b++;
-  return { blk, a, b };
-};
-const lastBar = () => { let m = -1; cells.forEach(r => r.forEach((c, i) => { if (c && i > m) m = i; })); return m; };
-const findLane = blk => cells.findIndex(r => r.includes(blk));
+// ---------- the stack: every loop plays in time with the others ----------
+const BAR_S = 3.2, TPB = 32, TICK = BAR_S / TPB, MAXL = 6;   // 75 BPM: a bar is 3.2 s, the length of one pad chord
+const LEVELS = [.95, .85, .75, .6, .6, .75, .55, .6], NV = 5;
+const S = { playing: false, tick: 0, next: 0, t0: 0, timer: 0, name: "" };
+let layers = [], uid = 0;
+const KEEP = { drums: { pat: "Amen Break", kit: 0, speed: 2 }, pads: { pad: 0 } };
+const nextBar = () => Math.ceil(S.tick / TPB) * TPB;   // a loop that starts while the stack plays waits for the next bar
+const loopTicks = l => l.type === "pads" ? TPB * 4 : (PATTERNS[l.pat].len || 16) * (l.speed === 2 ? 1 : 2);
 
 // ---------- the recordings ----------
 const ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
@@ -219,189 +189,145 @@ async function ensureSound(name) {
   return (SND[name] = m);
 }
 const ensurePad = async i => PAD[i] || (PAD[i] = await loadBuf("colours/" + PADS[i].file + ".mp3"));
-let loadFailed = false;
-async function loadFor(blocks) {
-  const jobs = [];
-  blocks.forEach(b => { if (b.type === "drums") KITS[b.kit].r.forEach(n => jobs.push(ensureSound(n))); else jobs.push(ensurePad(b.pad)); });
-  setName("Loading..."); await Promise.all(jobs);
-  loadFailed = blocks.length > 0 && blocks.every(b => b.type === "drums" ? KITS[b.kit].r.every(n => !SND[n] || !SND[n].size) : !PAD[b.pad]);
-  setName(loadFailed ? "The recordings only play from the website" : S.name);
+let failed = false;
+const setName = t => { $("#barName").textContent = t; };
+async function loadFor(ls) {
+  const jobs = []; ls.forEach(l => { if (l.type === "drums") KITS[l.kit].r.forEach(n => jobs.push(ensureSound(n))); else jobs.push(ensurePad(l.pad)); });
+  if (!jobs.length) return; setName("Loading..."); await Promise.all(jobs);
+  failed = ls.every(l => l.type === "drums" ? KITS[l.kit].r.every(n => !SND[n] || !SND[n].size) : !PAD[l.pad]);
+  setName(failed ? "The recordings only play from the website" : S.name);
 }
-const allBlocks = () => [...new Set(cells.flat().filter(Boolean))];
 
 // ---------- audio ----------
 const mnode = ctx.createGain(); mnode.gain.value = .7;
 const sh = ctx.createWaveShaper(), cv = new Float32Array(4097);
 for (let i = 0; i < cv.length; i++) { const x = 2 * i / 4096 - 1, a = Math.abs(x), T = .7; cv[i] = (x < 0 ? -1 : 1) * (a <= T ? a : T + (1 - T) * Math.tanh((a - T) / (1 - T))); }   // soft limiter
 sh.curve = cv; sh.oversample = "2x"; mnode.connect(sh); sh.connect(ctx.destination);
-const laneGain = LANES.map(l => { const g = ctx.createGain(); g.gain.value = l.type === "drums" ? .9 : 1.4; g.connect(mnode); return g; });
-const active = LANES.map(() => new Set()), rowOut = LANES.map((l, i) => l.type === "drums" ? LEVELS.map(lv => { const g = ctx.createGain(); g.gain.value = lv; g.connect(laneGain[i]); return g; }) : null);
 const stepsOf = {};   // a pattern as numbers: 0 off, 1 hit, 2 accent, 3 ghost
 const patSteps = n => stepsOf[n] || (stepsOf[n] = PATTERNS[n].p.map(s => Array.from({ length: PATTERNS[n].len || 16 }, (_, k) => s[k] === "X" ? 2 : s[k] === "x" ? 1 : s[k] === "o" ? 3 : 0)));
-const NV = 5;
-function pickVi(sound, row, lane) {   // the sound moves between its recorded variants over 4 bars, like the drum machine's Sweep 4
+function wire(l) {   // each loop has its own output, and a drums loop its own row levels
+  l.out = ctx.createGain(); l.out.gain.value = l.type === "drums" ? .9 : 1.4; l.out.connect(mnode); l.act = new Set();
+  if (l.type === "drums") l.rows = LEVELS.map(v => { const g = ctx.createGain(); g.gain.value = v; g.connect(l.out); return g; });
+}
+function pickVi(sound, row, l, bar) {   // the sound moves between its recorded variants over 4 bars
   if (!SOUNDS[sound] || SOUNDS[sound].v < 2) return -1;
-  const ph = ((S.count / 4) + row * .19 + lane * .07) % 1; return Math.round((1 - Math.abs(2 * ph - 1)) * (NV - 1));
+  const ph = ((bar / 4) + row * .19 + l.id * .07) % 1; return Math.round((1 - Math.abs(2 * ph - 1)) * (NV - 1));
 }
 function bufOf(sound, vi) {
   const m = SND[sound]; if (!m) return null; let b = m.get(vi);
   for (let d = 1; d < NV && !b; d++) b = m.get(vi + d) || m.get(vi - d);
   return b || m.get(-1) || null;
 }
-function drumHit(lane, row, sound, t, vel) {
-  const b = bufOf(sound, pickVi(sound, row, lane)); if (!b) return;
-  if (row === 3 || row === 4) [3, 4].forEach(r => active[lane].forEach(h => { if (h.row === r) { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, .004); try { h.s.stop(t + .04); } catch (e) {} } }));   // hats cut each other
-  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vel; s.connect(g); g.connect(rowOut[lane][row]);
-  const h = { s, g, row }; active[lane].add(h); s.onended = () => active[lane].delete(h); s.start(t);
+function drumHit(l, row, sound, t, vel, bar) {
+  const b = bufOf(sound, pickVi(sound, row, l, bar)); if (!b) return;
+  if (row === 3 || row === 4) l.act.forEach(h => { if (h.row === 3 || h.row === 4) { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, .004); try { h.s.stop(t + .04); } catch (e) {} } });   // hats cut each other
+  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vel; s.connect(g); g.connect(l.rows[row]);
+  const h = { s, g, row }; l.act.add(h); s.onended = () => l.act.delete(h); s.start(t);
 }
-function drumStep(lane, bar, tib, t) {
-  const sp = spanOf(lane, bar), blk = sp.blk, pat = PATTERNS[blk.pat], len = pat.len || 16, steps = patSteps(blk.pat), sound = KITS[blk.kit].r;
+function drumStep(l, tick, tib, t) {
+  const pat = PATTERNS[l.pat], len = pat.len || 16, steps = patSteps(l.pat), sound = KITS[l.kit].r, bar = Math.floor(tick / TPB), rel = tick - l.start;
   let step;
-  if (blk.speed === 2) step = len === 16 ? tib % 16 : tib;
-  else { if (tib % 2) return; const st = tib / 2; step = len === 16 ? st : ((bar - sp.a) % 2) * 16 + st; }
-  const odd = step % 2, stepDur = TICK * (blk.speed === 2 ? 1 : 2), tt = t + (odd ? (pat.swing || 0) * stepDur * .66 : 0);
-  steps.forEach((row, r) => { const v = row[step]; if (v) drumHit(lane, r, sound[r], tt, v === 2 ? 1 : v === 3 ? .3 * (.85 + Math.random() * .3) : .62 * (.92 + Math.random() * .12)); });
+  if (l.speed === 2) step = len === 16 ? rel % 16 : rel % 32;
+  else { if (rel % 2) return; step = (rel / 2) % len; }
+  const stepDur = TICK * (l.speed === 2 ? 1 : 2), tt = t + (step % 2 ? (pat.swing || 0) * stepDur * .66 : 0);
+  steps.forEach((row, r) => { const v = row[step]; if (v) drumHit(l, r, sound[r], tt, v === 2 ? 1 : v === 3 ? .3 * (.85 + Math.random() * .3) : .62 * (.92 + Math.random() * .12), bar); });
 }
-function fadePads(lane, t, tc = .15) {
-  active[lane].forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, tc); try { h.s.stop(t + tc * 8); } catch (e) {} });
-}
-function padBar(lane, bar, t) {   // at the start of a bar: start a pad, restart it every 4 bars, or fade it when its block ends
-  const cur = cells[lane][bar], prev = S.prev[lane], kb = cur ? bar - spanOf(lane, bar).a : 0;
-  if (prev && prev !== cur) fadePads(lane, t);
-  if (cur && (prev !== cur || kb % 4 === 0)) {
-    const b = PAD[cur.pad]; if (b) { const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; s.connect(g); g.connect(laneGain[lane]); const h = { s, g }; active[lane].add(h); s.onended = () => active[lane].delete(h); s.start(t); }
-  }
-  S.prev[lane] = cur;
+function fade(l, t, tc = .15) { l.act.forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, tc); try { h.s.stop(t + tc * 8); } catch (e) {} }); }
+function padStart(l, t) {
+  const b = PAD[l.pad]; if (!b) return;
+  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; s.connect(g); g.connect(l.out); const h = { s, g }; l.act.add(h); s.onended = () => l.act.delete(h); s.start(t);
 }
 
 // ---------- transport ----------
 function schedule() {
   while (S.next < ctx.currentTime + .45) {
-    const t = S.next, tib = S.tick % TPB;
-    if (tib === 0) {
-      if (S.tick > 0) S.bar = (S.bar + 1) % S.loopBars;
-      S.loopBars = Math.max(1, lastBar() + 1); if (S.bar >= S.loopBars) S.bar = 0;
-      if (S.bar === 0 && S.tick > 0) S.count++;
-      LANES.forEach((l, i) => { if (l.type === "pads") padBar(i, S.bar, t); });
-    }
-    LANES.forEach((l, i) => { if (l.type === "drums" && cells[i][S.bar]) drumStep(i, S.bar, tib, t); });
-    S.queue.push({ bar: S.bar, t }); S.tick++; S.next += TICK;
+    const t = S.next, tick = S.tick, tib = tick % TPB;
+    layers.forEach(l => {
+      if (!l.on || tick < l.start) return;
+      if (l.type === "drums") drumStep(l, tick, tib, t);
+      else if ((tick - l.start) % (TPB * 4) === 0) padStart(l, t);   // a pad restarts every four bars
+    });
+    S.tick++; S.next += TICK;
   }
 }
 async function play() {
   if (S.playing) return;
-  if (lastBar() < 0) { setName("Place a block first"); setTimeout(() => setName(S.name), 1800); return; }
-  await ctx.resume(); await loadFor(allBlocks()); if (loadFailed) return;
-  S.tick = 0; S.bar = 0; S.count = 0; S.loopBars = Math.max(1, lastBar() + 1); S.prev = LANES.map(() => null); S.queue.length = 0; S.next = ctx.currentTime + .08; S.playing = true;
-  setPlaying(true); S.timer = setInterval(schedule, 25); schedule(); requestAnimationFrame(anim);
+  if (!layers.some(l => l.on)) { setName("Add a loop first"); setTimeout(() => setName(S.name), 1800); return; }
+  await ctx.resume(); await loadFor(layers); if (failed) return;
+  layers.forEach(l => { l.start = 0; });
+  S.tick = 0; S.t0 = ctx.currentTime + .08; S.next = S.t0; S.playing = true; setPlaying(true);
+  S.timer = setInterval(schedule, 25); schedule(); requestAnimationFrame(anim);
 }
 function stop() {
-  S.playing = false; clearInterval(S.timer); S.queue.length = 0; paintNow(-1); setPlaying(false);
-  LANES.forEach((l, i) => { active[i].forEach(h => { try { h.g.gain.cancelScheduledValues(ctx.currentTime); h.g.gain.setTargetAtTime(0, ctx.currentTime, .03); h.s.stop(ctx.currentTime + .3); } catch (e) {} }); });
+  S.playing = false; clearInterval(S.timer); setPlaying(false); layers.forEach(l => fade(l, ctx.currentTime, .03)); showProgress();
 }
-function anim() {
-  if (!S.playing) return;
-  const t = ctx.currentTime; let cur = null; while (S.queue.length && S.queue[0].t <= t) cur = S.queue.shift();
-  if (cur) paintNow(cur.bar);
-  requestAnimationFrame(anim);
+function setPlaying(on) { [$("#playBtn"), $("#playTop")].forEach(b => { b.setAttribute("aria-pressed", on); b.setAttribute("aria-label", on ? "Stop" : "Play"); }); }
+[$("#playBtn"), $("#playTop")].forEach(b => { b.onclick = () => S.playing ? stop() : play(); });
+const nowTick = () => (ctx.currentTime - S.t0) / TICK;
+function showProgress() {   // each loop shows where it is in its own cycle; a loop that is waiting for the next bar pulses
+  const tk = S.playing ? nowTick() : -1;
+  layers.forEach(l => {
+    const run = S.playing && l.on && tk >= l.start, wait = S.playing && l.on && tk < l.start;
+    l.el.classList.toggle("wait", wait);
+    l.bar.style.transform = "scaleX(" + (run ? ((tk - l.start) % loopTicks(l)) / loopTicks(l) : 0) + ")";
+  });
 }
-const playBtns = [$("#playBtn"), $("#playTop")];   // the big button above the grid and the one in the bar
-function setPlaying(on) { playBtns.forEach(b => { b.setAttribute("aria-pressed", on); b.setAttribute("aria-label", on ? "Stop" : "Play"); }); }
-playBtns.forEach(b => { b.onclick = () => S.playing ? stop() : play(); });
-const nameEl = $("#barName");
-function setName(t) { nameEl.textContent = t; }
+function anim() { if (!S.playing) return; showProgress(); requestAnimationFrame(anim); }
 
-// ---------- drawing the grid ----------
-const grid = $("#grid"), cellEls = [], rowEls = [];
-const head = document.createElement("div"); head.className = "srow hd"; head.innerHTML = '<div class="rl"></div><div class="bars"></div>';
-for (let b = 0; b < NB; b++) { const n = document.createElement("div"); n.className = "bn" + (b % 4 === 0 ? " g" : ""); n.textContent = b + 1; head.lastChild.appendChild(n); }
-grid.appendChild(head);
-LANES.forEach((ln, i) => {
-  const el = document.createElement("div"); el.className = "srow"; el.style.setProperty("--rc", ln.col); rowEls.push(el);
-  const rl = document.createElement("div"); rl.className = "rl"; rl.textContent = ln.label;
-  const bars = document.createElement("div"); bars.className = "bars"; cellEls[i] = [];
-  for (let b = 0; b < NB; b++) { const c = document.createElement("div"); c.className = "bc" + (b % 4 === 0 ? " g" : ""); c.dataset.b = b; bars.appendChild(c); cellEls[i].push(c); }
-  el.append(rl, bars); grid.appendChild(el);
-});
-function paint() {
-  cells.forEach((row, i) => row.forEach((blk, b) => {
-    const c = cellEls[i][b], cont = blk && b > 0 && row[b - 1] === blk, end = blk && !(b < NB - 1 && row[b + 1] === blk);
-    c.className = "bc" + (b % 4 === 0 ? " g" : "") + (blk ? " on" : "") + (cont ? " cont" : "") + (end ? " end" : "") + (blk && blk === S.sel ? " sel" : "");
-    if (blk && !cont) c.dataset.label = LANES[i].label; else delete c.dataset.label;
-  }));
+// ---------- the stack on the page ----------
+const stack = $("#stack");
+const opt = (arr, f) => arr.map(f).join("");
+function addLayer(type, init) {
+  if (layers.length >= MAXL) return null;
+  const l = Object.assign({ id: ++uid, type, on: true, start: S.playing ? nextBar() : 0 }, KEEP[type], init || {});
+  wire(l); layers.push(l); build(l); refreshAdd(); return l;
 }
-let nowB = -1;
-function paintNow(b) { cellEls.forEach(row => { if (nowB >= 0) row[nowB].classList.remove("now"); if (b >= 0) row[b].classList.add("now"); }); head.querySelectorAll(".bn").forEach((n, k) => n.classList.toggle("now", k === b)); nowB = b; }
-
-// ---------- placing, selecting and editing blocks ----------
-let drag = null;
-const barAt = (e, lane) => { const r = cellEls[lane][0].parentNode.getBoundingClientRect(); return clamp(Math.floor((e.clientX - r.left) / r.width * NB), 0, NB - 1); };
-grid.addEventListener("pointerdown", e => {
-  const c = e.target.closest(".bc"); if (!c) return; const row = c.closest(".srow"), lane = rowEls.indexOf(row), b = +c.dataset.b; e.preventDefault();
-  const blk = cells[lane][b];
-  if (blk) { select(blk); return; }
-  const left = b > 0 ? cells[lane][b - 1] : null, nb = left || newBlock(LANES[lane].type);   // starting right after a block extends it
-  cells[lane][b] = nb; drag = { lane, blk: nb, last: b }; select(nb); changed();
-});
-grid.addEventListener("pointermove", e => {
-  if (!drag) return; const b = barAt(e, drag.lane); if (b === drag.last) return;
-  const step = b > drag.last ? 1 : -1;
-  for (let k = drag.last + step; step > 0 ? k <= b : k >= b; k += step) { if (cells[drag.lane][k]) break; cells[drag.lane][k] = drag.blk; drag.last = k; }
-  changed();
-});
-addEventListener("pointerup", () => { if (drag) { loadFor([drag.blk]); drag = null; } });
-function changed() { S.name = "Custom"; if (!loadFailed) setName("Custom"); paint(); syncStrip(); }
-
-const strip = $("#strip"), selPat = $("#bPat"), selKit = $("#bKit"), selSpd = $("#bSpd"), selPad = $("#bPad");
-selPat.innerHTML = PNAMES.map(n => `<option>${n}</option>`).join(""); selKit.innerHTML = KITS.map((k, i) => `<option value="${i}">${k.n}</option>`).join(""); selPad.innerHTML = PADS.map((p, i) => `<option value="${i}">${p.n}</option>`).join("");
-function select(blk) { S.sel = blk; paint(); syncStrip(); }
-function syncStrip() {
-  const blk = S.sel, lane = blk ? findLane(blk) : -1;
-  if (!blk || lane < 0) { S.sel = null; $("#sHint").hidden = false; $("#sBody").hidden = true; return; }
-  $("#sHint").hidden = true; $("#sBody").hidden = false;
-  const sp = spanOf(lane, cells[lane].indexOf(blk)), n = sp.b - sp.a + 1;
-  $("#sInfo").textContent = LANES[lane].label + " \u00B7 bar" + (n > 1 ? "s " + (sp.a + 1) + "\u2013" + (sp.b + 1) : " " + (sp.a + 1));
-  $("#sLen").textContent = n + (n > 1 ? " bars" : " bar");
-  const dr = blk.type === "drums"; $("#fDrums").hidden = !dr; $("#fPads").hidden = dr;
-  if (dr) { selPat.value = blk.pat; selKit.value = blk.kit; selSpd.value = blk.speed; } else selPad.value = blk.pad;
-  $("#bLess").disabled = n <= 1; $("#bMore").disabled = sp.b >= NB - 1 || !!cells[lane][sp.b + 1];
+function build(l) {
+  const el = document.createElement("div"); el.className = "loop " + l.type; l.el = el;
+  const dr = l.type === "drums";
+  el.innerHTML = '<div class="lrow"><button class="lon" type="button" aria-pressed="true" title="On / off"><i></i></button><b class="lt">' + (dr ? "Drums" : "Pads") + '</b><span class="lf">' +
+    (dr ? '<label>Pattern <select class="sPat">' + opt(PNAMES, n => `<option>${n}</option>`) + '</select></label><label>Kit <select class="sKit">' + opt(KITS, (k, i) => `<option value="${i}">${k.n}</option>`) + '</select></label><label>Tempo <select class="sSpd"><option value="2">150 BPM</option><option value="1">75 BPM</option></select></label>'
+        : '<label>Pad <select class="sPad">' + opt(PADS, (p, i) => `<option value="${i}">${p.n}</option>`) + '</select></label>') +
+    '</span><button class="lx" type="button" aria-label="Remove this loop" title="Remove">&times;</button></div><div class="ltr"><div class="lbar"></div></div>';
+  l.bar = el.querySelector(".lbar");
+  const on = el.querySelector(".lon"), set = () => { on.setAttribute("aria-pressed", l.on); el.classList.toggle("off", !l.on); };
+  on.onclick = () => { l.on = !l.on; if (l.on) l.start = S.playing ? nextBar() : 0; else fade(l, ctx.currentTime, .05); set(); custom(); };
+  const sel = (c, k, num) => { const s = el.querySelector(c); if (!s) return; s.value = l[k]; s.onchange = () => { l[k] = num ? +s.value : s.value; if (l.type === "pads") { fade(l, ctx.currentTime, .1); l.start = S.playing ? nextBar() : 0; } loadFor([l]); custom(); s.blur(); }; };
+  sel(".sPat", "pat"); sel(".sKit", "kit", 1); sel(".sSpd", "speed", 1); sel(".sPad", "pad", 1);
+  el.querySelector(".lx").onclick = () => { fade(l, ctx.currentTime, .05); layers = layers.filter(q => q !== l); el.remove(); refreshAdd(); custom(); };
+  set(); stack.appendChild(el);
 }
-const edit = (k, v) => { const b = S.sel; if (!b) return; b[k] = v; KEEP[b.type][k] = v; S.name = "Custom"; setName("Custom"); loadFor([b]); };
-selPat.onchange = () => { edit("pat", selPat.value); selPat.blur(); }; selKit.onchange = () => { edit("kit", +selKit.value); selKit.blur(); };
-selSpd.onchange = () => { edit("speed", +selSpd.value); selSpd.blur(); }; selPad.onchange = () => { edit("pad", +selPad.value); selPad.blur(); };
-$("#bMore").onclick = () => { const b = S.sel, lane = findLane(b), sp = spanOf(lane, cells[lane].indexOf(b)); if (sp.b < NB - 1 && !cells[lane][sp.b + 1]) { cells[lane][sp.b + 1] = b; changed(); } };
-$("#bLess").onclick = () => { const b = S.sel, lane = findLane(b), sp = spanOf(lane, cells[lane].indexOf(b)); if (sp.b > sp.a) { cells[lane][sp.b] = null; changed(); } };
-const removeSel = () => { const b = S.sel; if (!b) return; cells.forEach(r => r.forEach((c, i) => { if (c === b) r[i] = null; })); S.sel = null; changed(); };
-$("#bDel").onclick = removeSel;
+function refreshAdd() { $("#addDrums").disabled = $("#addPads").disabled = layers.length >= MAXL; $("#empty").hidden = layers.length > 0; }
+function custom() { S.name = "Custom"; if (!failed) setName("Custom"); }
+$("#addDrums").onclick = () => { const l = addLayer("drums"); if (l) { custom(); loadFor([l]); } };
+$("#addPads").onclick = () => { const l = addLayer("pads"); if (l) { custom(); loadFor([l]); } };
 addEventListener("keydown", e => {
   if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.code === "Space" && e.target.tagName !== "BUTTON") { e.preventDefault(); S.playing ? stop() : play(); }
-  else if ((e.key === "Delete" || e.key === "Backspace") && S.sel) { e.preventDefault(); removeSel(); }
 });
 
-// ---------- starting arrangements: the arrows cycle through them ----------
-const D = (pat, kit, speed = 2) => ({ type: "drums", pat, kit: KITS.findIndex(k => k.n === kit), speed }), P = pad => ({ type: "pads", pad: PADS.findIndex(p => p.n === pad) });
-const ARR = [
-  { n: "Four bars and eight", b: [[0, 0, 4, D("Amen Break", "Jungle 909")], [2, 0, 8, P("Warm chorus pad")], [0, 8, 8, D("Two-Step DnB", "DnB Tight")], [2, 8, 8, P("Glass pad")]] },
-  { n: "Slow build", b: [[2, 0, 8, P("Deep sea pad")], [0, 4, 12, D("Halftime DnB", "Sub & Tight")], [3, 8, 8, P("Violet haze")], [1, 12, 4, D("Breakbeat", "Hard 909")]] },
-  { n: "Break and back", b: [[0, 0, 4, D("Boom Bap", "808", 1)], [2, 0, 4, P("Sunset strings")], [0, 4, 4, D("Jungle Roller", "Punchy")], [1, 4, 4, D("Think Break", "Electro")], [2, 4, 8, P("Northern lights")], [0, 8, 8, D("Neurofunk", "Industrial")], [2, 12, 4, P("Obsidian")]] },
-  { n: "Pads and a pulse", b: [[2, 0, 16, P("Forest air")], [0, 0, 16, D("Four on the Floor", "909", 1)], [1, 8, 8, D("Funk", "Lo-Fi", 1)], [3, 4, 12, P("Moonlit meadow")]] }
+// ---------- starting stacks: the arrows cycle through them ----------
+const D = (pat, kit, speed = 2) => ["drums", { pat, kit: KITS.findIndex(k => k.n === kit), speed }], P = pad => ["pads", { pad: PADS.findIndex(p => p.n === pad) }];
+const STACKS = [
+  { n: "Break and pad", l: [D("Amen Break", "Jungle 909"), P("Warm chorus pad")] },
+  { n: "Halftime haze", l: [D("Halftime DnB", "Sub & Tight"), P("Deep sea pad"), P("Violet haze")] },
+  { n: "Boom bap and strings", l: [D("Boom Bap", "808", 1), P("Sunset strings")] },
+  { n: "Neuro dark", l: [D("Neurofunk", "Industrial"), P("Obsidian")] },
+  { n: "Four on the floor", l: [D("Four on the Floor", "909", 1), D("Funk", "Lo-Fi", 1), P("Forest air")] }
 ];
-let ai = 0;
-function loadArr(i) {
+let si = 0;
+function loadStack(i) {
   if (S.playing) stop();
-  ai = (i + ARR.length) % ARR.length; cells.forEach(r => r.fill(null)); S.sel = null;
-  ARR[ai].b.forEach(([lane, a, n, c]) => { const blk = Object.assign({}, c); for (let k = a; k < a + n; k++) cells[lane][k] = blk; });
-  S.name = ARR[ai].n; setName(S.name); paint(); syncStrip();
+  layers.forEach(l => { fade(l, ctx.currentTime, .03); l.el.remove(); }); layers = [];
+  si = (i + STACKS.length) % STACKS.length; STACKS[si].l.forEach(([t, c]) => addLayer(t, c));
+  S.name = STACKS[si].n; setName(S.name); refreshAdd(); showProgress();
 }
-$("#bp").onclick = () => loadArr(ai - 1); $("#bn").onclick = () => loadArr(ai + 1);
-[$("#bar"), $(".topplay")].forEach(el => el.addEventListener("click", e => { const b = e.target.closest("button"); if (b && e.detail) b.blur(); }));   // after a click the button lets go of focus, so Space plays and stops
+$("#bp").onclick = () => loadStack(si - 1); $("#bn").onclick = () => loadStack(si + 1);
+[$("#bar"), $(".topplay"), $(".addrow")].forEach(el => el.addEventListener("click", e => { const b = e.target.closest("button"); if (b && e.detail) b.blur(); }));
 
-// ---------- scale the panel to the page ----------
-const fit = () => { $("#sqapp").style.zoom = Math.min(1, $(".demo").clientWidth / 900); };
-const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); fit(); };
+const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); };
 fitSite(); addEventListener("resize", fitSite);
-loadArr(0);
+loadStack(0);
 </script>
 </body>
 </html>
