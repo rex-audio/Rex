@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Browse and play tuning presets (just intonation, meantone, well temperaments) with a virtual MIDI keyboard, or your own.">
+<title>Tunings | Rex Audio</title>
+<style>
+/* Same page frame as the home page: a 720px "desktop" page scaled to the window. The demo below it is the plugin window on a pretend desktop, in the plugin's own dark theme. */
+:root {
+  --bg: #e4e7e9;
+  --fg: #15181a;
+  --muted: #5a6166;
+  --line: #c3c9cc;
+  --focus: #c8321e;
+  --sans: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; }
+#site { width: 720px; margin: 0 auto; zoom: 0.54; }
+a { color: inherit; }
+a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, p { margin: 0; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 26px 36px 0; }
+.brand { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+.top nav a:hover, .top nav a[aria-current] { border-bottom-color: var(--fg); }
+
+.intro { text-align: center; padding: 36px 36px 0; }
+.intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
+.intro .lead { font-size: 19px; line-height: 1.5; margin: 16px auto 0; max-width: 560px; }
+.sec { padding: 36px 36px 0; }
+.notes { margin-top: 18px; font-size: 14px; line-height: 1.55; color: var(--muted); }
+.notes b { color: var(--fg); }
+.notes p + p { margin-top: 8px; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; font-size: 14px; color: var(--muted); }
+
+/* the demo: the plugin's dark theme */
+.demo {
+  --bg:#070b0f; --win:#0d141b; --card:#121b24; --card2:#18232e; --line:#1f2e3b; --track:#243443;
+  --text:#dbe9f5; --muted:#6f879b; --acc:#6fd3ff; --acc2:#b7f5e4; --a3:#a99bff; --chart:#0a1117;
+  color-scheme: dark; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-family: "Helvetica Neue", Inter, Arial, sans-serif; line-height: normal;
+}
+.demo button { font-family: Arial, sans-serif; }
+  #app { width:760px; margin:0 auto; transform-origin:top left; }
+  #win { width:760px; margin-left:auto; margin-right:auto; }
+  #win { border:1px solid var(--line); border-radius:6px; background:var(--win); position:relative; }
+  .banner { position:relative; display:flex; align-items:center; justify-content:flex-start; height:58px; padding:0 28px 0 16px; border-bottom:1px solid var(--line); border-radius:6px 6px 0 0; }
+  .logo { font-size:22px; font-weight:300; letter-spacing:.06em; text-transform:lowercase; }
+  .logo b { font-weight:800; color:var(--acc); }
+  .stitle { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font:700 20px Arial; letter-spacing:.3em; padding-left:.3em; text-transform:uppercase; white-space:nowrap; color:var(--text); }
+  .foot { display:flex; justify-content:center; padding:10px 0 12px; border-top:1px solid var(--line); }
+  .foot { position:relative; }
+  .pwr { width:34px; height:34px; display:grid; place-items:center; border:1px solid var(--line); border-radius:50%; background:transparent; color:var(--muted); cursor:pointer; }
+  .pwr svg { width:16px; height:16px; }
+  .pwr:hover:not(:disabled) { color:var(--text); border-color:var(--muted); }
+  .pwr:disabled { opacity:.35; cursor:default; }
+  .pwr[aria-pressed="true"] { color:var(--acc); border-color:var(--acc); }
+  .pwr:focus-visible, .ddb:focus-visible, .pbg button:focus-visible, .tab:focus-visible, .sq:focus-visible { outline:2px solid var(--text); outline-offset:2px; }
+  .body { padding:14px 20px 20px; }
+  .mod { position:relative; border:1px solid var(--line); border-radius:4px; background:var(--card); display:flex; flex-direction:column; }
+  .mh { display:flex; align-items:center; justify-content:center; padding:6px 12px; min-height:34px; border-bottom:1px solid var(--line); font:500 11px Arial; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .mb { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:end; padding:16px; }
+  .fld[hidden] { display:none; }
+  .tsys { display:flex; gap:6px; } .tsys select { flex:1; min-width:0; height:42px; background:transparent; color:var(--text); border:1px solid var(--line); border-radius:4px; font:600 14px Arial; padding:0 6px; text-align-last:center; cursor:pointer; }
+  .tsys select:focus-visible { outline:2px solid var(--text); outline-offset:2px; } .tsys select:hover { border-color:var(--acc); }
+  .foot .piano { position:absolute; left:16px; top:50%; width:84px; height:44px; margin-top:-22px; color:var(--acc); opacity:.9; }
+  .fld {  display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .hbtn { height:30px; font:600 15px Arial; color:var(--muted); background:transparent; border:1px solid var(--line); border-radius:3px; padding:0 12px; cursor:pointer; }
+  .hbtn:hover { color:var(--text); border-color:var(--muted); }
+  .hbtn:focus-visible, .pgb:focus-visible, .pib:focus-visible { outline:2px solid var(--text); outline-offset:2px; }
+  .hbtn.nm { position:relative; min-width:244px; color:var(--text); padding:0 28px; }
+  .hbtn.nm svg { position:absolute; right:11px; top:10px; width:10px; height:10px; color:var(--muted); }
+  .hbtn.nm[aria-expanded="true"] { border-color:var(--acc); }
+  .hbtn[aria-pressed="true"] { color:var(--acc); border-color:var(--acc); }
+  .hbtn.sm { height:24px; font-size:11px; padding:0 10px; }
+  .kcol { flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }
+  .fl { font:500 10px Arial; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); text-align:center; }
+  /* key dropdown */
+  .dd { position:relative; }
+  .ddb { position:relative; width:100%; height:42px; display:flex; align-items:center; justify-content:center; background:transparent; color:var(--text); border:1px solid var(--line); border-radius:3px; font:600 20px Arial; padding:0 12px; cursor:pointer; }
+  .ddb svg { display:none; } .ddw { flex:1; min-width:0; } .tsys select { appearance:none; -webkit-appearance:none; background-image:none; }
+  .dd.open .ddb { border-color:var(--acc); }
+  .ddl { position:absolute; top:0; left:0; right:0; z-index:20; height:76px; display:none; background:#000; border:1px solid var(--line); border-radius:4px; box-shadow:0 10px 28px rgba(0,0,0,.55); overflow:hidden; }
+  .dd.open .ddl { display:flex; }
+  .ddo { font:600 13px Arial; border:0; padding:0; cursor:pointer; }
+  .ddo.w { flex:1; background:#e9eef2; border-right:1px solid #8896a2; color:#40505e; display:flex; align-items:flex-end; justify-content:center; padding-bottom:5px; }
+  .ddo.w:last-of-type { border-right:0; }
+  .ddo.b { position:absolute; top:0; height:62%; z-index:2; background:#0d141b; color:var(--muted); border:1px solid #000; border-radius:0 0 3px 3px; display:flex; align-items:flex-end; justify-content:center; padding-bottom:4px; font-size:10px; }
+  .ddo.w:hover, .ddo.w:focus-visible { background:#cfdde8; outline:none; }
+  .ddo.b:hover, .ddo.b:focus-visible { background:#24384a; color:var(--text); outline:none; }
+  .ddo[aria-selected="true"] { background:var(--acc); color:var(--bg); }
+  .sq { display:inline-flex; align-items:center; gap:8px; font:700 11px Arial; letter-spacing:.06em; text-transform:uppercase; padding:5px 11px; border:1px solid var(--line); border-radius:999px; background:transparent; color:var(--muted); cursor:pointer; }
+  .sq i { width:10px; height:10px; border:1.5px solid var(--muted); border-radius:2px; }
+  .sq[aria-pressed="true"] i { background:var(--acc); border-color:var(--acc); }
+  #dock { display:flex; position:relative; height:96px; background:#000; border:1px solid var(--line); border-radius:4px; overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .dk { position:relative; flex:1; background:#e9eef2; border-right:1px solid #8896a2; display:flex; align-items:flex-end; justify-content:center; padding-bottom:3px; font:9px Arial; color:#6c7a86; cursor:pointer; }
+  .bk { position:absolute; top:0; height:60%; z-index:2; background:#0d141b; border:1px solid #000; border-radius:0 0 3px 3px; cursor:pointer; }
+  .dk.in::after, .bk.in::after { content:""; position:absolute; left:50%; transform:translateX(-50%); width:6px; height:6px; border-radius:50%; background:var(--acc); }
+  .dk.in::after { bottom:18px; } .bk.in::after { bottom:6px; }
+  .dk.down, .bk.down { background:var(--acc); }
+  #dock .dk::after, #dock .bk::after { display:none !important; }   /* no dots on the keyboard */
+  .down.in::after { background:var(--bg); }
+  #test { margin-top:14px; padding:12px 14px 14px; border:1px solid var(--line); border-radius:6px; background:var(--win); }
+  .rig { display:flex; gap:14px; align-items:stretch; }
+  .ctls { flex:none; display:flex; gap:16px; align-items:flex-end; justify-content:center; padding:0 2px; }
+  .cc { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .cc .fl { letter-spacing:.1em; }
+  .ctls.off { opacity:.35; pointer-events:none; }
+  #knob, #knob2 { position:relative; width:60px; height:60px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #2b3d4d, #121b24 70%); border:1px solid var(--muted); box-shadow:0 3px 8px rgba(0,0,0,.5); cursor:ns-resize; touch-action:none; }
+  #knob::before, #knob2::before { content:""; position:absolute; inset:-7px; border-radius:50%; border:1px dashed var(--line); }
+  #knob i, #knob2 i { position:absolute; left:50%; top:5px; width:3px; height:15px; margin-left:-1.5px; border-radius:2px; background:var(--acc); transform-origin:50% 25px; }
+  #knob:focus-visible, #knob2:focus-visible, #wheel:focus-visible { outline:2px solid var(--text); outline-offset:3px; }
+  #wheelw { position:relative; width:34px; height:84px; }
+  #wheel { position:absolute; inset:0; border-radius:8px; border:1px solid var(--muted); cursor:ns-resize; touch-action:none; box-shadow:0 3px 8px rgba(0,0,0,.5), inset 0 0 14px rgba(0,0,0,.7);
+    background:repeating-linear-gradient(to bottom, #2e4152 0 3px, #101921 3px 7px); background-size:100% 7px; }
+  #wheel::after { content:""; position:absolute; inset:0; border-radius:8px; background:linear-gradient(to bottom, rgba(0,0,0,.65), rgba(255,255,255,.12) 45%, rgba(0,0,0,.65)); pointer-events:none; }
+  #wmark { position:absolute; left:-8px; width:6px; height:6px; margin-top:-3px; border-radius:50%; background:var(--acc); }
+  #dock { flex:1; min-width:0; height:auto; min-height:104px; }
+  .fl small { display:block; font-size:9px; letter-spacing:.04em; text-transform:none; opacity:.85; margin-top:1px; white-space:nowrap; } .fl b { font-weight:700; }
+  .tsrow { display:flex; gap:6px; align-items:stretch; } .tsrow .tsys { flex:1; min-width:0; } .tsrow .hbtn { height:42px; padding:0 14px; font-size:18px; }
+  .mb .fld .fl { text-align:center; }
+  .monbez { border:2px solid var(--acc); border-radius:12px; padding:12px; background:#0b1218; }
+  #monSlot { zoom:.96; } #monSlot #win { display:block !important; margin:0; }
+  .monneck { width:70px; height:20px; margin:0 auto; border-left:2px solid var(--acc); border-right:2px solid var(--acc); background:#0b1218; }
+  .monbase { width:210px; height:10px; margin:0 auto; border:2px solid var(--acc); border-radius:6px; background:#0b1218; }
+  #pwheelw { position:relative; width:34px; height:84px; }
+  #pwheel { position:absolute; inset:0; border-radius:8px; border:1px solid var(--muted); cursor:ns-resize; touch-action:none; box-shadow:0 3px 8px rgba(0,0,0,.5), inset 0 0 14px rgba(0,0,0,.7); background:repeating-linear-gradient(to bottom, #2e4152 0 3px, #101921 3px 7px); background-size:100% 7px; }
+  #pwheel::after { content:""; position:absolute; inset:0; border-radius:8px; background:linear-gradient(to bottom, rgba(0,0,0,.65), rgba(255,255,255,.12) 45%, rgba(0,0,0,.65)); pointer-events:none; }
+  #pwheel:focus-visible { outline:2px solid var(--text); outline-offset:3px; }
+  #pmark { position:absolute; left:-8px; top:42px; width:6px; height:6px; margin-top:-3px; border-radius:50%; background:var(--acc); }
+  #dock .dk.anc { background:#8fcdf0; } #dock .dk.anc:not(.down) { color:#0d4565; } #dock .bk.anc:not(.down) { background:#2f7ea8; }
+  @keyframes ancflash { 0% { box-shadow:inset 0 0 0 200px transparent; } 18% { box-shadow:inset 0 0 0 200px color-mix(in srgb, var(--acc) 75%, transparent); } 100% { box-shadow:inset 0 0 0 200px transparent; } }
+  #dock .dk.flash { background:#8fcdf0; color:#0d4565; }
+  .mb { grid-template-columns:1fr 2.6fr; }
+  .arow { grid-column:1 / -1; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px 28px; }
+  .agrp { display:flex; align-items:center; gap:10px; }
+  .arow .hbtn#scaleBtn { height:42px; padding:0 16px; font-size:15px; }
+  #dock .dk.anc.down { background:var(--acc); color:var(--bg); box-shadow:inset 0 0 0 3px #0d4565; } #dock .bk.anc.down { background:var(--acc); box-shadow:inset 0 0 0 3px #0d4565; }
+  #win, .mod { border:0; background:transparent; border-radius:0; }
+  .body { padding:4px 4px 6px; }
+  .anc { display:flex; gap:6px; } .anc .hbtn { height:42px; padding:0 14px; font-size:15px; }
+  #test { margin-top:0; position:relative; }
+  .lcol { flex:none; display:flex; flex-direction:column; justify-content:flex-end; }
+  .ctls { gap:12px; }
+  #cable { display:block; width:100%; height:84px; color:var(--acc); margin:-1px 0 0; }
+  .mrow { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px; }
+  #midiMsg { font:500 12px/1.45 Arial; color:var(--muted); min-width:0; }
+  .sq[aria-pressed="true"] { color:var(--text); border-color:var(--acc); }
+  .sq i { width:10px; height:10px; border:1.5px solid var(--muted); border-radius:2px; }
+  .sq[aria-pressed="true"] i { background:var(--acc); border-color:var(--acc); }
+
+</style>
+</head>
+<body>
+<div id="site">
+  <header class="top">
+    <a class="brand" href="index.html">Rex Audio</a>
+    <nav aria-label="Main">
+      <a href="index.html">Shapes</a>
+      <a href="tunings.html" aria-current="page">Tunings</a>
+    </nav>
+  </header>
+
+  <section class="intro">
+    <p class="label">MPE Retuner</p>
+    <h1>Tunings</h1>
+    <p class="lead">Browse the tuning presets and play them. The plugin below is running on a pretend desktop, with a virtual MIDI keyboard plugged in.</p>
+  </section>
+
+  <section class="sec">
+    <div class="demo">
+      <div id="app">
+        <div id="mon" aria-label="Desktop monitor showing the plugin window"><div class="monbez"><div id="monSlot">
+          <div id="win">
+            <div class="body">
+              <div class="mod">
+                <div class="mb">
+                  <div class="fld"><span class="fl">Key</span>
+                    <div class="tsrow"><button class="hbtn" id="kp" type="button" aria-label="Previous key">&lt;</button><div class="ddw"><div class="dd" id="dd"><button class="ddb" id="ddb" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="ddv">C</span></button><div class="ddl" id="ddl" role="listbox"></div></div></div><button class="hbtn" id="kn" type="button" aria-label="Next key">&gt;</button></div>
+                  </div>
+                  <div class="fld tsf"><span class="fl">Tuning system</span><div class="tsrow"><button class="hbtn" id="pp" type="button" aria-label="Previous tuning">&lt;</button><div class="tsys"><select id="tsPreset" aria-label="Tuning system"></select></div><button class="hbtn" id="pnx" type="button" aria-label="Next tuning">&gt;</button></div></div>
+                  <div class="arow"><div class="agrp"><span class="fl">Anchor</span><div class="anc" role="group" aria-label="Anchor"><button class="hbtn" type="button" aria-pressed="false" data-anc="0" title="Anchor C: play as if in C, transposed to the chosen key. Press again to turn the anchor off">C</button><button class="hbtn" type="button" aria-pressed="false" data-anc="9" title="Anchor A: play as if in A (the white keys are A minor). Press again to turn the anchor off">A</button><button class="hbtn" type="button" aria-pressed="false" data-anc="-1" title="No anchor: the keys play the notes you press">None</button></div></div><button class="hbtn" id="scaleBtn" type="button" aria-pressed="false" title="Play the chromatic scale from the anchor note up an octave, lighting each key as it sounds">Play chromatic scale</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div></div><div class="monneck"></div><div class="monbase"></div></div>
+        <svg id="cable" viewBox="0 0 760 84" preserveAspectRatio="xMidYMid meet" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M380 4V60"/><rect x="369" y="-2" width="22" height="8" rx="2" fill="#18232e"/><rect x="366" y="60" width="28" height="16" rx="3" fill="#18232e"/><path d="M373 76v8M387 76v8"/></svg>
+        <div id="test">
+          <div class="mrow"><span id="midiMsg" role="status" aria-live="polite">Play the keys with the mouse, touch or computer keys, or connect a MIDI keyboard.</span><button class="sq" id="midiBtn" type="button" aria-pressed="false" title="Use a real MIDI keyboard: its notes play, and its knobs and wheels change the tuning system and key"><i></i>Connect MIDI</button></div>
+          <div class="rig">
+            <div class="lcol">
+              <div class="ctls" id="ctls">
+                <div class="cc"><div id="knob" tabindex="0" role="slider" aria-label="Tuning system knob"><i></i></div><span class="fl"><b>CC 74</b><small>Tuning system</small></span></div>
+                <div class="cc"><div id="knob2" tabindex="0" role="slider" aria-label="Key knob"><i></i></div><span class="fl"><b>CC 71</b><small>Key</small></span></div>
+                <div class="cc"><div id="wheelw"><div id="wheel" tabindex="0" role="slider" aria-label="Mod wheel (key)"></div><div id="wmark"></div></div><span class="fl">Mod<small>Key</small></span></div>
+                <div class="cc"><div id="pwheelw"><div id="pwheel" tabindex="0" role="slider" aria-label="Pitch wheel (previous / next tuning system)" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0"></div><div id="pmark"></div></div><span class="fl">Pitch<small>Tuning system</small></span></div>
+              </div>
+            </div>
+            <div class="kcol"><div id="dock"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <p><b>Playing.</b> Click or touch the keys, or use the computer keyboard: A W S E D F T G Y H U J play C to B, K O L P ; ' carry on up, and Z / X shift the octave. To use a real MIDI keyboard, press Connect MIDI (Chrome and Edge support this).</p>
+      <p><b>Choosing a tuning.</b> Pick one on the desktop, or use the controls on the keyboard. Knob 1 (CC 74) steps through the tuning systems, knob 2 (CC 71) and the mod wheel pick the key, and pushing the pitch wheel up or down moves to the next or previous tuning system. <b>Anchor.</b> With Anchor C the keys are laid out as if you were in C and only the sound moves to the chosen key; Anchor A does the same with the white keys as A minor. Press the active anchor again, or None, to play the notes you press. <b>Play chromatic scale</b> plays the twelve notes from the anchor up an octave in the chosen tuning, lighting each key as it sounds.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 Rex Audio</span>
+  </footer>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+// each tuning: 12 steps above the tonic, as [n, d] ratios or cents
+const fifths = f => [0,7,2,-3,4,-1,6,1,8,3,-2,5].map(k => ((k * f) % 1200 + 1200) % 1200);   // meantone: a chain of equal fifths
+const GROUPS = [
+  { name: "Equal", items: [
+    { name: "12-TET", s: [0,100,200,300,400,500,600,700,800,900,1000,1100] } ] },
+  { name: "Just intonation", items: [
+    { name: "5-Limit JI", s: [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[45,32],[3,2],[8,5],[5,3],[9,5],[15,8]] },
+    { name: "5-Limit JI (16/9 seventh)", s: [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[45,32],[3,2],[8,5],[5,3],[16,9],[15,8]] },
+    { name: "7-Limit JI", s: [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[7,5],[3,2],[8,5],[5,3],[7,4],[15,8]] },
+    { name: "Pythagorean", s: [[1,1],[256,243],[9,8],[32,27],[81,64],[4,3],[729,512],[3,2],[128,81],[27,16],[16,9],[243,128]] },
+    { name: "Harmonic Series", s: [[1,1],[17,16],[9,8],[19,16],[5,4],[21,16],[11,8],[3,2],[13,8],[27,16],[7,4],[15,8]] } ] },
+  { name: "Meantone", items: [
+    { name: "Quarter-Comma Meantone", s: fifths(1200 * Math.log2(5) / 4) },
+    { name: "Third-Comma Meantone", s: fifths(694.786) } ] },
+  { name: "Well temperaments", items: [
+    { name: "Werckmeister III", s: [0, 90.225, 192.180, 294.135, 390.225, 498.045, 588.270, 696.090, 792.180, 888.270, 996.090, 1092.180] },
+    { name: "Kirnberger III", s: [0, 90.225, 193.157, 294.135, 386.314, 498.045, 590.224, 696.578, 792.180, 889.735, 996.090, 1088.269] },
+    { name: "Vallotti", s: [0, 94.135, 196.090, 298.045, 392.180, 501.955, 592.180, 698.045, 796.090, 894.135, 1000.000, 1090.225] } ] }
+];
+const PRESETS = GROUPS.flatMap(g => g.items);
+const stepCents = st => Array.isArray(st) ? 1200 * Math.log2(st[0] / st[1]) : st;
+const SHARP = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const FLAT = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+const noteName = m => SHARP[m % 12] + (Math.floor(m / 12) - 1);
+const LOW = 48;
+
+// Anchor C (or A): the keyboard is laid out as if the key were that note, and only the sound is transposed to the chosen key. No anchor: the keys play the notes you press.
+const K = () => S.anchor ? S.ancN : S.key;
+const S = { pb: 0, preset: 0, key: 0, on: true, anchor: false, ancN: 0 };   // starts in 12-TET with no anchor
+const keyName = () => SHARP[S.key].length > 1 ? SHARP[S.key] + "/" + FLAT[S.key] : SHARP[S.key];
+const shiftNow = () => { if (!S.anchor) return 0; const d = ((S.key - S.ancN) % 12 + 12) % 12; return d > 6 ? d - 12 : d; };
+const zoom = () => (parseFloat($("#app").style.zoom) || 1) * (parseFloat($("#site").style.zoom) || 1);
+
+// ---------- key dropdown ----------
+const dd = $("#dd"), ddl = $("#ddl"), ddb = $("#ddb");
+const ddKeys = [], WH = [0,2,4,5,7,9,11], BLK = [0,1,3,4,5];
+function ddKey(k, cls, text) {
+  const o = document.createElement("button"); o.type = "button"; o.className = "ddo " + cls; o.setAttribute("role", "option"); o.textContent = text;
+  o.onclick = () => { S.key = k; refresh(); closeDd(); ddb.focus(); };
+  ddKeys[k] = o; return o;
+}
+WH.forEach(k => ddl.appendChild(ddKey(k, "w", SHARP[k])));
+BLK.forEach(i => { const k = WH[i] + 1, o = ddKey(k, "b", SHARP[k]); o.style.left = `calc(${(i + 1) / 7 * 100}% - ${.3 / 7 * 100}%)`; o.style.width = `${.6 / 7 * 100}%`; o.title = SHARP[k] + " / " + FLAT[k]; ddl.appendChild(o); });
+function openDd() { dd.classList.add("open"); ddb.setAttribute("aria-expanded", "true"); ddKeys[S.key].focus(); }
+function closeDd() { dd.classList.remove("open"); ddb.setAttribute("aria-expanded", "false"); }
+ddb.onclick = () => dd.classList.contains("open") ? closeDd() : openDd();
+document.addEventListener("pointerdown", e => { if (!dd.contains(e.target)) closeDd(); });
+ddl.addEventListener("keydown", e => {
+  const i = ddKeys.indexOf(document.activeElement), mv = d => { e.preventDefault(); const n = i + d; if (n >= 0 && n < 12) ddKeys[n].focus(); };
+  if (e.key === "Escape") { closeDd(); ddb.focus(); } else if (e.key === "ArrowRight" || e.key === "ArrowUp") mv(1); else if (e.key === "ArrowLeft" || e.key === "ArrowDown") mv(-1);
+});
+
+// ---------- tuning system select, previous / next ----------
+const ts = $("#tsPreset");
+GROUPS.forEach(g => {
+  const og = document.createElement("optgroup"); og.label = g.name;
+  g.items.forEach(it => { const o = document.createElement("option"); o.value = PRESETS.indexOf(it); o.textContent = it.name; og.appendChild(o); });
+  ts.appendChild(og);
+});
+const setPreset = i => { S.preset = i; refresh(); };
+ts.onchange = () => { setPreset(+ts.value); ts.blur(); };   // blur: computer keys must play, not type-ahead the list
+$("#pp").onclick = () => setPreset((S.preset + PRESETS.length - 1) % PRESETS.length);
+$("#pnx").onclick = () => setPreset((S.preset + 1) % PRESETS.length);
+$("#kp").onclick = () => KEYS.apply((S.key + 11) % 12);
+$("#kn").onclick = () => KEYS.apply((S.key + 1) % 12);
+const ancBtns = [...document.querySelectorAll(".anc .hbtn")];
+ancBtns.forEach(b => b.onclick = () => {   // C or A switches the anchor on; the one that is already on switches it off
+  const n = +b.dataset.anc;
+  S.anchor = n >= 0 && !(S.anchor && S.ancN === n); if (n >= 0) S.ancN = n;
+  stopScale(); [...held.keys()].forEach(release); refresh(); if (S.anchor) flashWhites();
+});
+
+// ---------- tuning (what the MPE output would send) ----------
+function tuneNote(m) {
+  const d = ((m - K()) % 12 + 12) % 12;
+  return { off: stepCents(PRESETS[S.preset].s[d]) - 100 * d };
+}
+
+// ---------- test synth: saw + square into a low-pass with a decaying filter envelope (electric keyboard) ----------
+let ctx = null, master = null;
+function ensureAudio() {
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0.3;
+    const comp = ctx.createDynamicsCompressor(); master.connect(comp); comp.connect(ctx.destination);
+  }
+  if (ctx.state === "suspended") ctx.resume();
+}
+function startVoice(m) {
+  const t = ctx.currentTime, f = 440 * Math.pow(2, (m + shiftNow() - 69) / 12), cents = tuneNote(m).off;
+  const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g1 = ctx.createGain(), g2 = ctx.createGain(), flt = ctx.createBiquadFilter(), vca = ctx.createGain();
+  o1.type = "sawtooth"; o2.type = "square"; o1.frequency.value = f; o2.frequency.value = f;
+  o1.detune.value = cents; o2.detune.value = cents + 4;   // the per-note cents; +4 is a fixed chorus-style spread
+  g1.gain.value = .55; g2.gain.value = .22;
+  flt.type = "lowpass"; flt.Q.value = 2.2;
+  const top = Math.min(7000, f * 9), rest = Math.max(600, f * 2.2);
+  flt.frequency.setValueAtTime(top, t); flt.frequency.exponentialRampToValueAtTime(rest, t + .7);
+  vca.gain.setValueAtTime(0, t); vca.gain.linearRampToValueAtTime(.8, t + .006); vca.gain.setTargetAtTime(.22, t + .006, .55);
+  o1.connect(g1); o2.connect(g2); g1.connect(flt); g2.connect(flt); flt.connect(vca); vca.connect(master);
+  o1.start(t); o2.start(t);
+  return { o1, o2, vca, flt, m };
+}
+function stopVoice(v) {
+  const t = ctx.currentTime, g = v.vca.gain;
+  if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t); else g.cancelScheduledValues(t);
+  g.setTargetAtTime(0, t, .12);
+  v.o1.stop(t + 1); v.o2.stop(t + 1);
+  v.o2.onended = () => { try { v.vca.disconnect(); v.flt.disconnect(); } catch (e) {} };
+}
+
+// ---------- virtual keyboard ----------
+const dock = $("#dock");
+(() => {
+  const W = [0,2,4,5,7,9,11], BA = [0,1,3,4,5], count = 14;
+  for (let i = 0; i < count; i++) { const k = document.createElement("div"), m = LOW + 12 * Math.floor(i / 7) + W[i % 7]; k.className = "dk"; k.dataset.m = m; dock.appendChild(k); }
+  for (let i = 0; i < count; i++) { if (!BA.includes(i % 7)) continue; const k = document.createElement("div"); k.className = "bk"; k.dataset.m = LOW + 12 * Math.floor(i / 7) + W[i % 7] + 1; k.style.left = `calc(${(i + 1) / count * 100}% - ${.3 / count * 100}%)`; k.style.width = `${.6 / count * 100}%`; dock.appendChild(k); }
+})();
+function labelDock() {   // each white key shows the note it sounds in the chosen key, so in key G the C key reads G
+  const sh = shiftNow();
+  dock.querySelectorAll(".dk").forEach(k => { const m = +k.dataset.m, n = m + sh; k.textContent = m % 12 === 0 ? noteName(n) : SHARP[((n % 12) + 12) % 12]; });
+}
+
+function flashWhites() {   // one white key at a time turns blue, left to right (no fade)
+  const all = [...dock.querySelectorAll(".dk")], ks = all, STEP = 130;
+  (flashWhites.ts || []).forEach(clearTimeout); all.forEach(k => k.classList.remove("flash")); flashWhites.ts = [];
+  ks.forEach((k, i) => { flashWhites.ts.push(setTimeout(() => k.classList.add("flash"), i * STEP), setTimeout(() => k.classList.remove("flash"), (i + 1) * STEP)); });
+}
+
+const held = new Map();
+function lightKeys(midis, on) { midis.forEach(m => { const k = dock.querySelector(`[data-m="${m}"]`); if (k) k.classList.toggle("down", on); }); }
+function press(pid, m) {
+  ensureAudio(); release(pid);
+  held.set(pid, { m, voice: startVoice(m) }); lightKeys([m], true);
+}
+function release(pid) {
+  const h = held.get(pid); if (!h) return; held.delete(pid);
+  stopVoice(h.voice); lightKeys([h.m], false);
+}
+dock.addEventListener("pointerdown", e => {
+  const k = e.target.closest(".dk, .bk"); if (!k) return; e.preventDefault();
+  press(e.pointerId, +k.dataset.m);
+});
+const up = e => release(e.pointerId);
+addEventListener("pointerup", up); addEventListener("pointercancel", up);
+
+// computer keyboard: A W S E D F T G Y H U J = C..B, K O L P ; ' = the next octave; Z / X shift the octave
+const KM = { a:0, w:1, s:2, e:3, d:4, f:5, t:6, g:7, y:8, h:9, u:10, j:11, k:12, o:13, l:14, p:15, ";":16, "'":17 }; let oct = 0;
+addEventListener("keydown", e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.closest("#ddl")) return;
+  const k = e.key.toLowerCase();
+  if (k === "z" || k === "x") { oct = clamp(oct + (k === "x" ? 1 : -1), -2, 2); return; }
+  if (k in KM) press("k" + k, LOW + 12 * oct + KM[k]);
+});
+addEventListener("keyup", e => release("k" + e.key.toLowerCase()));
+
+// ---------- chromatic scale: from the anchor note (or the key) up an octave, lighting each key as it sounds ----------
+const scale = { on: false, t: 0, i: 0, m0: 0 }, scaleBtn = $("#scaleBtn");
+function scaleTick() {
+  if (!scale.on) return;
+  if (scale.i > 12) { stopScale(); return; }
+  press("scale", scale.m0 + scale.i++);   // press releases the previous note, which lets go as the next one starts
+  scale.t = setTimeout(scaleTick, 380);
+}
+function stopScale() {
+  scale.on = false; clearTimeout(scale.t); release("scale");
+  scaleBtn.setAttribute("aria-pressed", false); scaleBtn.textContent = "Play chromatic scale";
+}
+scaleBtn.onclick = () => {
+  if (scale.on) { stopScale(); return; }
+  scale.on = true; scale.i = 0; scale.m0 = LOW + K();
+  scaleBtn.setAttribute("aria-pressed", true); scaleBtn.textContent = "Stop"; scaleTick();
+};
+
+// ---------- tuning knob, key knob, mod wheel, pitch wheel ----------
+const LIST = { info: () => ({ n: PRESETS.length, idx: S.preset }), apply: i => { i = clamp(i, 0, PRESETS.length - 1); if (i !== S.preset) setPreset(i); }, step: n => LIST.apply(S.preset + n) };
+const KEYS = { info: () => ({ n: 12, idx: S.key }), apply: i => { i = clamp(i, 0, 11); if (i !== S.key) { S.key = i; refresh(); } }, step: n => KEYS.apply(S.key + n) };
+function bindCtl(el, range, src) {
+  let drag = null;
+  el.addEventListener("pointerdown", e => {
+    e.preventDefault(); el.setPointerCapture(e.pointerId); el.focus();
+    const info = src.info(); drag = { y0: e.clientY, f0: info.idx / (info.n - 1) };
+  });
+  el.addEventListener("pointermove", e => {
+    if (!drag || !el.hasPointerCapture(e.pointerId)) return;
+    const info = src.info(), f = clamp(drag.f0 + (drag.y0 - e.clientY) / zoom() / (e.shiftKey ? range * 4 : range), 0, 1);
+    src.apply(Math.round(f * (info.n - 1)));
+  });
+  const end = () => { drag = null; };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+  el.addEventListener("wheel", e => { e.preventDefault(); src.step(e.deltaY < 0 ? 1 : -1); }, { passive: false });
+  el.addEventListener("keydown", e => {
+    const k = e.key;
+    if (k === "ArrowUp" || k === "ArrowRight") src.step(1); else if (k === "ArrowDown" || k === "ArrowLeft") src.step(-1); else if (k === "PageUp") src.step(5); else if (k === "PageDown") src.step(-5); else return;
+    e.preventDefault();
+  });
+}
+bindCtl($("#knob"), 150, LIST); bindCtl($("#knob2"), 150, KEYS); bindCtl($("#wheel"), 90, KEYS);
+// pitch wheel: springs back to the middle when let go; pushed up or down it steps through the tuning systems
+const pw = { dir: 0, t: 0 };
+function pitchStep(v) {
+  const dir = v > .5 ? 1 : v < -.5 ? -1 : 0; if (dir === pw.dir) return; clearInterval(pw.t); pw.dir = dir;
+  if (dir) { LIST.step(dir); pw.t = setInterval(() => LIST.step(dir), 500); }
+}
+let pbT = 0;
+function setPb(v) {
+  S.pb = clamp(v, -1, 1); $("#pmark").style.top = 42 - S.pb * 42 + "px"; $("#pwheel").style.backgroundPositionY = -S.pb * 30 + "px"; $("#pwheel").setAttribute("aria-valuenow", S.pb.toFixed(2)); pitchStep(S.pb);
+}
+function springPb() { clearInterval(pbT); pbT = setInterval(() => { if (Math.abs(S.pb) < .03) { clearInterval(pbT); setPb(0); } else setPb(S.pb * .72); }, 16); }
+(() => {
+  const el = $("#pwheel"); let g = null;
+  el.addEventListener("pointerdown", e => { e.preventDefault(); el.setPointerCapture(e.pointerId); clearInterval(pbT); g = { y0: e.clientY, v0: S.pb }; });
+  el.addEventListener("pointermove", e => { if (!g || !el.hasPointerCapture(e.pointerId)) return; setPb(g.v0 + (g.y0 - e.clientY) / zoom() / 36); });
+  const end = () => { if (g) { g = null; springPb(); } };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+  el.addEventListener("keydown", e => { if (e.key === "ArrowUp") { setPb(S.pb + .25); e.preventDefault(); } else if (e.key === "ArrowDown") { setPb(S.pb - .25); e.preventDefault(); } });
+  el.addEventListener("keyup", e => { if (e.key === "ArrowUp" || e.key === "ArrowDown") springPb(); });
+})();
+
+// ---------- refresh ----------
+function refresh() {
+  ts.value = S.preset; $("#ddv").textContent = keyName();
+  ddKeys.forEach((o, k) => o.setAttribute("aria-selected", k === S.key));
+  ancBtns.forEach(b => b.setAttribute("aria-pressed", +b.dataset.anc < 0 ? !S.anchor : S.anchor && S.ancN === +b.dataset.anc));
+  const fr = src => { const i = src.info(); return i.idx / (i.n - 1); }, f1 = fr(LIST), f2 = fr(KEYS);
+  $("#knob i").style.transform = `rotate(${-135 + 270 * f1}deg)`; $("#knob2 i").style.transform = `rotate(${-135 + 270 * f2}deg)`;
+  $("#wheel").style.backgroundPositionY = -(f2 * 70) + "px"; $("#wmark").style.top = (84 - f2 * 84) + "px";
+  $("#knob").setAttribute("aria-valuemin", 0); $("#knob").setAttribute("aria-valuemax", PRESETS.length - 1); $("#knob").setAttribute("aria-valuenow", S.preset); $("#knob").setAttribute("aria-valuetext", PRESETS[S.preset].name);
+  [$("#knob2"), $("#wheel")].forEach(el => { el.setAttribute("aria-valuemin", 0); el.setAttribute("aria-valuemax", 11); el.setAttribute("aria-valuenow", S.key); el.setAttribute("aria-valuetext", keyName()); });
+  labelDock();
+  dock.querySelectorAll(".dk, .bk").forEach(k => k.classList.toggle("anc", +k.dataset.m % 12 === K()));   // blue: the anchor note, or with no anchor the key
+  if (ctx) held.forEach(h => { const c = tuneNote(h.m).off; h.voice.o1.detune.setTargetAtTime(c, ctx.currentTime, .015); h.voice.o2.detune.setTargetAtTime(c + 4, ctx.currentTime, .015); });   // sounding notes follow a tuning change at once
+}
+
+// ---------- MIDI keyboard (Web MIDI): notes play, the knobs and wheels step through tunings and keys ----------
+const CC = { mod: 1, k1: 74, k2: 71 };   // mod wheel and knob 2 pick the key, knob 1 the tuning system (pitch wheel steps the tuning system)
+function onMidi(e) {
+  const [st, d1, d2] = e.data, cmd = st & 0xf0;
+  if (cmd === 0x90 && d2 > 0) press("m" + d1, d1);
+  else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) release("m" + d1);
+  else if (cmd === 0xE0) { clearInterval(pbT); setPb(((d2 << 7 | d1) - 8192) / 8192); }
+  else if (cmd === 0xB0) {
+    if (d1 === CC.mod || d1 === CC.k2) KEYS.apply(Math.min(11, d2 * 12 >> 7));
+    else if (d1 === CC.k1) LIST.apply(Math.round(d2 / 127 * (PRESETS.length - 1)));
+  }
+}
+const midiBtn = $("#midiBtn"), midiMsg = $("#midiMsg"), midiDefault = midiMsg.textContent;
+let midiAsked = false;
+function midiStatus(names) {
+  const on = names.length > 0; midiBtn.setAttribute("aria-pressed", on); midiBtn.lastChild.textContent = on ? names[0].slice(0, 22) : "Connect MIDI";
+  midiMsg.textContent = on ? "MIDI keyboard connected: " + names[0] : midiAsked ? "No MIDI keyboard found. Plug one in and it connects automatically." : midiDefault;
+}
+midiBtn.onclick = () => {
+  if (!navigator.requestMIDIAccess) { midiMsg.textContent = "This browser has no Web MIDI. Chrome and Edge do. You can still play the keyboard below with the mouse, touch or computer keys."; return; }
+  midiAsked = true;
+  navigator.requestMIDIAccess().then(acc => {
+    const hook = () => { const n = []; acc.inputs.forEach(i => { n.push(i.name); i.onmidimessage = onMidi; }); midiStatus(n); };
+    acc.onstatechange = hook; hook();
+  }).catch(() => { midiMsg.textContent = "MIDI access was blocked. Allow it in the browser to play with your keyboard."; });
+};
+
+// ---------- scale the 760px rig to the page ----------
+const fit = () => { const w = $(".demo").clientWidth - 24; $("#app").style.zoom = Math.min(1, w / 760); };
+const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); fit(); };
+refresh(); fitSite(); addEventListener("resize", fitSite);
+</script>
+</body>
+</html>
