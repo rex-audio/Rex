@@ -63,9 +63,9 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
 /* the play bar: large and minimal, fills the bottom of the window and never moves */
 #bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; }
 #bar .pill { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px max(16px, calc((100% - 680px) / 2)) calc(12px + env(safe-area-inset-bottom)); background: var(--fg); color: var(--panel); box-shadow: 0 -6px 24px rgba(0, 0, 0, .18); }
-#bar button { flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; display: grid; place-items: center; }
+#bar button { flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .14); color: inherit; cursor: pointer; display: grid; place-items: center; }
 #bar button svg { width: 26px; height: 26px; }
-#bar button:hover { background: rgba(255, 255, 255, .14); }
+#bar button:hover { background: rgba(255, 255, 255, .26); }
 #bar button:focus-visible { outline: 2px solid var(--panel); outline-offset: 2px; }
 #bar .go { width: 62px; height: 62px; background: var(--panel); color: var(--fg); }
 #bar .go:hover { background: #fff; }
@@ -120,7 +120,6 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
   <section class="intro">
     <p class="label">Drum machine</p>
     <h1>Drums</h1>
-    <p class="lead">Press play, click through the presets, or paint your own pattern. Every sound is a recording from the Rex Audio drum synth.</p>
   </section>
 
   <section class="sec">
@@ -155,11 +154,6 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
           <div id="seqstat" role="status" aria-live="polite"></div>
         </div>
       </div>
-    </div>
-    <div class="notes">
-      <p><b>Steps.</b> Click a step to turn it on, again for an accent, again for a quiet ghost note, and once more to clear it. Drag across a row to paint. Click a row to choose it, then set its level, pitch, choke group and motion underneath. M mutes a row, S solos it, and the arrow plays its sound.</p>
-      <p><b>Play bar.</b> The bar at the bottom of the page has play and stop, and left and right arrows that cycle through presets (each one is a pattern and a kit together, and the left arrow takes you back to the one before). Preset style chooses which kinds of preset the arrows pick. Roll shakes up the loaded pattern by the Variation amount, and Evolve keeps doing it as the pattern plays.</p>
-      <p><b>Recordings.</b> The sounds are recordings, and pitch changes by speeding them up or slowing them down. They are &copy; 2026 Rex Audio and may not be copied, redistributed or reused: see the <a href="drums/COPYRIGHT.txt">copyright notice</a>.</p>
     </div>
   </section>
 
