@@ -37,7 +37,10 @@ h1, h2, p { margin: 0; }
 .intro .lead { font-size: 19px; line-height: 1.5; margin: 16px auto 0; max-width: 520px; }
 
 .cards { display: grid; gap: 16px; padding: 44px 36px 0; }
-.card { display: block; text-decoration: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 24px 28px 26px; }
+.card { display: block; text-decoration: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.card img { display: block; width: 100%; height: auto; background: #0d141b; border-bottom: 1px solid var(--line); }
+.card img.crop { aspect-ratio: 16 / 9; object-fit: cover; object-position: top; }
+.card .txt { display: block; padding: 22px 28px 26px; }
 .card:hover { border-color: var(--fg); }
 .card h2 { font-size: 26px; line-height: 1.2; letter-spacing: -0.01em; margin-top: 4px; }
 .card p { margin-top: 6px; font-size: 16px; line-height: 1.5; color: var(--muted); }
@@ -64,22 +67,31 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
 
   <section class="cards" aria-label="What is here">
     <a class="card" href="shapes.html">
-      <span class="label">Synthesizer</span>
-      <h2>Shapes</h2>
-      <p>A geometric synthesizer VST3 plugin for Windows. Early access beta.</p>
-      <span class="go">See Shapes &rarr;</span>
+      <img class="crop" src="plugin-window.webp" width="1638" height="1766" alt="The Shapes synthesizer window, with a geometric scan plot in the middle">
+      <span class="txt">
+        <span class="label">Synthesizer</span>
+        <h2>Shapes</h2>
+        <p>A geometric synthesizer VST3 plugin for Windows. Early access beta.</p>
+        <span class="go">See Shapes &rarr;</span>
+      </span>
     </a>
     <a class="card" href="tunings.html">
-      <span class="label">Tuning</span>
-      <h2>Tunings</h2>
-      <p>Browse tuning presets and play them with a virtual MIDI keyboard.</p>
-      <span class="go">Open Tunings &rarr;</span>
+      <img src="tunings-preview.webp" width="1296" height="826" alt="The tunings page: key, tuning system and anchor controls above a virtual MIDI keyboard" loading="lazy">
+      <span class="txt">
+        <span class="label">Tuning</span>
+        <h2>Tunings</h2>
+        <p>Browse tuning presets and play them with a virtual MIDI keyboard.</p>
+        <span class="go">Open Tunings &rarr;</span>
+      </span>
     </a>
     <a class="card" href="drums.html">
-      <span class="label">Drum machine</span>
-      <h2>Drums</h2>
-      <p>A drum machine and break player, using recordings of the drum synth.</p>
-      <span class="go">Open Drums &rarr;</span>
+      <img src="drums-preview.webp" width="1296" height="436" alt="The drum machine: eight rows of steps, with a kick, snare, clap and hats" loading="lazy">
+      <span class="txt">
+        <span class="label">Drum machine</span>
+        <h2>Drums</h2>
+        <p>A drum machine and break player, using recordings of the drum synth.</p>
+        <span class="go">Open Drums &rarr;</span>
+      </span>
     </a>
   </section>
 
