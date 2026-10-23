@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<meta name="description" content="A pattern sequencer: place drums and pads in blocks of bars and play them together.">
-<title>Patterns | Rex Audio</title>
+<meta name="description" content="A timeline: place drums and pads in blocks of bars and play them together.">
+<title>Timeline | Rex Audio</title>
 <style>
 /* Same page frame as the other pages: a 720px "desktop" page scaled to the window. The grid keeps the dark theme of the drum machine. */
 :root {
@@ -35,6 +35,12 @@ h1, h2, p { margin: 0; }
 .intro { text-align: center; padding: 36px 36px 0; }
 .intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
 .sec { padding: 36px 36px 0; }
+.topplay { display: flex; justify-content: center; margin-bottom: 22px; }
+.go2 { width: 62px; height: 62px; padding: 0; border: 0; border-radius: 50%; background: var(--fg); color: var(--panel); cursor: pointer; display: grid; place-items: center; }
+.go2:hover { background: #000; }
+.go2:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.go2 svg { width: 30px; height: 30px; }
+.go2 .i-stop, .go2[aria-pressed="true"] .i-play { display: none; } .go2[aria-pressed="true"] .i-stop { display: block; }
 footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--muted); }
 footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
 
@@ -95,16 +101,17 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
       <a href="tunings.html">Tunings</a>
       <a href="drums.html">Drums</a>
       <a href="colours.html">Colours</a>
-      <a href="patterns.html" aria-current="page">Patterns</a>
+      <a href="timeline.html" aria-current="page">Timeline</a>
     </nav>
   </header>
 
   <section class="intro">
     <p class="label">Sequencer</p>
-    <h1>Patterns</h1>
+    <h1>Timeline</h1>
   </section>
 
   <section class="sec">
+    <div class="topplay"><button class="go2" id="playTop" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
     <div class="demo">
       <div id="sqapp">
         <div class="sp">
@@ -298,9 +305,9 @@ function anim() {
   if (cur) paintNow(cur.bar);
   requestAnimationFrame(anim);
 }
-const playBtn = $("#playBtn");
-function setPlaying(on) { playBtn.setAttribute("aria-pressed", on); playBtn.setAttribute("aria-label", on ? "Stop" : "Play"); }
-playBtn.onclick = () => S.playing ? stop() : play();
+const playBtns = [$("#playBtn"), $("#playTop")];   // the big button above the grid and the one in the bar
+function setPlaying(on) { playBtns.forEach(b => { b.setAttribute("aria-pressed", on); b.setAttribute("aria-label", on ? "Stop" : "Play"); }); }
+playBtns.forEach(b => { b.onclick = () => S.playing ? stop() : play(); });
 const nameEl = $("#barName");
 function setName(t) { nameEl.textContent = t; }
 
@@ -388,7 +395,7 @@ function loadArr(i) {
   S.name = ARR[ai].n; setName(S.name); paint(); syncStrip();
 }
 $("#bp").onclick = () => loadArr(ai - 1); $("#bn").onclick = () => loadArr(ai + 1);
-$("#bar").addEventListener("click", e => { const b = e.target.closest("button"); if (b && e.detail) b.blur(); });
+[$("#bar"), $(".topplay")].forEach(el => el.addEventListener("click", e => { const b = e.target.closest("button"); if (b && e.detail) b.blur(); }));   // after a click the button lets go of focus, so Space plays and stops
 
 // ---------- scale the panel to the page ----------
 const fit = () => { $("#sqapp").style.zoom = Math.min(1, $(".demo").clientWidth / 900); };
