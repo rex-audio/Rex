@@ -134,7 +134,10 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
   #pwheel::after { content:""; position:absolute; inset:0; border-radius:8px; background:linear-gradient(to bottom, rgba(0,0,0,.65), rgba(255,255,255,.12) 45%, rgba(0,0,0,.65)); pointer-events:none; }
   #pwheel:focus-visible { outline:2px solid var(--text); outline-offset:3px; }
   #pmark { position:absolute; left:-8px; top:42px; width:6px; height:6px; margin-top:-3px; border-radius:50%; background:var(--acc); }
-  .mb { grid-template-columns:1fr 2.6fr; }
+  .mb { grid-template-columns:1fr 2.2fr auto; }
+  #win, .mod { border:0; background:transparent; border-radius:0; }
+  .body { padding:4px 4px 6px; }
+  .anc { display:flex; gap:6px; } .anc .hbtn { height:42px; padding:0 14px; font-size:15px; }
   #test { margin-top:0; position:relative; }
   .lcol { flex:none; display:flex; flex-direction:column; justify-content:flex-end; }
   .ctls { gap:12px; }
@@ -160,7 +163,7 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
   <section class="intro">
     <p class="label">MPE Retuner</p>
     <h1>Tunings</h1>
-    <p class="lead">Browse the tuning presets and play them. The plugin window below is running on a pretend desktop, with a virtual MIDI keyboard plugged in.</p>
+    <p class="lead">Browse the tuning presets and play them. The plugin below is running on a pretend desktop, with a virtual MIDI keyboard plugged in.</p>
   </section>
 
   <section class="sec">
@@ -168,10 +171,6 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
       <div id="app">
         <div id="mon" aria-label="Desktop monitor showing the plugin window"><div class="monbez"><div id="monSlot">
           <div id="win">
-            <div class="banner">
-              <div class="stitle">MPE Retuner</div>
-              <button class="pwr" id="pwr" type="button" aria-pressed="true" aria-label="Tuning on" title="Tuning on/off"><svg viewBox="0 0 20 20"><path d="M10 2v8M5.2 5.2a7 7 0 1 0 9.6 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-            </div>
             <div class="body">
               <div class="mod">
                 <div class="mb">
@@ -179,10 +178,10 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
                     <div class="tsrow"><button class="hbtn" id="kp" type="button" aria-label="Previous key">&lt;</button><div class="ddw"><div class="dd" id="dd"><button class="ddb" id="ddb" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="ddv">C</span></button><div class="ddl" id="ddl" role="listbox"></div></div></div><button class="hbtn" id="kn" type="button" aria-label="Next key">&gt;</button></div>
                   </div>
                   <div class="fld tsf"><span class="fl">Tuning system</span><div class="tsrow"><button class="hbtn" id="pp" type="button" aria-label="Previous tuning">&lt;</button><div class="tsys"><select id="tsPreset" aria-label="Tuning system"></select></div><button class="hbtn" id="pnx" type="button" aria-label="Next tuning">&gt;</button></div></div>
+                  <div class="fld"><span class="fl">Anchor</span><div class="anc" role="group" aria-label="Anchor"><button class="hbtn" type="button" aria-pressed="false" data-anc="0" title="Anchor C: play as if in C, transposed to the chosen key. Press again to turn the anchor off">C</button><button class="hbtn" type="button" aria-pressed="false" data-anc="9" title="Anchor A: play as if in A (the white keys are A minor). Press again to turn the anchor off">A</button><button class="hbtn" type="button" aria-pressed="false" data-anc="-1" title="No anchor: the keys play the notes you press">None</button></div></div>
                 </div>
               </div>
             </div>
-            <div class="foot"><div class="logo">rex<b>audio</b></div><svg class="piano" viewBox="0 0 90 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 26h50c10 0 18-4 22-10 3-5-4-9-12-6l-8 3-34 3C16 17 10 19 8 22z"/><path d="M14 17L40 6l22 5"/><path d="M8 26v-2h20"/><path d="M14 26v18M56 26v18M72 22v22"/><path d="M26 30v14M22 44h8" stroke-width="1.4"/></svg></div>
           </div>
         </div></div><div class="monneck"></div><div class="monbase"></div></div>
         <svg id="cable" viewBox="0 0 760 84" preserveAspectRatio="xMidYMid meet" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M380 4V60"/><rect x="369" y="-2" width="22" height="8" rx="2" fill="#18232e"/><rect x="366" y="60" width="28" height="16" rx="3" fill="#18232e"/><path d="M373 76v8M387 76v8"/></svg>
@@ -204,7 +203,7 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
     </div>
     <div class="notes">
       <p><b>Playing.</b> Click or touch the keys, or use the computer keyboard: A W S E D F T G Y H U J play C to B, K O L P ; ' carry on up, and Z / X shift the octave. To use a real MIDI keyboard, press Connect MIDI (Chrome and Edge support this).</p>
-      <p><b>Choosing a tuning.</b> Pick one in the plugin window, or use the controls on the keyboard. Knob 1 (CC 74) steps through the tuning systems, knob 2 (CC 71) and the mod wheel pick the key, and pushing the pitch wheel up or down moves to the next or previous tuning system. The power button switches between the tuning and plain 12-TET.</p>
+      <p><b>Choosing a tuning.</b> Pick one on the desktop, or use the controls on the keyboard. Knob 1 (CC 74) steps through the tuning systems, knob 2 (CC 71) and the mod wheel pick the key, and pushing the pitch wheel up or down moves to the next or previous tuning system. <b>Anchor.</b> With Anchor C the keys are laid out as if you were in C and only the sound moves to the chosen key; Anchor A does the same with the white keys as A minor. Press the active anchor again, or None, to play the notes you press.</p>
     </div>
   </section>
 
@@ -241,10 +240,11 @@ const FLAT = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
 const noteName = m => SHARP[m % 12] + (Math.floor(m / 12) - 1);
 const LOW = 48;
 
-// The keyboard is laid out as if in C; the chosen key only transposes the sound (the plugin's "Anchor C")
-const S = { pb: 0, preset: 0, key: 0, on: true };
+// Anchor C (or A): the keyboard is laid out as if the key were that note, and only the sound is transposed to the chosen key. No anchor: the keys play the notes you press.
+const K = () => S.anchor ? S.ancN : S.key;
+const S = { pb: 0, preset: 0, key: 0, on: true, anchor: true, ancN: 0 };
 const keyName = () => SHARP[S.key].length > 1 ? SHARP[S.key] + "/" + FLAT[S.key] : SHARP[S.key];
-const shiftNow = () => { const d = ((S.key % 12) + 12) % 12; return d > 6 ? d - 12 : d; };
+const shiftNow = () => { if (!S.anchor) return 0; const d = ((S.key - S.ancN) % 12 + 12) % 12; return d > 6 ? d - 12 : d; };
 const zoom = () => (parseFloat($("#app").style.zoom) || 1) * (parseFloat($("#site").style.zoom) || 1);
 
 // ---------- key dropdown ----------
@@ -279,12 +279,16 @@ $("#pp").onclick = () => setPreset((S.preset + PRESETS.length - 1) % PRESETS.len
 $("#pnx").onclick = () => setPreset((S.preset + 1) % PRESETS.length);
 $("#kp").onclick = () => KEYS.apply((S.key + 11) % 12);
 $("#kn").onclick = () => KEYS.apply((S.key + 1) % 12);
-$("#pwr").onclick = () => { S.on = !S.on; refresh(); };
+const ancBtns = [...document.querySelectorAll(".anc .hbtn")];
+ancBtns.forEach(b => b.onclick = () => {   // C or A switches the anchor on; the one that is already on switches it off
+  const n = +b.dataset.anc;
+  S.anchor = n >= 0 && !(S.anchor && S.ancN === n); if (n >= 0) S.ancN = n;
+  [...held.keys()].forEach(release); refresh();
+});
 
 // ---------- tuning (what the MPE output would send) ----------
 function tuneNote(m) {
-  if (!S.on) return { off: 0 };
-  const d = ((m % 12) + 12) % 12;
+  const d = ((m - K()) % 12 + 12) % 12;
   return { off: stepCents(PRESETS[S.preset].s[d]) - 100 * d };
 }
 
@@ -408,7 +412,7 @@ function springPb() { clearInterval(pbT); pbT = setInterval(() => { if (Math.abs
 function refresh() {
   ts.value = S.preset; $("#ddv").textContent = keyName();
   ddKeys.forEach((o, k) => o.setAttribute("aria-selected", k === S.key));
-  const p = $("#pwr"); p.setAttribute("aria-pressed", S.on); p.setAttribute("aria-label", S.on ? "Tuning on" : "Tuning off");
+  ancBtns.forEach(b => b.setAttribute("aria-pressed", +b.dataset.anc < 0 ? !S.anchor : S.anchor && S.ancN === +b.dataset.anc));
   const fr = src => { const i = src.info(); return i.idx / (i.n - 1); }, f1 = fr(LIST), f2 = fr(KEYS);
   $("#knob i").style.transform = `rotate(${-135 + 270 * f1}deg)`; $("#knob2 i").style.transform = `rotate(${-135 + 270 * f2}deg)`;
   $("#wheel").style.backgroundPositionY = -(f2 * 70) + "px"; $("#wmark").style.top = (84 - f2 * 84) + "px";
