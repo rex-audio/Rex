@@ -137,7 +137,7 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
       <div class="row">
         <div class="field"><span class="label">Variation</span><div class="sl"><input id="rand" type="range" min="0" max="1" step="0.01" value="0.3" aria-label="Variation amount"><span class="val" id="randV">30%</span><button id="diceBtn" type="button" title="Roll a variation of the loaded pattern">Roll</button><button id="resetBtn" type="button" title="Back to the loaded pattern">Reset</button></div></div>
         <div class="field"><span class="label">Evolve</span><select id="evolveSel" aria-label="Evolve"><option>Off</option><option>Every bar</option><option>2 bars</option><option>4 bars</option></select></div>
-        <div class="field"><span class="label">Dice style</span><select id="styleSel" aria-label="Style of the presets the bar's arrows and dice choose"><option value="dnb">DnB / Jungle</option><option value="sacred">Sacred</option><option value="classic">Classic</option><option value="all">Everything</option></select></div>
+        <div class="field"><span class="label">Preset style</span><select id="styleSel" aria-label="Style of the presets the bar's arrows choose"><option value="dnb">DnB / Jungle</option><option value="sacred">Sacred</option><option value="classic">Classic</option><option value="all">Everything</option></select></div>
       </div>
     </div>
 
@@ -158,7 +158,7 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
     </div>
     <div class="notes">
       <p><b>Steps.</b> Click a step to turn it on, again for an accent, again for a quiet ghost note, and once more to clear it. Drag across a row to paint. Click a row to choose it, then set its level, pitch, choke group and motion underneath. M mutes a row, S solos it, and the arrow plays its sound.</p>
-      <p><b>Play bar.</b> The bar at the bottom of the page has play and stop, left and right arrows that cycle through presets (each one is a pattern and a kit together, and the left arrow takes you back to the one before), and a dice that jumps to a random preset. Dice style chooses which kinds of preset they pick. Roll shakes up the loaded pattern by the Variation amount, and Evolve keeps doing it as the pattern plays.</p>
+      <p><b>Play bar.</b> The bar at the bottom of the page has play and stop, and left and right arrows that cycle through presets (each one is a pattern and a kit together, and the left arrow takes you back to the one before). Preset style chooses which kinds of preset the arrows pick. Roll shakes up the loaded pattern by the Variation amount, and Evolve keeps doing it as the pattern plays.</p>
       <p><b>Recordings.</b> The sounds are recordings, and pitch changes by speeding them up or slowing them down. They are &copy; 2026 Rex Audio and may not be copied, redistributed or reused: see the <a href="drums/COPYRIGHT.txt">copyright notice</a>.</p>
     </div>
   </section>
@@ -173,7 +173,6 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
   <button class="go" id="playBtn" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button>
   <button id="bn" type="button" aria-label="Next preset" title="Next preset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <span class="name" id="presetName" aria-live="polite"></span>
-  <button id="bnew" type="button" aria-label="Random preset" title="Random preset"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9" r="1.5" fill="currentColor"/><circle cx="15" cy="9" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="15" r="1.5" fill="currentColor"/><circle cx="15" cy="15" r="1.5" fill="currentColor"/></svg></button>
 </div></div>
 <script>
 const $ = s => document.querySelector(s);
@@ -453,7 +452,7 @@ $("#pp").onclick = () => stepPat(-1); $("#pnx").onclick = () => stepPat(1);
 kitSel.onchange = () => setKit(+kitSel.value);
 $("#kp").onclick = () => setKit((S.kit + KITS.length - 1) % KITS.length); $("#kn").onclick = () => setKit((S.kit + 1) % KITS.length);
 $("#kdice").onclick = () => setKit(Math.floor(Math.random() * KITS.length));
-$("#bp").onclick = () => goBreak(S.brk - 1); $("#bn").onclick = () => goBreak(S.brk + 1); $("#bnew").onclick = () => goBreak(1 + Math.floor(Math.random() * 99999));
+$("#bp").onclick = () => goBreak(S.brk - 1); $("#bn").onclick = () => goBreak(S.brk + 1);
 $("#styleSel").onchange = e => { S.style = e.target.value; };
 [patSel, kitSel, $("#styleSel"), $("#evolveSel")].forEach(s => s.addEventListener("change", () => s.blur()));
 
