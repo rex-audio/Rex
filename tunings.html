@@ -339,8 +339,8 @@ function labelDock() {   // each white key shows the note it sounds in the chose
   dock.querySelectorAll(".dk").forEach(k => { const m = +k.dataset.m, n = m + sh; k.textContent = m % 12 === 0 ? noteName(n) : SHARP[((n % 12) + 12) % 12]; });
 }
 
-function flashWhites() {   // one white key at a time turns blue, left to right (no fade), from the anchor note up to the next one: A B C D E F G A
-  const all = [...dock.querySelectorAll(".dk")], lo = +all.find(k => +k.dataset.m % 12 === S.ancN).dataset.m, ks = all.filter(k => +k.dataset.m >= lo && +k.dataset.m <= lo + 12), STEP = 130;
+function flashWhites() {   // one white key at a time turns blue, left to right (no fade)
+  const all = [...dock.querySelectorAll(".dk")], ks = all, STEP = 130;
   (flashWhites.ts || []).forEach(clearTimeout); all.forEach(k => k.classList.remove("flash")); flashWhites.ts = [];
   ks.forEach((k, i) => { flashWhites.ts.push(setTimeout(() => k.classList.add("flash"), i * STEP), setTimeout(() => k.classList.remove("flash"), (i + 1) * STEP)); });
 }
