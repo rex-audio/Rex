@@ -113,7 +113,7 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
     <div id="loops"></div>
     <p id="empty" hidden>Add a loop</p>
     <div class="addrow"><button id="add" type="button">+ Add a loop</button><button id="pick" type="button">Choose type</button><button id="clear" type="button">Clear</button></div>
-    <div id="types" hidden></div>
+    <div id="types"></div>
   </section>
 
   <footer>
@@ -169,7 +169,7 @@ const KITS = DM.kits, SOUNDS = DM.sounds;
 const PNAMES = Object.keys(PATTERNS).filter(n => n !== "Empty");
 
 // ---------- the loops: every one plays in time with the others ----------
-const BAR_S = 3.2, TPB = 32, TICK = BAR_S / TPB, MAXL = 6;   // 75 BPM: a bar is 3.2 s, the length of one pad chord
+const BAR_S = 3.2, TPB = 32, TICK = BAR_S / TPB, MAXL = 10;   // 75 BPM: a bar is 3.2 s, the length of one pad chord
 const LEVELS = [.95, .85, .75, .6, .6, .75, .55, .6], NV = 5;
 const S = { playing: false, tick: 0, next: 0, t0: 0, timer: 0, name: "" };
 let layers = [], uid = 0;
@@ -324,12 +324,12 @@ function addLoop(type, v, k) {   // starts on the next bar if the others are pla
   const l = { id: ++uid, type, v: v === undefined ? same * (type === "drums" ? 5 : 1) : v, k, start: S.playing ? nextBar() : 0 };
   wire(l); layers.push(l); build(l); refresh(); loadFor([l]); return l;
 }
-function refresh() { const full = layers.length >= MAXL; $("#add").disabled = full; $("#add").textContent = full ? "That is plenty of loops" : "+ Add a loop"; $("#pick").disabled = full; $("#types").hidden = true; $("#empty").hidden = layers.length > 0; $("#clear").hidden = layers.length === 0; }
+function refresh() { const full = layers.length >= MAXL; $("#add").disabled = full; $("#add").textContent = full ? "That is plenty of loops" : "+ Add a loop"; $("#pick").disabled = full; $("#empty").hidden = layers.length > 0; $("#clear").hidden = layers.length === 0; }
 function clear() { layers.forEach(l => { fade(l, ctx.currentTime, .03); l.el.remove(); }); layers = []; }
 $("#add").onclick = addNext;
 $("#pick").onclick = () => { $("#types").hidden = !$("#types").hidden; };
 $("#types").innerHTML = TYPES.map(t => '<button type="button" class="ty ' + t[0] + '" data-t="' + t[0] + '"><i></i>' + t[1] + '</button>').join("");
-$("#types").onclick = e => { const b = e.target.closest("button"); if (b) { addLoop(b.dataset.t); $("#types").hidden = true; } };
+$("#types").onclick = e => { const b = e.target.closest("button"); if (b) { addLoop(b.dataset.t); } };
 $("#clear").onclick = () => { if (S.playing) stop(); clear(); refresh(); };
 addEventListener("keydown", e => {
   if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -345,7 +345,7 @@ $("#bp").onclick = () => setHarm(hi - 1); $("#bn").onclick = () => setHarm(hi + 
 
 const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); };
 fitSite(); addEventListener("resize", fitSite);
-S.name = "Key: " + HARM[hi]; setName(S.name); addNext();
+S.name = "Key: " + HARM[hi]; setName(S.name); DEFAULT.forEach(() => addNext());   // opens with the usual five loops, and the types ready to add more
 </script>
 </body>
 </html>
