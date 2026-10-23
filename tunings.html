@@ -43,9 +43,9 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
 /* the play bar: large and minimal, fills the bottom of the window and never moves */
 #bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; }
 #bar .pill { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px max(16px, calc((100% - 680px) / 2)) calc(12px + env(safe-area-inset-bottom)); background: var(--fg); color: #f3f4f5; box-shadow: 0 -6px 24px rgba(0, 0, 0, .18); }
-#bar button { flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; display: grid; place-items: center; }
+#bar button { flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .14); color: inherit; cursor: pointer; display: grid; place-items: center; }
 #bar button svg { width: 26px; height: 26px; }
-#bar button:hover { background: rgba(255, 255, 255, .14); }
+#bar button:hover { background: rgba(255, 255, 255, .26); }
 #bar button:focus-visible { outline: 2px solid #f3f4f5; outline-offset: 2px; }
 #bar .go { width: 62px; height: 62px; background: #f3f4f5; color: var(--fg); }
 #bar .go:hover { background: #fff; }
@@ -186,9 +186,10 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
   <header class="top">
     <a class="brand" href="index.html">Rex Audio</a>
     <nav aria-label="Main">
-      <a href="index.html">Shapes</a>
+      <a href="shapes.html">Shapes</a>
       <a href="tunings.html" aria-current="page">Tunings</a>
       <a href="drums.html">Drums</a>
+      <a href="colours.html">Colours</a>
     </nav>
   </header>
 

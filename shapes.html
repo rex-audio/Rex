@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Shapes by Rex Audio: a geometric synthesizer VST3 plugin for Windows. Early access beta.">
+<title>Shapes | Rex Audio</title>
+<style>
+/* Layout: fixed 720px "desktop" page scaled to the phone. A banner at the top has a title and short text on the left and, on the right, one synth module at a time drawn with the synth's own dark theme (slate panels, cyan and amber accents, glossy headers). Below it, a real screenshot of the synth window. Arial throughout. */
+:root {
+  --bg: #e4e7e9;
+  --panel: #f3f4f5;
+  --fg: #15181a;
+  --muted: #5a6166;
+  --line: #c3c9cc;
+  --ink: #15181a;
+  --ink-fg: #f3f4f5;
+  --focus: #c8321e;
+  --sans: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.6;
+}
+#site { width: 720px; margin: 0 auto; zoom: 0.54; }
+a { color: inherit; }
+a:focus-visible, button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+h1, h2, h3, p { margin: 0; }
+h2 { font-size: 26px; line-height: 1.2; letter-spacing: -0.01em; text-wrap: balance; }
+h3 { font-size: 17px; line-height: 1.3; }
+
+
+/* Hero banner: the demo video's geometry card (flower of life on a dark ground) */
+.hero { position: relative; margin: 26px 36px 0; height: 330px; border-radius: 12px; overflow: hidden; background: #070b0f; border: 1px solid #1f2e3b; color: #dbe9f5; text-align: center; }
+.hero svg.fol { position: absolute; left: 50%; top: 50%; width: 470px; height: 470px; margin: -235px 0 0 -235px; overflow: visible; animation: folspin 90s linear infinite; }
+.hero svg.fol circle { fill: none; stroke: #6fd3ff; stroke-width: 1.4; opacity: .5; stroke-dasharray: 1; stroke-dashoffset: 1; animation: foldraw 2.4s cubic-bezier(.4,0,.2,1) forwards; }
+.hero svg.fol .o { stroke-width: 2; opacity: .8; }
+.hero::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(7,11,15,0) 30%, rgba(7,11,15,.85) 100%); pointer-events: none; }
+.hero .hin { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 24px; }
+.hero .hmark { font-size: 20px; font-weight: 300; letter-spacing: .06em; }
+.hero .hmark b { font-weight: 800; color: #6fd3ff; }
+.hero h2 { margin: 6px 0 0; font-size: 64px; line-height: 1; font-weight: 700; letter-spacing: -.03em; color: #f1f7fc; text-shadow: 0 0 24px #070b0f, 0 0 8px #070b0f; }
+.hero .hsub { margin-top: 10px; font-size: 12px; font-weight: 700; letter-spacing: .42em; text-transform: uppercase; color: #6fd3ff; text-shadow: 0 0 10px #070b0f; }
+.hero .htag { position: relative; height: 28px; width: 100%; margin-top: 14px; font-size: 20px; font-weight: 700; color: #e6eff7; text-shadow: 0 0 12px #070b0f, 0 0 4px #070b0f; }
+.hero .htag span { position: absolute; left: 0; right: 0; top: 0; opacity: 0; animation: tagcyc 12s infinite; }
+.hero .htag span:nth-child(2) { animation-delay: 4s; }
+.hero .htag span:nth-child(3) { animation-delay: 8s; }
+.hero .hbtns { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+.hbtn { font: inherit; font-size: 15px; font-weight: 700; border-radius: 6px; padding: 11px 20px; cursor: pointer; border: 1px solid #6fd3ff; background: #6fd3ff; color: #06121a; }
+.hbtn.ghost { background: rgba(7,11,15,.6); color: #6fd3ff; }
+.hbtn:hover { opacity: .85; }
+.hbtn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.hero .hstat { position: absolute; z-index: 2; left: 0; right: 0; bottom: 8px; font-size: 13px; color: #9fb3c4; min-height: 1.4em; }
+@keyframes foldraw { to { stroke-dashoffset: 0; } }
+@keyframes folspin { to { transform: rotate(360deg); } }
+@keyframes tagcyc { 0% { opacity: 0; transform: translateY(8px); } 6% { opacity: 1; transform: none; } 28% { opacity: 1; transform: none; } 34% { opacity: 0; transform: translateY(-6px); } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .hero svg.fol, .hero svg.fol circle { animation: none; stroke-dashoffset: 0; }
+  .hero .htag span { animation: none; opacity: 0; }
+  .hero .htag span:first-child { opacity: 1; }
+}
+.sec .note { margin-top: 14px; font-size: 14px; color: var(--muted); }
+
+
+
+/* Header */
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 26px 36px 0; }
+.brand { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+.top nav a:hover { border-bottom-color: var(--fg); }
+
+/* Banner */
+.banner {
+  margin: 26px 36px 0;
+  height: 244px;
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #1e2123;
+  border-color: #353a3d;
+  overflow: hidden;
+}
+.btxt { width: 238px; flex: none; box-sizing: border-box; padding: 0 6px 0 26px; display: flex; flex-direction: column; justify-content: center; }
+.btxt h2 { color: #e9ebec; font-size: 30px; line-height: 1.1; letter-spacing: -0.02em; margin: 0; }
+.btxt p { margin-top: 8px; font-size: 16px; line-height: 1.3; color: #9aa1a6; }
+.btxt p:empty { display: none; }
+.bstage { position: relative; flex: 1; min-width: 0; }
+.scene { position: absolute; inset: 0; display: none; align-items: center; padding-left: 6px; }
+.mod { position: relative; flex: none; }
+
+/* The synth's own look (its default style, values read from the running synth) */
+.sy, .sy * { font-family: Arial, sans-serif; box-sizing: border-box; }
+.sy { --card:#121b24; --card2:#18232e; --line2:#1f2e3b; --text:#dbe9f5; --mut:#6f879b; --track:#243443; --chart:#0a1117; --acc:#6fd3ff; --mint:#b7f5e4; --vio:#a99bff; --grid:rgba(255,255,255,.08); --dash:rgba(255,255,255,.25);
+  font-size:12px; line-height:normal; letter-spacing:normal; text-align:left; color:var(--text); }
+.gmod { background:var(--card); border:1px solid var(--line2); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+.gmh { display:flex; align-items:center; gap:8px; padding:7px 10px; min-height:34px; color:var(--mut); font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; border-bottom:1px solid var(--line2); }
+.gmh .sp { flex:1; }
+.gnum { width:20px; height:20px; border-radius:50%; border:1px solid var(--line2); color:var(--mut); display:inline-flex; align-items:center; justify-content:center; font-size:11px; letter-spacing:0; }
+.gsel { display:inline-flex; align-items:center; gap:10px; padding:4px 6px 4px 8px; border:1px solid rgba(255,255,255,.3); border-radius:6px; color:var(--text); font-size:12px; font-weight:600; letter-spacing:0; text-transform:none; white-space:nowrap; }
+.gsel::after { content:""; width:5px; height:5px; border-right:2px solid var(--text); border-bottom:2px solid var(--text); transform:rotate(45deg) translate(-1px,-1px); }
+.gsq { width:20px; height:20px; border:1px solid var(--line2); border-radius:4px; display:inline-flex; align-items:center; justify-content:center; }
+.gsq i { width:10px; height:10px; border-radius:2px; background:var(--acc); }
+.gtab { font-size:12px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--mut); padding:3px 9px; }
+.gtab.on { color:var(--text); }
+.gmb { padding:8px 6px 10px; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:2px 0; }
+.gknob { width:76px; text-align:center; position:relative; }
+.gknob .dial { width:54px; height:54px; margin:0 auto; border-radius:50%; }
+.gknob svg { width:100%; height:100%; display:block; overflow:visible; }
+.gknob .kn { font-size:11px; font-weight:700; color:var(--mut); line-height:1.15; margin-top:2px; }
+.gknob .kv { font-size:11px; font-weight:800; font-family:ui-monospace,Menlo,monospace; color:var(--text); }
+.gknob .ring { fill:none; stroke-linecap:round; stroke-width:3; opacity:.85; }
+.gknob .ring.act { opacity:1; stroke-width:4.5; }
+.gplot { margin:10px 12px 4px; background:var(--chart); border:1px solid var(--line2); border-radius:8px; overflow:hidden; display:block; }
+.gplot svg { display:block; width:100%; height:100%; }
+.gcap { display:flex; justify-content:space-between; padding:4px 14px 0; font-size:12px; font-weight:600; color:var(--mut); white-space:nowrap; overflow:hidden; }
+.gplus { display:inline-flex; align-items:center; gap:8px; padding:3px 12px 3px 6px; border:1px solid var(--line2); border-radius:14px; color:var(--vio); font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; position:relative; }
+.gplus.active { box-shadow:0 0 0 3px rgba(169,155,255,.35); }
+.gplus svg { display:block; }
+.cur { position:absolute; width:24px; height:24px; margin:-12px 0 0 -12px; pointer-events:none; opacity:0; z-index:6; }
+.cur svg { display:block; }
+
+/* Tabs under the banner */
+.tabs { margin: 16px 36px 0; display: flex; gap: 10px; align-items: flex-start; }
+.tabbtn {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: left;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-top: 2px solid var(--line);
+  padding: 10px 0 0;
+  cursor: pointer;
+  --p: 0;
+}
+.tabbtn::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -2px;
+  height: 2px;
+  background: var(--fg);
+  transform: scaleX(var(--p));
+  transform-origin: left;
+}
+.tabbtn[aria-pressed="true"] { color: var(--fg); font-weight: 700; }
+/* Intro */
+.intro { text-align: center; padding: 36px 36px 0; }
+.intro .buy { justify-content: center; }
+.intro > * { min-width: 0; }
+.intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; text-wrap: balance; }
+.intro .lead { font-size: 19px; line-height: 1.5; }
+.buy { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.btn {
+  display: inline-block;
+  text-decoration: none;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  padding: 11px 18px;
+  cursor: pointer;
+  background: var(--ink);
+  color: var(--ink-fg);
+}
+.btn.ghost { background: transparent; color: var(--fg); }
+.btn:hover { opacity: 0.85; }
+.status { min-height: 1.6em; margin-top: 10px; font-size: 14px; color: var(--muted); }
+
+/* Sections */
+.sec { padding: 60px 36px 0; }
+.sec > .label { margin-bottom: 10px; display: block; }
+.shot { margin: 24px 0 0; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: #0d141b; }
+.shot img { display: block; width: 100%; height: auto; }
+
+
+.feats { list-style: none; margin: 24px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 36px; border-top: 2px solid var(--fg); }
+.feats li { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 26px; }
+.three > * { min-width: 0; }
+.three p { margin-top: 8px; font-size: 15px; color: var(--muted); line-height: 1.55; }
+
+.specs { margin: 24px 0 0; border-top: 2px solid var(--fg); }
+.specs div { display: grid; grid-template-columns: 170px 1fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.specs dt { color: var(--muted); }
+.specs dd { margin: 0; }
+
+#site.sup > section:not(#support), #site.sup > .hero { display: none; }
+#site .back { display: none; }
+#site.sup .back { display: inline-block; margin-top: 28px; color: var(--muted); font-size: 15px; text-underline-offset: 3px; }
+#site.sup #support { padding-top: 72px; min-height: 360px; }
+#site.sup #support h2 { font-size: 40px; }
+.support-p { margin: 16px 0 0; font-size: 18px; line-height: 1.5; }
+.mail { color: var(--fg); font-weight: 700; text-underline-offset: 3px; overflow-wrap: anywhere; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; font-size: 14px; color: var(--muted); }
+footer a { text-decoration: none; }
+footer a:hover { color: var(--fg); }
+footer nav { display: flex; gap: 18px; }
+</style>
+</head>
+<body>
+
+
+<div id="site">
+  <header class="top" id="top">
+    <a class="brand" href="index.html">Rex Audio</a>
+    <nav aria-label="Main">
+      <a href="#synth">Synth</a>
+      <a href="tunings.html">Tunings</a>
+      <a href="drums.html">Drums</a>
+      <a href="colours.html">Colours</a>
+      <a href="#specs">Specs</a>
+      <a href="#requirements">Requirements</a>
+      <a href="#support" data-view="support">Support</a>
+    </nav>
+  </header>
+
+  <section class="hero" aria-label="Shapes, a geometric synthesizer by Rex Audio">
+    <svg class="fol" viewBox="-330 -330 660 660" aria-hidden="true"><circle cx="0.0" cy="0.0" r="100" pathLength="1" style="animation-delay:0.00s"/><circle cx="100.0" cy="0.0" r="100" pathLength="1" style="animation-delay:0.09s"/><circle cx="50.0" cy="86.6" r="100" pathLength="1" style="animation-delay:0.18s"/><circle cx="-50.0" cy="86.6" r="100" pathLength="1" style="animation-delay:0.27s"/><circle cx="-100.0" cy="0.0" r="100" pathLength="1" style="animation-delay:0.36s"/><circle cx="-50.0" cy="-86.6" r="100" pathLength="1" style="animation-delay:0.45s"/><circle cx="50.0" cy="-86.6" r="100" pathLength="1" style="animation-delay:0.54s"/><circle cx="200.0" cy="0.0" r="100" pathLength="1" style="animation-delay:0.63s"/><circle cx="100.0" cy="173.2" r="100" pathLength="1" style="animation-delay:0.72s"/><circle cx="-100.0" cy="173.2" r="100" pathLength="1" style="animation-delay:0.81s"/><circle cx="-200.0" cy="0.0" r="100" pathLength="1" style="animation-delay:0.90s"/><circle cx="-100.0" cy="-173.2" r="100" pathLength="1" style="animation-delay:0.99s"/><circle cx="100.0" cy="-173.2" r="100" pathLength="1" style="animation-delay:1.08s"/><circle cx="150.0" cy="86.6" r="100" pathLength="1" style="animation-delay:1.17s"/><circle cx="0.0" cy="173.2" r="100" pathLength="1" style="animation-delay:1.26s"/><circle cx="-150.0" cy="86.6" r="100" pathLength="1" style="animation-delay:1.35s"/><circle cx="-150.0" cy="-86.6" r="100" pathLength="1" style="animation-delay:1.44s"/><circle cx="-0.0" cy="-173.2" r="100" pathLength="1" style="animation-delay:1.53s"/><circle cx="150.0" cy="-86.6" r="100" pathLength="1" style="animation-delay:1.62s"/><circle class="o" cx="0" cy="0" r="300" pathLength="1" style="animation-delay:1.9s"/><circle class="o" cx="0" cy="0" r="316" pathLength="1" style="animation-delay:2.1s"/></svg>
+    <div class="hin">
+      <div class="hmark">rex<b>audio</b></div>
+      <h2>Shapes</h2>
+      <p class="hsub">Geometric synthesizer</p>
+      <div class="htag" aria-hidden="true"><span>Shape your sound.</span><span>Enter new dimensions.</span><span>Sacred geometry in motion.</span></div>
+    </div>
+  </section>
+
+  <section class="intro" id="synth">
+    <p class="label">Early access &middot; Beta</p>
+    <div class="buy">
+      <a class="btn" href="https://rexaudio.gumroad.com/l/shapes" target="_blank" rel="noopener" data-act="buy">Buy now &pound;49.99</a>
+      <a class="btn ghost" href="https://rexaudio.gumroad.com/l/shapes" target="_blank" rel="noopener" data-act="demo">Download demo</a>
+    </div>
+  </section>
+
+  <section class="sec">
+    <figure class="shot">
+      <img alt="The Shapes window: a geometry plot with a scan point, six transform slots, pitch, filter, amp and mod envelopes, LFO and keyboard" src="plugin-window.webp">
+    </figure>
+  </section>
+
+
+  <section class="sec" id="how">
+    <span class="label">Inspired by sacred geometry</span>
+    <h2 style="margin-bottom:12px">Geometry, turned into sound</h2>
+    <p>Shapes is inspired by sacred geometry, an art form of geometric patterns that appear in nature, science, art, religious symbols and cultures throughout history. This plugin turns those patterns into sound.</p>
+    <h2 style="margin-top:36px">How it works</h2>
+    <dl class="specs">
+      <div><dt>The display</dt><dd>The large display in the middle is a visualiser for the oscillators.</dd></div>
+      <div><dt>Transform slots</dt><dd>Each oscillator has six transform slots, three either side of the display. Each slot applies one transform, such as Twist, Ripple or Fold, and has two knobs.</dd></div>
+      <div><dt>Modulation</dt><dd>The mod envelope and the LFO can be used to change these geometric transformations over time. Press the + symbol on the mod env or LFO, click the knob you want to control, then set the amount.</dd></div>
+    </dl>
+  </section>
+
+  <section class="sec" id="video">
+    <h2>See it in action</h2>
+    <figure class="shot"><video controls preload="metadata" playsinline poster="poster.jpg" src="shapes_demo.mp4" style="display:block;width:100%;height:auto;background:#000"></video></figure>
+  </section>
+
+  <section class="sec" id="specs">
+    <span class="label">Details</span>
+    <h2>Specifications</h2>
+    <dl class="specs">
+      <div><dt>Oscillators</dt><dd>Two oscillators shaped by geometric transforms</dd></div>
+      <div><dt>Transforms</dt><dd>Six slots per oscillator, each with two knobs</dd></div>
+      <div><dt>Transform types</dt><dd>Pinch, Harm, Rip, Twist, WaveBend, Fold, Warp, PM, AM/RM, Polar Angle, Shear, Squash</dd></div>
+      <div><dt>Pitch</dt><dd>Coarse, fine and ratio, plus unison and vibrato</dd></div>
+      <div><dt>Filter</dt><dd>Lowpass 24, lowpass 12, highpass, bandpass, notch, comb</dd></div>
+      <div><dt>Modulation</dt><dd>Amp envelope, mod envelope and LFO, aimed at any knob with the + button</dd></div>
+      <div><dt>Polyphony</dt><dd>16 voices</dd></div>
+      <div><dt>Playing</dt><dd>On-screen keyboard, computer keyboard, pitch and mod wheels</dd></div>
+    </dl>
+  </section>
+
+  <section class="sec" id="requirements">
+    <span class="label">Before you buy</span>
+    <h2>System requirements</h2>
+    <dl class="specs">
+      <div><dt>Operating system</dt><dd>Windows 10 or 11, 64-bit</dd></div>
+      <div><dt>Plugin format</dt><dd>VST3 64-bit</dd></div>
+      <div><dt>Licence</dt><dd>Offline activation</dd></div>
+      <div><dt>Demo Limitations</dt><dd>Goes silent about once a minute and stops after 10 minutes</dd></div>
+    </dl>
+    <p class="note">Windows only for now. macOS and Linux versions are not available yet.</p>
+  </section>
+
+  <section class="sec" id="in-motion">
+  <div class="banner" style="margin:24px 0 0" aria-hidden="true">
+    <div class="btxt">
+      <h2 id="b-title">Shape your sound.</h2>
+      <p id="b-text"></p>
+    </div>
+    <div class="bstage" id="bstage"></div>
+  </div>
+  <p class="sr" id="cap-sr" aria-live="polite"></p>
+
+  <div class="tabs" id="tabs" style="margin:16px 0 0">
+  </div>
+
+  </section>
+
+  <section class="sec" id="support">
+    <span class="label">Support</span>
+    <h2>Need help?</h2>
+    <p class="support-p">Email us for support at <a class="mail" href="mailto:rex-audio@outlook.com?subject=Shapes%20support">rex-audio@outlook.com</a></p>
+    <a class="back" href="#top" data-view="main">&larr; Back to Shapes</a>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 Rex Audio</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var site=document.getElementById('site');
+  function show(v,scroll){
+    site.classList.toggle('sup',v==='support');
+    if(scroll){ try{window.scrollTo(0,0);}catch(e){} }
+  }
+  document.addEventListener('click',function(e){
+    var a=e.target.closest&&e.target.closest('a[href^="#"]'); if(!a||!site.contains(a)) return;
+    var v=a.getAttribute('data-view')||'main';
+    if(v==='support'){ e.preventDefault(); show('support',true); }
+    else { show('main',false); var id=a.getAttribute('href').slice(1); var el=document.getElementById(id);
+      if(el){ e.preventDefault(); setTimeout(function(){el.scrollIntoView({behavior:'smooth'});},0);} }
+  });
+})();
+</script>
+<script>
+(function () {
+  var site = document.getElementById('site');
+  function fit() {
+    var w = document.documentElement.clientWidth || window.innerWidth;
+    site.style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5);
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+  function ss(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
+  function mk(tag, cls, parent, html) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html != null) e.innerHTML = html;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  var NSS = 'http://www.w3.org/2000/svg';
+  function sv(tag, attrs, parent) {
+    var n = document.createElementNS(NSS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  var CROSS = '<svg viewBox="0 0 20 20" width="20" height="20"><path d="M10 1v6M10 13v6M1 10h6M13 10h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
+  var CURSOR = '<svg viewBox="0 0 20 20" width="24" height="24"><path d="M10 1v6M10 13v6M1 10h6M13 10h6" stroke="#000" stroke-width="5.2" stroke-linecap="round" fill="none"/><path d="M10 1v6M10 13v6M1 10h6M13 10h6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>';
+  var BLUE = '#29A2DE', ORANGE = '#D8862A', ACC = '#6fd3ff', MINT = '#b7f5e4', VIO = '#a99bff';
+
+  /* the synth's rotary knob: 48x48, 270 degree sweep */
+  function pt(a, r) { var x = a * Math.PI / 180; return [24 + r * Math.sin(x), 24 - r * Math.cos(x)]; }
+  function arc(a0, a1, r) {
+    r = r || 19;
+    if (a1 - a0 < 0.5) return '';
+    var p = pt(a0, r), q = pt(a1, r);
+    return 'M' + p[0].toFixed(2) + ' ' + p[1].toFixed(2) + 'A' + r + ' ' + r + ' 0 ' + (a1 - a0 > 180 ? 1 : 0) + ' 1 ' + q[0].toFixed(2) + ' ' + q[1].toFixed(2);
+  }
+  function Knob(c) {
+    var el = mk('div', 'gknob');
+    var dial = mk('div', 'dial', el);
+    var svg = sv('svg', { viewBox: '0 0 48 48' }, dial);
+    sv('path', { d: arc(-135, 135), fill: 'none', stroke: '#243443', 'stroke-width': 4, 'stroke-linecap': 'round' }, svg);
+    var fill = sv('path', { fill: 'none', stroke: c.acc || ACC, 'stroke-width': 4, 'stroke-linecap': 'round' }, svg);
+    var cap = sv('circle', { cx: 24, cy: 24, r: 12.5, fill: '#18232e', stroke: '#1f2e3b', 'stroke-width': 1.5 }, svg);
+    var ptr = sv('line', { stroke: '#dbe9f5', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, svg);
+    mk('div', 'kn', el, c.name);
+    var val = mk('div', 'kv', el);
+    var rings = [], ang = -135, o = { el: el };
+    function norm(v) { return c.log ? Math.log(v / c.min) / Math.log(c.max / c.min) : (v - c.min) / (c.max - c.min); }
+    o.paint = function () {
+      rings.forEach(function (e) {
+        var span = e.depth * 135;
+        var lo = e.shape === 'one' ? Math.min(ang, ang + span) : ang - Math.abs(span);
+        var hi = e.shape === 'one' ? Math.max(ang, ang + span) : ang + Math.abs(span);
+        e.path.setAttribute('d', arc(Math.max(-135, lo), Math.min(135, hi), 22));
+        e.path.setAttribute('class', e.act ? 'ring act' : 'ring');
+      });
+    };
+    o.set = function (v) {
+      v = clamp(v, c.min, c.max);
+      ang = -135 + clamp(norm(v), 0, 1) * 270;
+      fill.setAttribute('d', arc(-135, ang));
+      var a = pt(ang, 5), b = pt(ang, 11.5);
+      ptr.setAttribute('x1', a[0]); ptr.setAttribute('y1', a[1]);
+      ptr.setAttribute('x2', b[0]); ptr.setAttribute('y2', b[1]);
+      val.textContent = c.fmt ? c.fmt(v) : v.toFixed(c.dec || 0);
+      o.paint();
+    };
+    o.addRing = function (color, shape) {
+      var e = { shape: shape, depth: 0, act: false, path: sv('path', { 'class': 'ring', stroke: color }) };
+      svg.insertBefore(e.path, cap);
+      rings.push(e);
+      return e;
+    };
+    o.set(c.min);
+    return o;
+  }
+
+  function curAt(parent, x, y) { var c = mk('div', 'cur', parent, CURSOR); c.style.left = x; c.style.top = y; return c; }
+  function inWin(t, a, b) { return t >= a && t < b; }
+
+  /* shapes: point arrays, N samples each */
+  var N = 128;
+  function mkShape(f) { var a = []; for (var i = 0; i < N; i++) a.push(f(2 * Math.PI * i / N)); return a; }
+  /* the core is a circle; the shapes below are what the synth's own Rip:Sine and Rip:2D transforms make of it */
+  var SHAPES = {
+    circle: mkShape(function (t) { return [Math.cos(t), Math.sin(t)]; }),
+    star: mkShape(function (t) { var r = 1 + 0.32 * Math.cos(5 * t); return [r * Math.cos(t) * 0.8, r * Math.sin(t) * 0.8]; }),
+    heart: mkShape(function (t) { var a = 0.7, c = Math.cos(t), s = Math.sin(t), cs = Math.cos(3 * t), sn = Math.sin(3 * t); return [(c * (1 - a) + (c * cs - s * sn) * a), (s * (1 - a) + (c * sn + s * cs) * a)]; })
+  };
+  function mix(a, b, k) { return a.map(function (p, i) { return [p[0] + (b[i][0] - p[0]) * k, p[1] + (b[i][1] - p[1]) * k]; }); }
+  function pathOf(pts, cx, cy, S) {
+    var d = '';
+    for (var i = 0; i <= pts.length; i++) { var p = pts[i % pts.length]; d += (i ? 'L' : 'M') + (cx + p[0] * S).toFixed(1) + ' ' + (cy - p[1] * S).toFixed(1); }
+    return d + 'Z';
+  }
+  /* the plot's backdrop: rings at .5, 1, 1.5 x radius and a crosshair */
+  function backdrop(svg, W, H, S) {
+    var cx = W / 2, cy = H / 2, g = 'rgba(255,255,255,.08)';
+    [0.5, 1, 1.5].forEach(function (r) { sv('circle', { cx: cx, cy: cy, r: r * S * 0.9, fill: 'none', stroke: g, 'stroke-width': 1 }, svg); });
+    sv('path', { d: 'M0 ' + cy + 'H' + W + 'M' + cx + ' 0V' + H, stroke: g, 'stroke-width': 1, fill: 'none' }, svg);
+  }
+
+  /* 1. The Osc panel: a shape, a scan point, and the waveform it draws */
+  function scOsc() {
+    var root = mk('div', 'scene');
+    root.style.alignItems = 'flex-start';
+    var mod = mk('div', 'sy gmod', root);
+    mod.style.cssText = 'width:380px;zoom:.84;margin:16px 0 0 20px;flex:none';
+    mod.innerHTML = '<div class="gmh"><span class="gtab on">Osc 1</span><span class="gtab">Osc 2</span><span class="sp"></span><span style="display:flex;align-items:center;gap:8px;font-size:11px">Gain <span style="position:relative;width:130px;height:12px;display:block"><span style="position:absolute;left:0;right:0;top:5px;height:2px;background:#243443"></span><span style="position:absolute;left:0;width:80%;top:5px;height:2px;background:' + BLUE + '"></span><span style="position:absolute;left:calc(80% - 5px);top:1px;width:10px;height:10px;border-radius:50%;background:' + BLUE + '"></span></span><span style="font-family:ui-monospace,Menlo,monospace">0.80</span></span></div>';
+    var plot = mk('div', 'gplot', mod); plot.style.height = '200px';
+    var W = 360, H = 200, cx = W / 2, cy = H / 2, S = 200 / 2 * 0.82 * 0.9;
+    var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio: 'xMidYMid slice' }, plot);
+    backdrop(svg, W, H, S / 0.9);
+    var dash = sv('path', { fill: 'none', stroke: 'rgba(255,255,255,.25)', 'stroke-width': 1.2, 'stroke-dasharray': '4 4' }, svg);
+    var shp = sv('path', { fill: 'none', stroke: BLUE, 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+    var line = sv('line', { stroke: ORANGE, 'stroke-width': 1, 'stroke-dasharray': '2 3', opacity: .6 }, svg);
+    var dot = sv('circle', { r: 4.5, fill: ORANGE }, svg), dot2 = sv('circle', { r: 2, fill: '#fff' }, svg);
+    var wp = mk('div', 'gplot', mod); wp.style.height = '56px'; wp.style.marginTop = '8px';
+    var wsv = sv('svg', { viewBox: '0 0 360 56', preserveAspectRatio: 'none' }, wp);
+    sv('path', { d: 'M0 28H360', stroke: 'rgba(255,255,255,.08)', fill: 'none' }, wsv);
+    var wpath = sv('path', { fill: 'none', stroke: BLUE, 'stroke-width': 1.6, 'vector-effect': 'non-scaling-stroke' }, wsv);
+    var cap = mk('div', 'gcap', mod, '<span id="gc1">Osc 1: core</span><span>Output = Y position of the scan point</span>');
+    function cur(t) {
+      var a = SHAPES.circle, b = SHAPES.star, c = SHAPES.heart;
+      if (t < 1.4) return a;
+      if (t < 2.4) return mix(a, b, ss((t - 1.4) / 1.0));
+      if (t < 3.8) return b;
+      if (t < 4.9) return mix(b, c, ss((t - 3.8) / 1.1));
+      return c;
+    }
+    function draw(t) {
+      var pts = cur(t);
+      shp.setAttribute('d', pathOf(pts, cx, cy, S));
+      dash.setAttribute('d', '');
+      var pos = ((t * 0.17) % 1) * N, i0 = Math.floor(pos) % N, f = pos - Math.floor(pos), p = pts[i0], q = pts[(i0 + 1) % N];
+      var x = cx + (p[0] + (q[0] - p[0]) * f) * S, y = cy - (p[1] + (q[1] - p[1]) * f) * S;
+      line.setAttribute('x1', x); line.setAttribute('y1', y); line.setAttribute('x2', W - 4); line.setAttribute('y2', y);
+      [dot, dot2].forEach(function (d) { d.setAttribute('cx', x); d.setAttribute('cy', y); });
+      var d = '';
+      for (var i = 0; i < N; i++) d += (i ? 'L' : 'M') + (i / N * 360).toFixed(1) + ' ' + (28 - clamp(pts[i][1], -1, 1) * 23).toFixed(1);
+      wpath.setAttribute('d', d);
+    }
+    return { root: root, still: 3, update: draw };
+  }
+
+  /* a transform slot as it appears in the synth: number, type, bypass, two knobs */
+  function slot(parent, w, n, type, k1, k2) {
+    var m = mk('div', 'sy gmod', parent);
+    m.style.width = w + 'px';
+    m.innerHTML = '<div class="gmh"><span class="gnum">' + n + '</span><span class="gsel">' + type + '</span><span class="sp"></span><span class="gsq"><i></i></span></div>';
+    var sel = m.querySelector('.gsel');
+    var b = mk('div', 'gmb', m);
+    b.appendChild(k1.el); if (k2) b.appendChild(k2.el);
+    return { el: m, sel: sel };
+  }
+
+  /* 2. A transform slot bends the shape: Twist, then Fold */
+  function scBend() {
+    var root = mk('div', 'scene');
+    var row = mk('div', null, root);
+    row.style.cssText = 'display:flex;align-items:center;gap:12px;margin-left:20px;zoom:.92';
+    var k1 = Knob({ name: 'P1', min: 0, max: 10, dec: 2 }), k2 = Knob({ name: 'P2', min: 0, max: 20, dec: 0 });
+    var sl = slot(row, 176, 2, 'Twist', k1, k2);
+    var plot = mk('div', 'sy gplot', row); plot.style.cssText = 'width:200px;height:200px;margin:0;flex:none';
+    var W = 200, S = 78, c0 = 100;
+    var svg = sv('svg', { viewBox: '0 0 200 200' }, plot);
+    backdrop(svg, W, W, S / 0.9);
+    var dash = sv('path', { fill: 'none', stroke: 'rgba(255,255,255,.25)', 'stroke-width': 1.2, 'stroke-dasharray': '4 4' }, svg);
+    var shp = sv('path', { fill: 'none', stroke: BLUE, 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+    var star = SHAPES.star;
+    function twist(p, k) { var r = Math.hypot(p[0], p[1]), a = k * r, ca = Math.cos(a), sa = Math.sin(a); return [p[0] * ca - p[1] * sa, p[0] * sa + p[1] * ca]; }
+    function fold(p, k) { var r = Math.hypot(p[0], p[1]); if (r < 1e-6) return p; var u = r * 2, f = 1 - Math.abs((u % 2) - 1), r2 = r * (1 - k) + f * k; return [p[0] / r * r2, p[1] / r * r2]; }
+    return { root: root, still: 2.8, update: function (t) {
+      var folding = t >= 3.2, k;
+      if (!folding) k = 1.9 * ss((t - 0.5) / 2.3); else k = 0.85 * ss((t - 3.7) / 2.2);
+      sl.sel.textContent = folding ? 'Fold' : 'Twist';
+      k1.set(k); k2.set(folding ? 2 : 0);
+      var out = star.map(function (p) { return folding ? fold(p, k) : twist(p, k); });
+      shp.setAttribute('d', pathOf(out, c0, c0, S));
+      dash.setAttribute('d', pathOf(star, c0, c0, S));
+    } };
+  }
+
+  /* 3. Click + on the LFO, click P1 of a Rip:2D slot: the ring appears and the shape ripples */
+  function scMod() {
+    var root = mk('div', 'scene');
+    var row = mk('div', null, root);
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;margin-left:14px;zoom:.7';
+    var lfo = mk('div', 'sy gmod', row);
+    lfo.style.width = '150px';
+    var hd = mk('div', 'gmh', lfo);
+    var plus = mk('span', 'gplus', hd, CROSS + '<span>LFO 1</span>');
+    var lp = mk('div', 'gplot', lfo); lp.style.cssText = 'height:90px;margin:10px 10px 12px';
+    var lsv = sv('svg', { viewBox: '0 0 130 90', preserveAspectRatio: 'none' }, lp);
+    var d = '';
+    for (var i = 0; i <= 80; i++) { d += (i ? 'L' : 'M') + (i / 80 * 130).toFixed(1) + ' ' + (45 - Math.sin(i / 80 * 2 * Math.PI) * 32).toFixed(1); }
+    sv('path', { d: d + 'L130 45L0 45Z', fill: 'rgba(169,155,255,.28)' }, lsv);
+    sv('path', { d: d, fill: 'none', stroke: VIO, 'stroke-width': 1.8, 'vector-effect': 'non-scaling-stroke' }, lsv);
+    var ph = sv('circle', { r: 3.5, fill: VIO }, lsv);
+    var k1 = Knob({ name: 'P1', min: 0, max: 10, dec: 2 }), k2 = Knob({ name: 'P2', min: 0, max: 20, dec: 0 });
+    var sl = slot(row, 168, 1, 'Rip:2D', k1, k2);
+    k1.set(0.4); k2.set(3);
+    var ring = k1.addRing(VIO, 'sym');
+    var plot = mk('div', 'sy gplot', row); plot.style.cssText = 'width:176px;height:176px;margin:0;flex:none';
+    var S = 66, c0 = 88;
+    var svg = sv('svg', { viewBox: '0 0 176 176' }, plot);
+    backdrop(svg, 176, 176, S / 0.9);
+    var dash = sv('path', { fill: 'none', stroke: 'rgba(255,255,255,.25)', 'stroke-width': 1.2, 'stroke-dasharray': '4 4' }, svg);
+    var shp = sv('path', { fill: 'none', stroke: BLUE, 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+    var circ = SHAPES.circle;
+    var cP = curAt(plus, '30%', '58%'), cK = curAt(k1.el, '58%', '34%');
+    function rip(p, th, a1, a2) {
+      var sn = Math.sin(a2 * th), cs = Math.cos(a2 * th), rx = p[0] * cs - p[1] * sn, ry = p[0] * sn + p[1] * cs;
+      return [p[0] * (1 - a1) + rx * a1, p[1] * (1 - a1) + ry * a1];
+    }
+    return { root: root, still: 4, update: function (t) {
+      var pick = inWin(t, 0.5, 2.0);
+      plus.className = 'gplus' + (pick ? ' active' : '');
+      cP.style.opacity = inWin(t, 0.5, 1.2) ? 1 : 0;
+      cK.style.opacity = inWin(t, 1.3, 2.0) ? 1 : 0;
+      var g = ss((t - 2.0) / 0.5), lf = Math.sin(2.3 * (t - 2.0));
+      ring.depth = 0.4 * g;
+      ring.act = inWin(t, 2.0, 2.7);
+      k1.paint();
+      var a1 = clamp(0.4 + 0.4 * g * lf, 0, 1);
+      var out = circ.map(function (p, i) { return rip(p, 2 * Math.PI * i / N, a1, 3); });
+      shp.setAttribute('d', pathOf(out, c0, c0, S));
+      dash.setAttribute('d', pathOf(circ, c0, c0, S));
+      var u = ((t - 2.0) * 2.3 / (2 * Math.PI)) % 1; if (u < 0) u += 1;
+      ph.setAttribute('cx', u * 130); ph.setAttribute('cy', 45 - Math.sin(u * 2 * Math.PI) * 32);
+    } };
+  }
+
+  var scenes = [
+    { tab: 'Shape your sound', title: 'Shape your sound.', build: scOsc, text: '' },
+    { tab: 'Enter new dimensions', title: 'Enter new dimensions.', build: scBend, text: '' },
+    { tab: 'Sacred geometry in motion', title: 'Sacred geometry in motion.', build: scMod, text: '' }
+  ];
+  var stage = document.getElementById('bstage');
+  scenes.forEach(function (s) { var o = s.build(); s.root = o.root; s.update = o.update; s.still = o.still; s.titleFn = o.titleFn; stage.appendChild(o.root); });
+
+  var T = 6.4;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cur = 0, elapsed = 1.6, paused = reduce, lastTs = null;
+  var tabsEl = document.getElementById('tabs');
+  var capSr = document.getElementById('cap-sr');
+  var bTitle = document.getElementById('b-title'), bText = document.getElementById('b-text');
+  var btxt = bTitle.parentNode;
+  var tabBtns = scenes.map(function (s, i) {
+    var b = mk('button', 'tabbtn');
+    b.type = 'button'; b.textContent = s.tab;
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', function () { select(i, true); });
+    tabsEl.appendChild(b);
+    return b;
+  });
+
+  function render() {
+    var s = scenes[cur];
+    var a = reduce ? 1 : ss((elapsed - 0.3) / 0.4) * ss((T - elapsed) / 0.4);
+    s.root.style.opacity = a.toFixed(2);
+    btxt.style.opacity = a.toFixed(2);
+    s.update(reduce ? s.still : elapsed);
+    var ttl = s.titleFn ? s.titleFn(reduce ? s.still : elapsed) : s.title;
+    if (bTitle.textContent !== ttl) bTitle.textContent = ttl;
+    tabBtns.forEach(function (b, i) { b.style.setProperty('--p', i === cur && !reduce ? (elapsed / T).toFixed(3) : '0'); });
+  }
+  function select(i, byUser) {
+    scenes[cur].root.style.display = 'none';
+    cur = i; elapsed = reduce ? 3.2 : (byUser && paused ? 2.4 : 0);
+    scenes[cur].root.style.display = 'flex';
+    bTitle.textContent = scenes[i].title;
+    bText.textContent = scenes[i].text;
+    capSr.textContent = scenes[i].title + '. ' + scenes[i].text;
+    tabBtns.forEach(function (b, j) { b.setAttribute('aria-pressed', String(j === i)); });
+    render();
+  }
+  function tick(ts) {
+    if (lastTs === null) lastTs = ts;
+    var dt = Math.min((ts - lastTs) / 1000, 0.1);
+    lastTs = ts;
+    if (!paused) {
+      elapsed += dt;
+      if (elapsed >= T) { select((cur + 1) % scenes.length); }
+      else render();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  select(0);
+  if (!reduce) { elapsed = 1.6; render(); requestAnimationFrame(tick); }
+
+  // Gumroad links. The page lists both the demo and the full version.
+  // Each button opens checkout (wanted=true) with its version preselected (option=...).
+  // The ids are from each version's Share link on the Gumroad product edit page.
+  var GUMROAD = 'https://rexaudio.gumroad.com/l/shapes';
+  var OPTION = { buy: 'zq7yV4kXZoQYgZDD4bqN_w==', demo: '0bHxYo9zm51RyRjkemUllQ==' };
+  Array.prototype.forEach.call(document.querySelectorAll('[data-act]'), function (b) {
+    var o = OPTION[b.getAttribute('data-act')];
+    if (o) b.href = GUMROAD + '?wanted=true&option=' + encodeURIComponent(o);
+    else b.href = GUMROAD;
+  });
+})();
+</script>
+
+</body>
+</html>
