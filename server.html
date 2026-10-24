@@ -145,7 +145,7 @@ const MAP = "awsedftgyhujkolp;"; addEventListener("keydown", e => {
   const i = MAP.indexOf(e.key.toLowerCase()); if (i >= 0) { const k = keys.querySelector('[data-m="' + (60 + i) + '"]'); if (k) press(k); }
 });
 function status(ok, txt) { $("#stat").className = "stat " + (ok ? "ok" : "bad"); $("#statTxt").textContent = txt || (ok ? "Server connected" : "Server not reachable"); }
-fetch(API_BASE + "/api/health").then(r => r.json()).then(j => status(j.ok)).catch(() => status(false, "No server here. This page makes its sounds on the Vercel server: open the Vercel address of this site, or add ?api=https://your-project.vercel.app to this page's address."));
+fetch(API_BASE + "/api/health").then(r => r.json()).then(j => status(j.ok)).catch(() => status(false, "No server connected. Add ?api=https://your-server-address to this page's address to try one."));
 const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); };
 fitSite(); addEventListener("resize", fitSite);
 </script>
