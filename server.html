@@ -106,7 +106,7 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--focus); out
 </div>
 <script>
 const $ = s => document.querySelector(s);
-const DEFAULT_API = "";   // the address of the private server, e.g. "https://rex-audio-server.vercel.app" (the page's own address is used when empty)
+const DEFAULT_API = "https://vercel-8v8mrwy7m-rex-audio.vercel.app";   // the address of the private server (the page's own address is used when empty)
 const API_BASE = (new URLSearchParams(location.search).get("api") || DEFAULT_API).replace(/\/$/, "");   // ?api=https://... overrides it for testing
 const ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
 const cache = new Map();
