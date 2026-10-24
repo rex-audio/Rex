@@ -60,6 +60,8 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--focus); out
 .eg button { padding: 8px 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--fg); font: 15px var(--sans); cursor: pointer; }
 .eg button:hover { border-color: var(--fg); }
 .result { margin-top: 34px; text-align: center; min-height: 120px; }
+.speak { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; font-size: 15px; color: var(--muted); }
+.speak input { width: 18px; height: 18px; accent-color: var(--fg); }
 .result .plan { margin-top: 14px; font-size: 16px; color: var(--muted); min-height: 26px; }
 </style>
 </head>
@@ -88,6 +90,7 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--focus); out
       <input id="q" type="text" maxlength="300" placeholder="For example: sad chords in A minor" aria-label="What do you want to hear?">
       <button id="go" type="submit">Make</button>
     </form>
+    <label class="speak" id="speakRow" hidden><input id="speak" type="checkbox" checked> Read replies aloud</label>
     <div class="eg" id="eg" aria-label="Examples"></div>
     <div class="result">
       <div class="topplay"><button class="go2" id="play" type="button" aria-pressed="false" aria-label="Play" title="Play / stop" disabled><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
@@ -110,6 +113,14 @@ let src = null, busy = false;
 const EXAMPLES = ["Sad chords in A minor", "Warm pad", "Plucky arp", "Deep bass", "Happy bright melody", "Slow dreamy pad in C major", "Tense low bass at 100 bpm"];
 EXAMPLES.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.onclick = () => { $("#q").value = t; make(); }; $("#eg").appendChild(b); });
 
+// Reads replies aloud with the browser's own speech (no server, no microphone).
+const canSpeak = "speechSynthesis" in window;
+if (canSpeak) $("#speakRow").hidden = false;
+function say(t) {
+  if (!canSpeak || !$("#speak").checked || !t) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t.replace(/`|\{|\}|\[|\]/g, "")); u.rate = 1; speechSynthesis.speak(u); }
+  catch (e) { /* speech is a nicety: a failure here must never hide the reply */ }
+}
 function status(ok, txt) { $("#stat").className = "stat " + (ok ? "ok" : "bad"); $("#statTxt").textContent = txt || (ok ? "Server connected" : "Server not reachable"); }
 fetch(API_BASE + "/api/health").then(r => r.json()).then(j => status(j.ok)).catch(() => status(false));
 
@@ -135,7 +146,8 @@ async function make() {
     current = hit.buf; start(hit.buf); $("#play").disabled = false;
     $("#plan").textContent = (hit.plan ? "Made: " + hit.plan + "." : "Made.") + (hit.ms ? " " + (hit.ms / 1000).toFixed(1) + " s from the server." : "");
     status(true);
-  } catch (e) { $("#plan").textContent = "The server did not answer. Try again in a moment."; status(false); }
+    say($("#plan").textContent);
+  } catch (e) { $("#plan").textContent = "The server did not answer. Try again in a moment."; status(false); say($("#plan").textContent); }
   busy = false; $("#go").disabled = false;
 }
 $("#ask").addEventListener("submit", e => { e.preventDefault(); make(); });
