@@ -60,6 +60,9 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--focus); out
 .eg button { padding: 8px 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--fg); font: 15px var(--sans); cursor: pointer; }
 .eg button:hover { border-color: var(--fg); }
 .result { margin-top: 34px; text-align: center; min-height: 120px; }
+[hidden] { display: none !important; }   /* a class with display: flex must not override the hidden attribute */
+.modelrow { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; font-size: 15px; color: var(--muted); }
+.modelrow select { height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--fg); font: 15px var(--sans); }
 .speak { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; font-size: 15px; color: var(--muted); }
 .speak input { width: 18px; height: 18px; accent-color: var(--fg); }
 .result .plan { margin-top: 14px; font-size: 16px; color: var(--muted); min-height: 26px; }
@@ -90,6 +93,7 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--focus); out
       <input id="q" type="text" maxlength="300" placeholder="For example: sad chords in A minor" aria-label="What do you want to hear?">
       <button id="go" type="submit">Make</button>
     </form>
+    <label class="modelrow" id="modelRow" hidden>Model <select id="model" aria-label="Model"></select></label>
     <label class="speak" id="speakRow" hidden><input id="speak" type="checkbox" checked> Read replies aloud</label>
     <div class="eg" id="eg" aria-label="Examples"></div>
     <div class="result">
@@ -108,7 +112,16 @@ const DEFAULT_API = "https://vercel-omega-woad-23.vercel.app";   // the address 
 const API_BASE = (new URLSearchParams(location.search).get("api") || DEFAULT_API).replace(/\/$/, "");   // ?api=https://... overrides it for testing
 const ctx = new (window.AudioContext || window.webkitAudioContext)();
 const cache = new Map();   // request words -> { buf, plan }
-let src = null, busy = false;
+let src = null, busy = false, model = "music";
+
+// Asks the server which models it runs. If that fails, the page uses the default and hides the menu.
+fetch(API_BASE + "/api/models").then(r => r.json()).then(j => {
+  if (!j.models || !j.models.length) return;
+  model = j.default || j.models[0].id;
+  j.models.forEach(m => { const o = document.createElement("option"); o.value = m.id; o.textContent = m.label; $("#model").appendChild(o); });
+  $("#model").value = model; $("#modelRow").hidden = false;
+  $("#model").onchange = () => { model = $("#model").value; cache.clear(); };
+}).catch(() => {});
 
 const EXAMPLES = ["Sad chords in A minor", "Warm pad", "Plucky arp", "Deep bass", "Happy bright melody", "Slow dreamy pad in C major", "Tense low bass at 100 bpm"];
 EXAMPLES.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.onclick = () => { $("#q").value = t; make(); }; $("#eg").appendChild(b); });
@@ -136,7 +149,7 @@ async function make() {
   const text = $("#q").value.trim(); if (!text || busy) return;
   busy = true; $("#go").disabled = true; $("#plan").textContent = "Making it..."; await ctx.resume();
   try {
-    const u = API_BASE + "/api/music?" + new URLSearchParams({ text, wav: 1 });
+    const u = API_BASE + "/api/music?" + new URLSearchParams({ text, wav: 1, model });
     let hit = cache.get(u);
     if (!hit) {
       const t0 = performance.now(), r = await fetch(u); if (!r.ok) throw new Error(r.status);
