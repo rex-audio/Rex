@@ -41,6 +41,7 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
 .topplay { display: flex; justify-content: center; margin-bottom: 26px; }
 .go2 { width: 62px; height: 62px; padding: 0; border: 0; border-radius: 50%; background: var(--fg); color: var(--panel); cursor: pointer; display: grid; place-items: center; }
 .go2:hover { background: #000; }
+.go2:disabled { opacity: .25; cursor: default; }
 .go2:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 .go2 svg { width: 30px; height: 30px; }
 .go2 .i-stop, .go2[aria-pressed="true"] .i-play { display: none; } .go2[aria-pressed="true"] .i-stop { display: block; }
@@ -61,10 +62,12 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--focus); out
 .eg button:hover { border-color: var(--fg); }
 .result { margin-top: 34px; text-align: center; min-height: 120px; }
 [hidden] { display: none !important; }   /* a class with display: flex must not override the hidden attribute */
-.modelrow { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; font-size: 15px; color: var(--muted); }
-.modelrow select { height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--fg); font: 15px var(--sans); }
+.modelrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; font-size: 15px; color: var(--muted); }
+.modelrow select { max-width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--fg); font: 15px var(--sans); }
 .speak { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; font-size: 15px; color: var(--muted); }
 .speak input { width: 18px; height: 18px; accent-color: var(--fg); }
+.reply { margin: 28px 0 0; padding: 18px 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; font-size: 19px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; text-align: left; }
+.reply:empty { display: none; }
 .result .plan { margin-top: 14px; font-size: 16px; color: var(--muted); min-height: 26px; }
 </style>
 </head>
@@ -96,9 +99,10 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--focus); out
     <label class="modelrow" id="modelRow" hidden>Model <select id="model" aria-label="Model"></select></label>
     <label class="speak" id="speakRow" hidden><input id="speak" type="checkbox" checked> Read replies aloud</label>
     <div class="eg" id="eg" aria-label="Examples"></div>
+    <p class="reply" id="reply" aria-live="polite"></p>
     <div class="result">
       <div class="topplay"><button class="go2" id="play" type="button" aria-pressed="false" aria-label="Play" title="Play / stop" disabled><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
-      <p class="plan" id="plan" aria-live="polite">Type a request and press Make. The loop is made on the server.</p>
+      <p class="plan" id="plan">Say hello, or ask for some music. The replies and the loops come from the server's nets.</p>
     </div>
   </section>
 
@@ -112,7 +116,7 @@ const DEFAULT_API = "https://vercel-omega-woad-23.vercel.app";   // the address 
 const API_BASE = (new URLSearchParams(location.search).get("api") || DEFAULT_API).replace(/\/$/, "");   // ?api=https://... overrides it for testing
 const ctx = new (window.AudioContext || window.webkitAudioContext)();
 const cache = new Map();   // request words -> { buf, plan }
-let src = null, busy = false, model = "music";
+let src = null, busy = false, model = "auto";
 
 // Asks the server which models it runs. If that fails, the page uses the default and hides the menu.
 fetch(API_BASE + "/api/models").then(r => r.json()).then(j => {
@@ -123,7 +127,7 @@ fetch(API_BASE + "/api/models").then(r => r.json()).then(j => {
   $("#model").onchange = () => { model = $("#model").value; cache.clear(); };
 }).catch(() => {});
 
-const EXAMPLES = ["Sad chords in A minor", "Warm pad", "Plucky arp", "Deep bass", "Happy bright melody", "Slow dreamy pad in C major", "Tense low bass at 100 bpm"];
+const EXAMPLES = ["Hello", "Sad chords in A minor", "Warm pad", "Plucky arp", "Deep bass", "Happy bright melody", "Slow dreamy pad in C major", "Tense low bass at 100 bpm"];
 EXAMPLES.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.onclick = () => { $("#q").value = t; make(); }; $("#eg").appendChild(b); });
 
 // Reads replies aloud with the browser's own speech (no server, no microphone).
@@ -145,22 +149,46 @@ function start(buf) {
 let current = null;
 $("#play").onclick = async () => { await ctx.resume(); if ($("#play").getAttribute("aria-pressed") === "true") stop(); else if (current) start(current); };
 
+// The text reply: GET /api/reply. Returns null when it cannot be had (an older server with no reply net answers 404 without CORS headers,
+// which the browser reports as a network error), and the page falls back to music only; if the server is down that fails too, and says so.
+async function getReply(text) {
+  try {
+    const r = await fetch(API_BASE + "/api/reply?" + new URLSearchParams({ text, model }));
+    return r.ok ? await r.json() : null;
+  } catch (e) { return null; }
+}
+// The loop: GET /api/music?wav=1, always from the music net, cached by its address.
+async function getLoop(text) {
+  const u = API_BASE + "/api/music?" + new URLSearchParams({ text, wav: 1, model: "music" });
+  let hit = cache.get(u);
+  if (!hit) {
+    const t0 = performance.now(), r = await fetch(u); if (!r.ok) throw new Error(r.status);
+    const plan = r.headers.get("X-Plan") || "", a = await r.arrayBuffer(), buf = await new Promise((ok, no) => ctx.decodeAudioData(a, ok, no));
+    hit = { buf, plan, ms: Math.round(performance.now() - t0) }; cache.set(u, hit);
+  }
+  return hit;
+}
+
 async function make() {
   const text = $("#q").value.trim(); if (!text || busy) return;
-  busy = true; $("#go").disabled = true; $("#plan").textContent = "Making it..."; await ctx.resume();
+  busy = true; $("#go").disabled = true; $("#reply").textContent = ""; $("#plan").textContent = "Thinking..."; await ctx.resume();
   try {
-    const u = API_BASE + "/api/music?" + new URLSearchParams({ text, wav: 1, model });
-    let hit = cache.get(u);
-    if (!hit) {
-      const t0 = performance.now(), r = await fetch(u); if (!r.ok) throw new Error(r.status);
-      const plan = r.headers.get("X-Plan") || "", a = await r.arrayBuffer(), buf = await new Promise((ok, no) => ctx.decodeAudioData(a, ok, no));
-      hit = { buf, plan, ms: Math.round(performance.now() - t0) }; cache.set(u, hit);
+    const rep = await getReply(text);
+    if (rep === null || rep.kind === "music") {
+      if (rep) $("#reply").textContent = rep.text;
+      $("#plan").textContent = "Making the loop...";
+      const hit = await getLoop(text);
+      current = hit.buf; start(hit.buf); $("#play").disabled = false;
+      if (!rep) $("#reply").textContent = hit.plan ? "Made: " + hit.plan + "." : "Made.";
+      $("#plan").textContent = (hit.plan ? hit.plan + "." : "") + (hit.ms ? " " + (hit.ms / 1000).toFixed(1) + " s from the server." : "");
+    } else {
+      stop(); current = null; $("#play").disabled = true;
+      $("#reply").textContent = rep.text;
+      $("#plan").textContent = rep.kind === "chat" ? "From the reply net, using " + (rep.source || "a dataset") + "." : "";
     }
-    current = hit.buf; start(hit.buf); $("#play").disabled = false;
-    $("#plan").textContent = (hit.plan ? "Made: " + hit.plan + "." : "Made.") + (hit.ms ? " " + (hit.ms / 1000).toFixed(1) + " s from the server." : "");
     status(true);
-    say($("#plan").textContent);
-  } catch (e) { $("#plan").textContent = "The server did not answer. Try again in a moment."; status(false); say($("#plan").textContent); }
+    say($("#reply").textContent);
+  } catch (e) { $("#reply").textContent = "The server did not answer. Try again in a moment."; $("#plan").textContent = ""; status(false); say($("#reply").textContent); }
   busy = false; $("#go").disabled = false;
 }
 $("#ask").addEventListener("submit", e => { e.preventDefault(); make(); });
