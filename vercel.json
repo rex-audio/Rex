@@ -1,0 +1,6 @@
+{
+  "functions": { "api/*.js": { "maxDuration": 10 } },
+  "headers": [
+    { "source": "/(.*)\\.(mp3|flac|webp|jpg)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }] }
+  ]
+}

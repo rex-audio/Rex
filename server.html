@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="A test of audio rendered on the Rex Audio server and sent to the page.">
+<title>Server synth | Rex Audio</title>
+<style>
+/* Same page frame as the other pages: a 720px "desktop" page scaled to the window. */
+:root {
+  --bg: #e4e7e9;
+  --panel: #f3f4f5;
+  --fg: #15181a;
+  --muted: #5a6166;
+  --line: #c3c9cc;
+  --focus: #c8321e;
+  --sans: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; padding-bottom: 100px; }
+#site { width: 720px; margin: 0 auto; zoom: 0.54; }
+a { color: inherit; }
+a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, p { margin: 0; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 26px 36px 0; }
+.brand { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+.top nav a:hover, .top nav a[aria-current] { border-bottom-color: var(--fg); }
+
+.intro { text-align: center; padding: 36px 36px 0; }
+.intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
+.sec { padding: 36px 36px 0; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--muted); }
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
+
+.topplay { display: flex; justify-content: center; margin-bottom: 26px; }
+.go2 { width: 62px; height: 62px; padding: 0; border: 0; border-radius: 50%; background: var(--fg); color: var(--panel); cursor: pointer; display: grid; place-items: center; }
+.go2:hover { background: #000; }
+.go2:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.go2 svg { width: 30px; height: 30px; }
+.go2 .i-stop, .go2[aria-pressed="true"] .i-play { display: none; } .go2[aria-pressed="true"] .i-stop { display: block; }
+
+
+.intro { text-align: center; padding: 36px 36px 0; } .intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
+.sec { padding: 32px 36px 0; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--muted); }
+.stat { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 15px; color: var(--muted); margin-bottom: 22px; text-align: center; }
+.stat i { flex: none; width: 12px; height: 12px; border-radius: 50%; background: #b9bfc3; } .stat.ok i { background: #2f9e6a; } .stat.bad i { background: var(--focus); }
+.panel { background: #0d141b; color: #e4e9ec; border-radius: 14px; padding: 18px; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 22px; margin-bottom: 18px; }
+.grid label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #8795a0; }
+.grid label span { display: flex; justify-content: space-between; } .grid output { color: #e4e9ec; font-weight: 700; letter-spacing: 0; text-transform: none; }
+.grid input[type=range] { width: 100%; accent-color: #2f86b8; }
+.grid select { height: 36px; padding: 0 10px; border: 1px solid #2a3845; border-radius: 8px; background: #17212b; color: #e4e9ec; font-size: 15px; }
+.keys { position: relative; height: 150px; background: #17212b; border-radius: 8px; overflow: hidden; touch-action: none; }
+.key { position: absolute; top: 0; box-sizing: border-box; border: 1px solid #2a3845; border-radius: 0 0 6px 6px; cursor: pointer; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; font: 700 10px Arial; color: #5a6670; user-select: none; }
+.key.w { height: 100%; background: #e4e9ec; } .key.b { height: 60%; background: #0d141b; z-index: 1; color: #8795a0; }
+.key.on { background: #2f86b8; color: #fff; } .key.wait { background: #9fb7c7; }
+.info { margin-top: 14px; font-size: 14px; color: #8795a0; min-height: 22px; text-align: center; }
+select:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div id="site">
+  <header class="top">
+    <a class="brand" href="index.html">Rex Audio</a>
+    <nav aria-label="Main">
+      <a href="shapes.html">Shapes</a>
+      <a href="tunings.html">Tunings</a>
+      <a href="drums.html">Drums</a>
+      <a href="colours.html">Colours</a>
+      <a href="loops.html">Loops</a>
+      <a href="roll.html">Piano roll</a>
+    </nav>
+  </header>
+
+  <section class="intro">
+    <p class="label">Server test</p>
+    <h1>Server synth</h1>
+  </section>
+
+  <section class="sec">
+    <div class="stat" id="stat"><i></i><span id="statTxt">Checking the server...</span></div>
+    <div class="panel">
+      <div class="grid">
+        <label>Wave <select id="wave"><option value="saw">Saw</option><option value="square">Square</option><option value="tri">Triangle</option><option value="sine">Sine</option></select></label>
+        <label><span>Length <output id="durV"></output></span><input id="dur" type="range" min="0.1" max="4" step="0.1" value="1"></label>
+        <label><span>Cutoff <output id="cutoffV"></output></span><input id="cutoff" type="range" min="0" max="1" step="0.01" value="0.55"></label>
+        <label><span>Resonance <output id="resV"></output></span><input id="res" type="range" min="0" max="0.95" step="0.05" value="0.3"></label>
+        <label><span>Filter envelope <output id="envV"></output></span><input id="env" type="range" min="0" max="1" step="0.1" value="0.5"></label>
+        <label><span>Release <output id="releaseV"></output></span><input id="release" type="range" min="0.05" max="3" step="0.05" value="0.3"></label>
+      </div>
+      <div class="keys" id="keys" role="group" aria-label="Keyboard"></div>
+      <div class="info" id="info">Press a key. The sound is made on the server and sent to this page.</div>
+    </div>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 Rex Audio</span>
+  </footer>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const API_BASE = (new URLSearchParams(location.search).get("api") || "").replace(/\/$/, "");   // empty: the server that served this page
+const ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
+const cache = new Map();
+const NN = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"], BLACK = [1, 3, 6, 8, 10];
+const cut = () => Math.round(40 * Math.pow(300, +$("#cutoff").value));
+const fmt = { dur: v => v + " s", cutoff: () => cut() + " Hz", res: v => Math.round(v * 100) + "%", env: v => Math.round(v * 100) + "%", release: v => v + " s" };
+function readouts() { ["dur", "cutoff", "res", "env", "release"].forEach(k => { $("#" + k + "V").textContent = fmt[k]($("#" + k).value); }); }
+["dur", "cutoff", "res", "env", "release"].forEach(k => $("#" + k).addEventListener("input", readouts)); readouts();
+
+// a two-octave keyboard
+const keys = $("#keys"), FIRST = 48, LAST = 71, whites = []; for (let m = FIRST; m <= LAST; m++) if (!BLACK.includes(m % 12)) whites.push(m);
+const W = 100 / whites.length;
+for (let m = FIRST; m <= LAST; m++) {
+  const k = document.createElement("div"), pc = m % 12, black = BLACK.includes(pc); k.className = "key " + (black ? "b" : "w"); k.dataset.m = m;
+  const wi = whites.filter(x => x < m).length; k.style.left = (black ? wi * W - W * .3 : wi * W) + "%"; k.style.width = (black ? W * .6 : W) + "%";
+  if (pc === 0) k.textContent = "C" + (Math.floor(m / 12) - 1); keys.appendChild(k);
+}
+const url = m => API_BASE + "/api/render?" + new URLSearchParams({ note: m, wave: $("#wave").value, dur: $("#dur").value, cutoff: cut(), res: $("#res").value, env: $("#env").value, release: $("#release").value });
+async function fetchSound(u) {
+  if (cache.has(u)) return { buf: cache.get(u), ms: 0, bytes: 0, hit: true };
+  const t0 = performance.now(), r = await fetch(u); if (!r.ok) throw new Error(r.status);
+  const a = await r.arrayBuffer(), bytes = a.byteLength, buf = await new Promise((ok, no) => ctx.decodeAudioData(a, ok, no)); cache.set(u, buf);
+  return { buf, ms: Math.round(performance.now() - t0), bytes };
+}
+async function press(k) {
+  const m = +k.dataset.m; await ctx.resume(); k.classList.add("wait");
+  try {
+    const { buf, ms, bytes, hit } = await fetchSound(url(m)), s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start();
+    k.classList.remove("wait"); k.classList.add("on"); setTimeout(() => k.classList.remove("on"), 160);
+    $("#info").textContent = NN[m % 12] + (Math.floor(m / 12) - 1) + (hit ? ": played from this page's memory" : ": " + ms + " ms from the server, " + Math.round(bytes / 1024) + " KB");
+  } catch (e) { k.classList.remove("wait"); $("#info").textContent = "The server did not answer."; status(false); }
+}
+keys.addEventListener("pointerdown", e => { const k = e.target.closest(".key"); if (k) { e.preventDefault(); press(k); } });
+// the computer keyboard: A W S E D F T G Y H U J K
+const MAP = "awsedftgyhujkolp;"; addEventListener("keydown", e => {
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|SELECT)$/.test(e.target.tagName)) return;
+  const i = MAP.indexOf(e.key.toLowerCase()); if (i >= 0) { const k = keys.querySelector('[data-m="' + (60 + i) + '"]'); if (k) press(k); }
+});
+function status(ok, txt) { $("#stat").className = "stat " + (ok ? "ok" : "bad"); $("#statTxt").textContent = txt || (ok ? "Server connected" : "Server not reachable"); }
+fetch(API_BASE + "/api/health").then(r => r.json()).then(j => status(j.ok)).catch(() => status(false, "No server here. This page makes its sounds on the Vercel server: open the Vercel address of this site, or add ?api=https://your-project.vercel.app to this page's address."));
+const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); };
+fitSite(); addEventListener("resize", fitSite);
+</script>
+</body>
+</html>
