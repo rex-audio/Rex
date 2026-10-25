@@ -92,6 +92,12 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--focus); out
 
   <section class="sec">
     <div class="stat" id="stat"><i></i><span id="statTxt">Checking the server...</span></div>
+    <form class="ask lock" id="lock" autocomplete="on">
+      <input id="pw" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password">
+      <button id="enter" type="submit">Enter</button>
+    </form>
+    <p class="plan" id="lockMsg" aria-live="polite"></p>
+    <div id="app" hidden>
     <form class="ask" id="ask" autocomplete="off">
       <input id="q" type="text" maxlength="300" placeholder="For example: sad chords in A minor" aria-label="What do you want to hear?">
       <button id="go" type="submit">Make</button>
@@ -102,7 +108,8 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--focus); out
     <p class="reply" id="reply" aria-live="polite"></p>
     <div class="result">
       <div class="topplay"><button class="go2" id="play" type="button" aria-pressed="false" aria-label="Play" title="Play / stop" disabled><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
-      <p class="plan" id="plan">Say hello, or ask for some music. The replies and the loops come from the server's nets.</p>
+      <p class="plan" id="plan">Say hello, or ask for some music. Each press of Make gives a new version.</p>
+    </div>
     </div>
   </section>
 
@@ -116,16 +123,36 @@ const DEFAULT_API = "https://vercel-omega-woad-23.vercel.app";   // the address 
 const API_BASE = (new URLSearchParams(location.search).get("api") || DEFAULT_API).replace(/\/$/, "");   // ?api=https://... overrides it for testing
 const ctx = new (window.AudioContext || window.webkitAudioContext)();
 const cache = new Map();   // request words -> { buf, plan }
-let src = null, busy = false, model = "auto";
+let src = null, busy = false, model = "auto", key = "";
+
+// The password: the server checks it (only a hash of it is kept there); this page only passes on what was typed, and keeps it for this tab.
+const hdr = () => ({ "x-prompt-key": key });
+const remember = k => { try { sessionStorage.setItem("promptKey", k); } catch (e) {} };
+const recall = () => { try { return sessionStorage.getItem("promptKey") || ""; } catch (e) { return ""; } };
+function lock(msg) { $("#app").hidden = true; $("#lock").hidden = false; $("#lockMsg").textContent = msg || ""; $("#pw").focus(); }
+async function unlock(k, quiet) {
+  if (!quiet) $("#lockMsg").textContent = "Checking...";
+  try {
+    const r = await fetch(API_BASE + "/api/unlock", { headers: { "x-prompt-key": k } });
+    if (r.status === 401) { lock(quiet ? "" : "That password is not right."); return; }
+    if (!r.ok) throw new Error(r.status);
+    key = k; remember(k); $("#lock").hidden = true; $("#lockMsg").textContent = ""; $("#app").hidden = false; loadModels(); $("#q").focus();
+  } catch (e) { lock("The server did not answer. Try again in a moment."); }
+}
+$("#lock").addEventListener("submit", e => { e.preventDefault(); const k = $("#pw").value; if (k) unlock(k); });
+if (recall()) unlock(recall(), true); else lock();
 
 // Asks the server which models it runs. If that fails, the page uses the default and hides the menu.
-fetch(API_BASE + "/api/models").then(r => r.json()).then(j => {
+function loadModels() {
+  if ($("#model").options.length) return;
+  fetch(API_BASE + "/api/models", { headers: hdr() }).then(r => r.json()).then(j => {
   if (!j.models || !j.models.length) return;
   model = j.default || j.models[0].id;
   j.models.forEach(m => { const o = document.createElement("option"); o.value = m.id; o.textContent = m.label; $("#model").appendChild(o); });
   $("#model").value = model; $("#modelRow").hidden = false;
   $("#model").onchange = () => { model = $("#model").value; cache.clear(); };
-}).catch(() => {});
+  }).catch(() => {});
+}
 
 const EXAMPLES = ["Hello", "Sad chords in A minor", "Heavy trap drums", "Jazz drums", "Reggae beat", "Funky drums", "Dark bass with drums", "Warm pad", "Plucky arp", "Deep bass", "Happy bright melody", "Slow dreamy pad in C major", "Tense low bass at 100 bpm"];
 EXAMPLES.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.onclick = () => { $("#q").value = t; make(); }; $("#eg").appendChild(b); });
@@ -151,18 +178,18 @@ $("#play").onclick = async () => { await ctx.resume(); if ($("#play").getAttribu
 
 // The text reply: GET /api/reply. Returns null when it cannot be had (an older server with no reply net answers 404 without CORS headers,
 // which the browser reports as a network error), and the page falls back to music only; if the server is down that fails too, and says so.
-async function getReply(text) {
-  try {
-    const r = await fetch(API_BASE + "/api/reply?" + new URLSearchParams({ text, model }));
-    return r.ok ? await r.json() : null;
-  } catch (e) { return null; }
+async function getReply(text, seed) {
+  let r;
+  try { r = await fetch(API_BASE + "/api/reply?" + new URLSearchParams({ text, model, seed }), { headers: hdr() }); } catch (e) { return null; }
+  if (r.status === 401) throw new Error("locked");
+  return r.ok ? await r.json() : null;
 }
 // The loop: GET /api/music?wav=1, always from the music net, cached by its address.
-async function getLoop(text) {
-  const u = API_BASE + "/api/music?" + new URLSearchParams({ text, wav: 1, model: "music" });
+async function getLoop(text, seed) {
+  const u = API_BASE + "/api/music?" + new URLSearchParams({ text, wav: 1, model: "music", seed });
   let hit = cache.get(u);
   if (!hit) {
-    const t0 = performance.now(), r = await fetch(u); if (!r.ok) throw new Error(r.status);
+    const t0 = performance.now(), r = await fetch(u, { headers: hdr() }); if (r.status === 401) throw new Error("locked"); if (!r.ok) throw new Error(r.status);
     const plan = r.headers.get("X-Plan") || "", a = await r.arrayBuffer(), buf = await new Promise((ok, no) => ctx.decodeAudioData(a, ok, no));
     hit = { buf, plan, ms: Math.round(performance.now() - t0) }; cache.set(u, hit);
   }
@@ -172,12 +199,14 @@ async function getLoop(text) {
 async function make() {
   const text = $("#q").value.trim(); if (!text || busy) return;
   busy = true; $("#go").disabled = true; $("#reply").textContent = ""; $("#plan").textContent = "Thinking..."; await ctx.resume();
+  // a new seed every press, so the same words give a new sound and rhythm each time (what the words say stays the same)
+  const seed = String(crypto.getRandomValues(new Uint32Array(1))[0]);
   try {
-    const rep = await getReply(text);
+    const rep = await getReply(text, seed);
     if (rep === null || rep.kind === "music") {
       if (rep) $("#reply").textContent = rep.text;
       $("#plan").textContent = "Making the loop...";
-      const hit = await getLoop(text);
+      const hit = await getLoop(text, seed);
       current = hit.buf; start(hit.buf); $("#play").disabled = false;
       if (!rep) $("#reply").textContent = hit.plan ? "Made: " + hit.plan + "." : "Made.";
       $("#plan").textContent = (hit.plan ? hit.plan + "." : "") + (hit.ms ? " " + (hit.ms / 1000).toFixed(1) + " s from the server." : "");
@@ -188,7 +217,10 @@ async function make() {
     }
     status(true);
     say($("#reply").textContent);
-  } catch (e) { $("#reply").textContent = "The server did not answer. Try again in a moment."; $("#plan").textContent = ""; status(false); say($("#reply").textContent); }
+  } catch (e) {
+    if (e.message === "locked") { busy = false; $("#go").disabled = false; return lock("Please enter the password again."); }
+    $("#reply").textContent = "The server did not answer. Try again in a moment."; $("#plan").textContent = ""; status(false); say($("#reply").textContent);
+  }
   busy = false; $("#go").disabled = false;
 }
 $("#ask").addEventListener("submit", e => { e.preventDefault(); make(); });
