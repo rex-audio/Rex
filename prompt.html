@@ -127,7 +127,7 @@ fetch(API_BASE + "/api/models").then(r => r.json()).then(j => {
   $("#model").onchange = () => { model = $("#model").value; cache.clear(); };
 }).catch(() => {});
 
-const EXAMPLES = ["Hello", "Sad chords in A minor", "Warm pad", "Plucky arp", "Deep bass", "Happy bright melody", "Slow dreamy pad in C major", "Tense low bass at 100 bpm"];
+const EXAMPLES = ["Hello", "Sad chords in A minor", "A drum beat", "Dark bass with drums", "Warm pad", "Plucky arp", "Deep bass", "Happy bright melody", "Slow dreamy pad in C major", "Tense low bass at 100 bpm"];
 EXAMPLES.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.onclick = () => { $("#q").value = t; make(); }; $("#eg").appendChild(b); });
 
 // Reads replies aloud with the browser's own speech (no server, no microphone).
