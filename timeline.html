@@ -262,6 +262,8 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
 
   const STORAGE_KEY = "rexaudio-timeline-v1";
   const BAR_COUNT = 8;
+  const TICKS_PER_BAR = 96;
+  const TICKS_PER_BEAT = 24;
   const TYPES = {
     drums: { label: "Drums", color: "#6fd3ff" },
     pads: { label: "Pads", color: "#a99bff" },
@@ -285,9 +287,15 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
   let drumManifest = null;
   let audioContext = null;
   let masterGain = null;
+  let limiter = null;
   let playing = false;
   let cycleStart = 0;
-  let cycleTimer = 0;
+  let playbackStart = 0;
+  let nextTime = 0;
+  let nextTick = 0;
+  let schedulerTimer = 0;
+  let finishTimer = 0;
+  let finishScheduledFor = -1;
   let animationFrame = 0;
   let pendingPointerClick = false;
   let editingClipId = null;
@@ -295,7 +303,7 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
   let idCounter = 0;
   const buffers = new Map();
   const pendingBuffers = new Map();
-  const activeSources = [];
+  const activeSources = new Set();
   const trackGains = new Map();
 
   function makeId(prefix) {
@@ -434,13 +442,15 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
     const pending = fetch(url).then(response => {
       if (!response.ok) throw new Error("Could not load " + url);
       return response.arrayBuffer();
-    }).then(data => audioContext.decodeAudioData(data)).then(buffer => {
+    }).then(data => new Promise((resolve, reject) => {
+      audioContext.decodeAudioData(data, resolve, reject);
+    })).then(buffer => {
       buffers.set(url, buffer);
       pendingBuffers.delete(url);
       return buffer;
     }).catch(error => {
       pendingBuffers.delete(url);
-      throw error;
+      return null;
     });
     pendingBuffers.set(url, pending);
     return pending;
@@ -455,7 +465,8 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
   function getTrackGain(track) {
     if (!trackGains.has(track.id)) {
       const gain = audioContext.createGain();
-      gain.gain.value = audible(track) ? 1 : 0;
+      const level = { drums: .9, bass: 1.3, arp: 1, chords: .8, leads: 1.1 }[track.type] || 1.4;
+      gain.gain.value = audible(track) ? level : 0;
       gain.connect(masterGain);
       trackGains.set(track.id, gain);
     }
@@ -466,7 +477,8 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
     if (!audioContext) return;
     state.tracks.forEach(track => {
       const gain = trackGains.get(track.id);
-      if (gain) gain.gain.setTargetAtTime(audible(track) ? 1 : 0, audioContext.currentTime, .025);
+      const level = { drums: .9, bass: 1.3, arp: 1, chords: .8, leads: 1.1 }[track.type] || 1.4;
+      if (gain) gain.gain.setTargetAtTime(audible(track) ? level : 0, audioContext.currentTime, .025);
     });
   }
 
@@ -519,7 +531,7 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
     pickerLength.value = String(clip ? clip.length : Math.min(4, BAR_COUNT - start + 1));
     $("pickerHelp").textContent = currentTrack.type === "drums"
       ? "The kit plays a steady four-on-the-floor groove with a backbeat and hats."
-      : "Recorded loops are four bars long; shorter clips use the start of the recording.";
+      : "Loops align to the first bar; shorter clips play their opening bars.";
     picker.showModal();
   }
 
@@ -528,6 +540,7 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
       setStatus(state.tracks.length >= 12 ? "The arrangement is limited to 12 tracks." : "Choose a track type.");
       return;
     }
+    if (playing) stopPlayback(true);
     const count = state.tracks.filter(t => t.type === type).length + 1;
     const asset = getAssets(type)[0];
     const name = TYPES[type].label + (count > 1 ? " " + count : "");
@@ -708,12 +721,14 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
       render();
       return;
     }
+    if (playing) stopPlayback(true);
     clip.start = next;
     saveState();
     render();
   }
 
   function removeClip(id) {
+    if (playing) stopPlayback(true);
     state.clips = state.clips.filter(c => c.id !== id);
     saveState();
     render();
@@ -742,7 +757,7 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
 
   function requiredUrls() {
     const urls = new Set();
-    activeClips().forEach(clip => {
+    state.clips.forEach(clip => {
       const track = getTrack(clip.trackId);
       if (track.type === "drums") {
         drumKitSamples(clip.sound).forEach(sound => urls.add(drumUrl(sound)));
@@ -754,22 +769,24 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
     return Array.from(urls);
   }
 
-  function playSource(buffer, when, gainNode, rate, duration) {
+  function playSource(buffer, when, gainNode, velocity = 1, rate = 1, offset = 0, duration = 0) {
     if (!buffer || when < audioContext.currentTime - .05) return;
     const source = audioContext.createBufferSource();
+    const gain = audioContext.createGain();
     source.buffer = buffer;
-    if (rate) source.playbackRate.setValueAtTime(rate, when);
-    source.connect(gainNode);
-    source.onended = () => {
-      const index = activeSources.indexOf(source);
-      if (index >= 0) activeSources.splice(index, 1);
-    };
-    if (duration && rate) source.start(when, 0, Math.min(buffer.duration, duration * rate));
-    else source.start(when);
-    activeSources.push(source);
+    source.playbackRate.value = rate;
+    gain.gain.value = velocity;
+    source.connect(gain);
+    gain.connect(gainNode);
+    const handle = { source, gain };
+    source.onended = () => { activeSources.delete(handle); gain.disconnect(); };
+    activeSources.add(handle);
+    if (duration) source.start(when, offset, Math.min(buffer.duration - offset, duration));
+    else source.start(when, offset);
   }
 
-  function scheduleDrums(clip, track, startTime, barSeconds) {
+  function scheduleDrumStep(clip, track, relativeTick, when) {
+    if (relativeTick % 6) return;
     const kitSounds = drumKitSamples(clip.sound);
     if (kitSounds.length < 3) return;
     const kick = buffers.get(drumUrl(kitSounds[0]));
@@ -777,48 +794,71 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
     const closedHat = buffers.get(drumUrl(kitSounds[2]));
     const openHat = buffers.get(drumUrl(kitSounds[3] || kitSounds[2]));
     const output = getTrackGain(track);
-    for (let bar = 0; bar < clip.length; bar += 1) {
-      for (let step = 0; step < 16; step += 1) {
-        const when = startTime + ((clip.start - 1 + bar) * barSeconds) + (step * barSeconds / 16);
-        if (step === 0 || step === 8) playSource(kick, when, output, 0, 0);
-        if (step === 4 || step === 12) playSource(snare, when, output, 0, 0);
-        if (step % 2 === 0 && step !== 14) playSource(closedHat, when, output, 0, 0);
-        if (step === 14) playSource(openHat, when, output, 0, 0);
-      }
-    }
+    const step = (relativeTick % TICKS_PER_BAR) / 6;
+    if (step === 0 || step === 8) playSource(kick, when, output);
+    if (step === 4 || step === 12) playSource(snare, when, output, .8);
+    if (step % 2 === 0 && step !== 14) playSource(closedHat, when, output, .5);
+    if (step === 14) playSource(openHat, when, output, .7);
   }
 
-  function scheduleCycle(startTime) {
-    const bpm = state.bpm;
-    const barSeconds = 4 * 60 / bpm;
-    activeClips().forEach(clip => {
+  function scheduleTick(tick, when) {
+    state.clips.forEach(clip => {
       const track = getTrack(clip.trackId);
+      if (!track) return;
+      const relativeTick = tick - (clip.start - 1) * TICKS_PER_BAR;
+      if (relativeTick < 0 || relativeTick >= clip.length * TICKS_PER_BAR) return;
       if (track.type === "drums") {
-        scheduleDrums(clip, track, startTime, barSeconds);
+        scheduleDrumStep(clip, track, relativeTick, when);
         return;
       }
+      if (relativeTick !== 0) return;
       const buffer = buffers.get(clipUrl(track.type, clip.sound));
       if (!buffer) return;
-      const rate = buffer.duration / (4 * barSeconds);
-      const duration = clip.length * barSeconds;
-      const when = startTime + (clip.start - 1) * barSeconds;
-      playSource(buffer, when, getTrackGain(track), rate, duration);
+      const asset = getAsset(track.type, clip.sound);
+      const offset = track.type === "pads" ? Math.max(0, Number(asset && asset.lead) || 0) : 0;
+      // Like Loops, pads begin at their recorded first chord. Recordings are 75 BPM.
+      playSource(buffer, when, getTrackGain(track), 1, state.bpm / 75, offset, clip.length * 4 * 60 / 75);
     });
   }
 
-  function stopPlayback(resetPosition) {
-    if (!audioContext) {
-      playing = false;
-      $("playBtn").setAttribute("aria-pressed", "false");
-      playhead.style.opacity = "0";
-      if (resetPosition) updatePlayhead(0);
-      return;
+  function schedule() {
+    if (!playing) return;
+    const tickSeconds = 60 / (state.bpm * TICKS_PER_BEAT);
+    const cycleSeconds = BAR_COUNT * 4 * 60 / state.bpm;
+    while (nextTime < audioContext.currentTime + .45) {
+      if (nextTick >= BAR_COUNT * TICKS_PER_BAR) {
+        if (state.loop) {
+          clearTimeout(finishTimer);
+          finishScheduledFor = -1;
+          cycleStart += cycleSeconds;
+          nextTime = cycleStart;
+          nextTick = 0;
+        } else {
+          if (finishScheduledFor !== cycleStart) {
+            finishScheduledFor = cycleStart;
+            finishTimer = setTimeout(() => {
+              if (playing && !state.loop) stopPlayback(true);
+            }, Math.max(0, (cycleStart + cycleSeconds - audioContext.currentTime) * 1000 + 35));
+          }
+          break;
+        }
+      }
+      scheduleTick(nextTick, nextTime);
+      nextTick += 1;
+      nextTime += tickSeconds;
     }
+  }
+
+  function stopPlayback(resetPosition) {
     playing = false;
-    clearTimeout(cycleTimer);
+    clearInterval(schedulerTimer);
+    clearTimeout(finishTimer);
     cancelAnimationFrame(animationFrame);
-    activeSources.splice(0).forEach(source => {
-      try { source.stop(audioContext.currentTime + .025); } catch (_) {}
+    if (audioContext) activeSources.forEach(handle => {
+      const now = audioContext.currentTime;
+      handle.gain.gain.cancelScheduledValues(now);
+      handle.gain.gain.setTargetAtTime(0, now, .03);
+      try { handle.source.stop(now + .24); } catch (_) {}
     });
     $("playBtn").setAttribute("aria-pressed", "false");
     $("playBtn").setAttribute("aria-label", "Play");
@@ -831,20 +871,9 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
   function animation() {
     if (!playing || !audioContext) return;
     const barSeconds = 4 * 60 / state.bpm;
-    const elapsed = Math.max(0, audioContext.currentTime - cycleStart);
-    updatePlayhead(elapsed / barSeconds);
+    const elapsed = Math.max(0, audioContext.currentTime - playbackStart);
+    updatePlayhead((elapsed % (BAR_COUNT * barSeconds)) / barSeconds);
     animationFrame = requestAnimationFrame(animation);
-  }
-
-  function finishCycle(startTime) {
-    if (!playing || startTime !== cycleStart) return;
-    if (state.loop) {
-      cycleStart = startTime + BAR_COUNT * 4 * 60 / state.bpm;
-      scheduleCycle(cycleStart);
-      cycleTimer = setTimeout(() => finishCycle(cycleStart), Math.max(20, (cycleStart + BAR_COUNT * 4 * 60 / state.bpm - audioContext.currentTime) * 1000 + 60));
-    } else {
-      stopPlayback(true);
-    }
   }
 
   async function startPlayback() {
@@ -865,29 +894,39 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
         const Context = window.AudioContext || window.webkitAudioContext;
         audioContext = new Context({ latencyHint: "interactive" });
         masterGain = audioContext.createGain();
-        masterGain.gain.value = .84;
-        masterGain.connect(audioContext.destination);
+        masterGain.gain.value = .7;
+        // The same soft-limiter curve used by Loops.
+        limiter = audioContext.createWaveShaper();
+        const curve = new Float32Array(4097);
+        for (let i = 0; i < curve.length; i += 1) {
+          const x = 2 * i / (curve.length - 1) - 1, a = Math.abs(x), threshold = .7;
+          curve[i] = (x < 0 ? -1 : 1) * (a <= threshold ? a : threshold + (1 - threshold) * Math.tanh((a - threshold) / (1 - threshold)));
+        }
+        limiter.curve = curve;
+        limiter.oversample = "2x";
+        masterGain.connect(limiter);
+        limiter.connect(audioContext.destination);
       }
       await audioContext.resume();
       setStatus("Loading the sounds for this arrangement…");
+      if (!activeClips().length) throw new Error("Unmute a track with clips before pressing play.");
       const urls = requiredUrls();
-      if (!urls.length) throw new Error("No playable clips in this arrangement.");
       const loaded = await Promise.all(urls.map(loadBuffer));
       if (loaded.some(buffer => !buffer)) throw new Error("A recording could not be decoded.");
-      trackGains.clear();
-      const startTime = audioContext.currentTime + .12;
-      cycleStart = startTime;
-      activeSources.splice(0);
-      trackGains.forEach(gain => gain.disconnect());
-      scheduleCycle(startTime);
+      playbackStart = audioContext.currentTime + .08;
+      cycleStart = playbackStart;
+      nextTime = playbackStart;
+      nextTick = 0;
+      finishScheduledFor = -1;
       playing = true;
       $("playBtn").setAttribute("aria-pressed", "true");
       $("playBtn").setAttribute("aria-label", "Stop");
       $("bpm").disabled = true;
       playhead.style.opacity = "1";
       setStatus("Playing · " + state.bpm + " BPM · " + KEY_NAMES[state.keyGroup]);
+      schedulerTimer = setInterval(schedule, 25);
+      schedule();
       animation();
-      cycleTimer = setTimeout(() => finishCycle(startTime), Math.max(40, (startTime + BAR_COUNT * 4 * 60 / state.bpm - audioContext.currentTime) * 1000 + 60));
     } catch (error) {
       stopPlayback(true);
       setStatus(error && error.message ? error.message : "Could not load the recordings.", true);
@@ -920,7 +959,7 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
     fillAssetSelect(track.type, pickerAsset.value || track.sound);
     $("pickerHelp").textContent = track.type === "drums"
       ? "The kit plays a steady kick, backbeat and hat groove."
-      : "Recorded loops are four bars long; shorter clips use the start of the recording.";
+      : "Loops align to the first bar; shorter clips play their opening bars.";
   }
 
   $("pickerTrack").addEventListener("change", updateClipPicker);
@@ -940,6 +979,7 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
       $("pickerHelp").textContent = "Those bars already contain a clip on this track.";
       return;
     }
+    if (playing) stopPlayback(true);
     targetTrack.sound = sound;
     if (editingClipId) {
       const clip = state.clips.find(c => c.id === editingClipId);
@@ -971,6 +1011,7 @@ footer { margin: 54px 36px 0; padding: 22px 0 36px; border-top: 1px solid var(--
     saveState();
   });
   $("keyGroup").addEventListener("change", () => {
+    if (playing) stopPlayback(true);
     state.keyGroup = Math.max(0, Math.min(4, Number($("keyGroup").value) || 0));
     saveState();
     render();
