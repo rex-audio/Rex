@@ -75,6 +75,16 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
     <h1>Colours</h1>
   </section>
 
+  <section class="sec" id="vercel-only-audio-test" aria-labelledby="vercel-test-heading">
+    <div style="border:2px solid #126b4f;border-radius:12px;padding:22px;background:#f8fbf9">
+      <p class="label" style="color:#126b4f">Private Vercel audio check · REX-VERCEL-AUDIO-001</p>
+      <h2 id="vercel-test-heading" style="font-size:28px;line-height:1.15;margin:8px 0">Vercel-only test sound</h2>
+      <p style="font-size:15px;margin:0 0 14px">This is a separate test sound served from the Vercel deployment, not one of the Colours pads.</p>
+      <button id="vercelTestPlay" type="button" style="border:0;border-radius:8px;padding:13px 17px;background:#126b4f;color:#fff;font:700 15px Arial,Helvetica,sans-serif;cursor:pointer">▶ Play Vercel-only test sound</button>
+      <p id="vercelTestStatus" role="status" aria-live="polite" style="font-size:14px;margin-top:12px">Ready · tap the button to request the test audio.</p>
+    </div>
+  </section>
+
   <section class="sec">
     <canvas id="cv" role="img" aria-label="The colour gradient of the chosen pad"></canvas>
   </section>
@@ -92,6 +102,40 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
 </div></div>
 <script>
 const $ = s => document.querySelector(s);
+
+// Separate test button. The audio file is supplied by the Vercel deployment.
+const vercelTestButton = $("#vercelTestPlay");
+const vercelTestStatus = $("#vercelTestStatus");
+let vercelTestAudio = null, vercelTestLoading = false;
+vercelTestButton.addEventListener("click", async () => {
+  if (vercelTestLoading) return;
+  vercelTestLoading = true;
+  vercelTestButton.disabled = true;
+  vercelTestStatus.textContent = "Fetching Vercel test audio…";
+  try {
+    if (!vercelTestAudio) {
+      const response = await fetch("/migration-test/assets/vercel-only-test-tone.wav.b64", { cache: "no-store" });
+      if (!response.ok) throw new Error("Audio request returned HTTP " + response.status);
+      const encoded = (await response.text()).trim();
+      const binary = atob(encoded);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const objectUrl = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
+      vercelTestAudio = new Audio(objectUrl);
+      vercelTestAudio.addEventListener("ended", () => {
+        vercelTestStatus.textContent = "Playback complete · REX-VERCEL-AUDIO-001";
+      });
+    }
+    vercelTestAudio.currentTime = 0;
+    await vercelTestAudio.play();
+    vercelTestStatus.textContent = "Playback started · Vercel test asset loaded";
+  } catch (error) {
+    vercelTestStatus.textContent = "Test failed: " + (error && error.message ? error.message : "could not load or play audio");
+  } finally {
+    vercelTestLoading = false;
+    vercelTestButton.disabled = false;
+  }
+});
 const MAN = {"pads":[{"n":"Warm chorus pad","file":"warm-chorus-pad"},{"n":"Glass pad","file":"glass-pad"},{"n":"Deep sea pad","file":"deep-sea-pad"},{"n":"Sunset strings","file":"sunset-strings"},{"n":"Forest air","file":"forest-air"},{"n":"Violet haze","file":"violet-haze"},{"n":"Brown velvet pad","file":"brown-velvet-pad"},{"n":"Singing glass pad","file":"singing-glass-pad"},{"n":"Ember growl pad","file":"ember-growl-pad"},{"n":"Vowel violet pad","file":"vowel-violet-pad"},{"n":"Deep sea resonance pad","file":"deep-sea-resonance-pad"},{"n":"Mossy forest floor","file":"mossy-forest-floor"},{"n":"Autumn leaves","file":"autumn-leaves"},{"n":"Lavender field","file":"lavender-field"},{"n":"Coral reef","file":"coral-reef"},{"n":"Northern lights","file":"northern-lights"},{"n":"Desert dusk","file":"desert-dusk"},{"n":"Glacier","file":"glacier"},{"n":"Cherry blossom","file":"cherry-blossom"},{"n":"Rainforest canopy","file":"rainforest-canopy"},{"n":"Bioluminescent bay","file":"bioluminescent-bay"},{"n":"Volcanic ember","file":"volcanic-ember"},{"n":"Misty moorland","file":"misty-moorland"},{"n":"Sunflower field","file":"sunflower-field"},{"n":"Moonlit meadow","file":"moonlit-meadow"},{"n":"Jungle humidity","file":"jungle-humidity"},{"n":"Fern grotto","file":"fern-grotto"},{"n":"Emerald canopy","file":"emerald-canopy"},{"n":"Swamp mist","file":"swamp-mist"},{"n":"Bamboo grove","file":"bamboo-grove"},{"n":"Olive grove","file":"olive-grove"},{"n":"Lime spring","file":"lime-spring"},{"n":"Deep jungle night","file":"deep-jungle-night"},{"n":"Red rock canyon","file":"red-rock-canyon"},{"n":"Crimson maple","file":"crimson-maple"},{"n":"Poppy meadow","file":"poppy-meadow"},{"n":"Ruby cavern","file":"ruby-cavern"},{"n":"Terracotta dusk","file":"terracotta-dusk"},{"n":"Sand dune wind","file":"sand-dune-wind"},{"n":"Mahogany hall","file":"mahogany-hall"},{"n":"Redwood bark","file":"redwood-bark"},{"n":"Green spectrum: lime to forest","file":"green-spectrum-lime-to-forest"},{"n":"Green spectrum: emerald depths","file":"green-spectrum-emerald-depths"},{"n":"Green spectrum: sea glass","file":"green-spectrum-sea-glass"},{"n":"Green spectrum: moss to jade","file":"green-spectrum-moss-to-jade"},{"n":"Red spectrum: scarlet to wine","file":"red-spectrum-scarlet-to-wine"},{"n":"Red spectrum: crimson glow","file":"red-spectrum-crimson-glow"},{"n":"Red spectrum: blood orange","file":"red-spectrum-blood-orange"},{"n":"Red spectrum: garnet depths","file":"red-spectrum-garnet-depths"},{"n":"Blue spectrum: ice to midnight","file":"blue-spectrum-ice-to-midnight"},{"n":"Blue spectrum: sky to cobalt","file":"blue-spectrum-sky-to-cobalt"},{"n":"Blue spectrum: indigo tide","file":"blue-spectrum-indigo-tide"},{"n":"Blue spectrum: teal blue lagoon","file":"blue-spectrum-teal-blue-lagoon"},{"n":"Black glass","file":"black-glass"},{"n":"Obsidian","file":"obsidian"},{"n":"Charcoal ember","file":"charcoal-ember"},{"n":"Black forest","file":"black-forest"},{"n":"Midnight void","file":"midnight-void"},{"n":"Dark chocolate","file":"dark-chocolate"}]};
 const PADS = MAN.pads, N = PADS.length;
 const cv = $("#cv"), g = cv.getContext("2d"), W = 964, H = 614;
