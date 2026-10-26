@@ -209,7 +209,17 @@ const ensureLive = async id => LB[id] || (LB[id] = await loadBuf("loops/live/" +
 let failed = false;
 const setName = t => { $("#barName").textContent = t; };
 async function loadFor(ls) {
-  const jobs = []; ls.forEach(l => { if (l.type === "drums") KITS[l.kit].r.forEach(n => jobs.push(ensureSound(n))); else if (isLive(l)) jobs.push(ensureLive(l.item.file)); else jobs.push(ensureClip(clipUrl(l))); });
+  const jobs = []; ls.forEach(l => {
+    if (l.type === "drums") {
+      // Only decode drum sounds this layer can actually trigger. Decoding every
+      // sound and variant in a kit creates a needless CPU/memory spike at startup.
+      const steps = patSteps(l.pat);
+      KITS[l.kit].r.forEach((n, row) => {
+        if ((!l.rows || l.rows.includes(row)) && steps[row]?.some(Boolean)) jobs.push(ensureSound(n));
+      });
+    } else if (isLive(l)) jobs.push(ensureLive(l.item.file));
+    else jobs.push(ensureClip(clipUrl(l)));
+  });
   if (!jobs.length) return; setName("Loading..."); await Promise.all(jobs);
   failed = ls.every(l => l.type === "drums" ? KITS[l.kit].r.every(n => !SND[n] || !SND[n].size) : isLive(l) ? !LB[l.item.file] : !CLIPS[clipUrl(l)]);
   setName(failed ? "The recordings only play from the website" : S.name);
@@ -219,7 +229,9 @@ async function loadFor(ls) {
 const mnode = ctx.createGain(); mnode.gain.value = .7;
 const sh = ctx.createWaveShaper(), cv = new Float32Array(4097);
 for (let i = 0; i < cv.length; i++) { const x = 2 * i / 4096 - 1, a = Math.abs(x), T = .7; cv[i] = (x < 0 ? -1 : 1) * (a <= T ? a : T + (1 - T) * Math.tanh((a - T) / (1 - T))); }   // soft limiter
-sh.curve = cv; sh.oversample = "2x"; mnode.connect(sh); sh.connect(ctx.destination);
+// Keep the soft limiter but disable 2x oversampling, which is costly on mobile
+// and unnecessary for this lightweight loop playback test.
+sh.curve = cv; sh.oversample = "none"; mnode.connect(sh); sh.connect(ctx.destination);
 const stepsOf = {};   // a pattern as numbers: 0 off, 1 hit, 2 accent, 3 ghost
 const patSteps = n => stepsOf[n] || (stepsOf[n] = PATTERNS[n].p.map(s => Array.from({ length: PATTERNS[n].len || 16 }, (_, k) => s[k] === "X" ? 2 : s[k] === "x" ? 1 : s[k] === "o" ? 3 : 0)));
 function wire(l) {   // each loop has its own output, and a drums loop its own row levels
@@ -238,7 +250,9 @@ function bufOf(sound, vi) {
 function drumHit(l, row, sound, t, vel, bar) {
   const b = bufOf(sound, pickVi(sound, row, l, bar)); if (!b) return;
   if (row === 3 || row === 4) l.act.forEach(h => { if (h.row === 3 || h.row === 4) { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, .004); try { h.s.stop(t + .04); } catch (e) {} } });   // hats cut each other
-  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vel; s.connect(g); g.connect(l.rg[row]);
+  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b;
+  g.gain.value = vel;
+  s.connect(g); g.connect(l.rg[row]);
   const h = { s, g, row }; l.act.add(h); s.onended = () => l.act.delete(h); s.start(t);
 }
 function drumStep(l, tick, tib, t) {
@@ -265,6 +279,7 @@ function clipStart(l, t, phaseSeconds = 0) {
   });
   const s = ctx.createBufferSource(), g = ctx.createGain();
   s.buffer = b;
+  g.gain.value = 1;
   s.connect(g); g.connect(l.out);
   const h = { s, g, clip: true };
   l.act.add(h); s.onended = () => l.act.delete(h);
@@ -295,7 +310,8 @@ function note(l, m, t, gate, vel) {
   let n = it.notes[0]; it.notes.forEach(x => { if (Math.abs(x[0] - m) < Math.abs(n[0] - m)) n = x; });
   if (l.type === "bass" || l.type === "leads") l.act.forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, .012); try { h.s.stop(t + .1); } catch (e) {} });   // one note at a time
   const s = ctx.createBufferSource(), g = ctx.createGain(), r = Math.pow(2, (m - n[0]) / 12); s.buffer = b; s.playbackRate.value = r; s.connect(g); g.connect(l.out);
-  g.gain.setValueAtTime(vel, t); g.gain.setTargetAtTime(0, t + gate, .05);
+  g.gain.setValueAtTime(vel, t);
+  g.gain.setTargetAtTime(0, t + gate, .05);
   const h = { s, g }; l.act.add(h); s.onended = () => l.act.delete(h); s.start(t, n[1], n[2]); s.stop(t + Math.min(gate + .4, n[2] / r));
 }
 function liveStep(l, tick, t) {
