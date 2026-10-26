@@ -68,6 +68,12 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
 .lx:focus-visible, .addrow button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .loop.wait { border-style: dashed; border-color: var(--lc); animation: pulse .9s ease-in-out infinite alternate; }
 @keyframes pulse { from { background: var(--panel); } to { background: color-mix(in srgb, var(--lc) 14%, var(--panel)); } }
+
+#renderMode { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 16px; padding:12px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel); font-size:14px; }
+#renderMode label { display:flex; align-items:center; gap:9px; font-weight:700; }
+#renderMode input { width:20px; height:20px; accent-color:#2a9d6f; }
+#renderMode small { color:var(--muted); text-align:right; }
+
 #empty { text-align: center; color: var(--muted); font-size: 15px; padding: 18px 0; }
 .addrow { display: flex; gap: 12px; margin-top: 14px; }
 .addrow #add { flex: 1; height: 60px; border: 2px dashed var(--line); border-radius: 14px; background: transparent; color: var(--fg); font: 700 16px var(--sans); cursor: pointer; }
@@ -111,7 +117,8 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
   </section>
 
   <section class="sec">
-    <div class="topplay"><button class="go2" id="playTop" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
+<div id="renderMode"><label><input id="barRender" type="checkbox" checked> Bar render mode</label><small id="renderStatus">Renders a 4-bar cycle before playback</small></div>
+        <div class="topplay"><button class="go2" id="playTop" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
     <div id="loops"></div>
     <p id="empty" hidden>Add a loop</p>
     <div class="addrow"><button id="add" type="button">+ Add a loop</button><button id="pick" type="button">Choose type</button><button id="clear" type="button">Clear</button></div>
@@ -326,6 +333,107 @@ function liveStep(l, tick, t) {
 }
 
 // ---------- transport ----------
+
+// ---------- optional bar-render playback ----------
+// Render a complete four-bar musical cycle offline, then loop one prepared buffer.
+// This moves clip decoding, drum scheduling and note scheduling out of real-time playback.
+// The renderer is a snapshot: changes made while it plays take effect after stop/restart.
+let renderedSource = null, renderedBuffer = null, renderGeneration = 0;
+const barRenderEnabled = () => $("#barRender").checked;
+async function renderCycle() {
+  const gen = ++renderGeneration;
+  const status = $("#renderStatus");
+  status.textContent = "Rendering 4 bars…";
+  const frames = Math.ceil(BAR_S * 4 * ctx.sampleRate);
+  const off = new OfflineAudioContext(2, frames, ctx.sampleRate);
+  const master = off.createGain(); master.gain.value = .7;
+  const limiter = off.createWaveShaper();
+  limiter.curve = cv; limiter.oversample = "none";
+  master.connect(limiter); limiter.connect(off.destination);
+  const out = new Map(), rowGains = new Map(), active = new Map();
+  layers.forEach(l => {
+    const g = off.createGain();
+    g.gain.value = l.out?.gain?.value ?? ({drums:.9,bass:1.3,arp:1,chords:.8,leads:1.1}[l.type] || 1.4);
+    g.connect(master); out.set(l, g); active.set(l, []);
+    if (l.type === "drums") rowGains.set(l, LEVELS.map(v => { const x=off.createGain(); x.gain.value=v; x.connect(g); return x; }));
+  });
+  const source = (buf, dest, t, offset=0, rate=1, duration) => {
+    if (!buf || t >= BAR_S*4) return;
+    const s=off.createBufferSource(); s.buffer=buf; s.playbackRate.value=rate; s.connect(dest);
+    try { if (duration) s.start(Math.max(0,t), offset, duration); else s.start(Math.max(0,t), offset); } catch(e) {}
+    return s;
+  };
+  const localNote = (l,m,t,gate,vel) => {
+    const it=l.item, b=LB[it.file]; if(!b || t<0 || t>=BAR_S*4) return;
+    const [lo,hi]=spanOf(it); while(m<lo)m+=12; while(m>hi)m-=12;
+    let n=it.notes[0]; it.notes.forEach(x=>{if(Math.abs(x[0]-m)<Math.abs(n[0]-m))n=x;});
+    if(l.type==="bass"||l.type==="leads") (active.get(l)||[]).forEach(h=>{try{h.g.gain.setTargetAtTime(0,Math.max(0,t),.012);h.s.stop(Math.max(0,t)+.1);}catch(e){}});
+    const g=off.createGain(), s=off.createBufferSource(), rate=Math.pow(2,(m-n[0])/12);
+    s.buffer=b; s.playbackRate.value=rate; g.gain.setValueAtTime(vel,t); g.gain.setTargetAtTime(0,t+gate,.05);
+    s.connect(g); g.connect(out.get(l)); active.get(l).push({s,g});
+    try{s.start(t,n[1],n[2]);s.stop(t+Math.min(gate+.4,n[2]/rate));}catch(e){}
+  };
+  // Clips are four-bar recordings. Start them at cycle origin, preserving the pad lead-in.
+  layers.forEach(l=>{
+    if(l.type!=="drums"&&!isLive(l)){
+      const b=CLIPS[clipUrl(l)], lead=(l.type==="pads"&&l.item.lead)||0;
+      if(b) source(b,out.get(l),0,Math.min(b.duration-.001,lead));
+    }
+  });
+  for(let tick=0;tick<TPB*4;tick++){
+    const t=tick*TICK, tib=tick%TPB, bar=Math.floor(tick/TPB);
+    layers.forEach(l=>{
+      if(tick<l.start) return;
+      if(l.type==="drums"){
+        const pat=PATTERNS[l.pat],len=pat.len||16,stepsNow=patSteps(l.pat),sound=KITS[l.kit].r,rel=tick-l.start;
+        let step;
+        if(l.speed===2) step=len===16?rel%16:rel%32;
+        else {if(rel%2)return;step=(rel/2)%len;}
+        const stepDur=TICK*(l.speed===2?1:2),tt=t+(step%2?(pat.swing||0)*stepDur*.66:0);
+        stepsNow.forEach((row,r)=>{
+          if(l.rows&&!l.rows.includes(r))return;
+          const v=row[step]; if(!v)return;
+          const b=bufOf(sound[r],pickVi(sound[r],r,l,bar)); if(!b)return;
+          const g=off.createGain();g.gain.value=v===2?1:v===3?.3:.62;g.connect(rowGains.get(l)[r]);source(b,g,tt);
+        });
+      } else if(isLive(l)){
+        const [root,ct]=PROGS[hi][bar%4],iv=INT[ct],ext=iv.concat(iv.map(x=>x+12)),pat=PAT[l.type][l.pi%PAT[l.type].length][1];
+        for(let k=0;k<3;k++){
+          const u=(tick%TPB)*3+k,tt=t+k*TICK/3;
+          pat.forEach(e=>{
+            if(e[0]!==u)return;const gate=e[1]*TICK/3*.95,vel=u%24===0?1:.75;
+            if(l.type==="chords")iv.forEach(x=>localNote(l,root+BASE.chords+x,tt,gate,vel*.55));
+            else localNote(l,root+BASE[l.type]+ext[l.type==="bass"?e[2]:(e[2]+l.rot)%8],tt,gate,vel);
+          });
+        }
+      }
+    });
+  }
+  try {
+    const b=await off.startRendering();
+    if(gen!==renderGeneration)return null;
+    renderedBuffer=b; status.textContent="Rendered · edits apply after restart";
+    return b;
+  } catch(e) {
+    if(gen===renderGeneration) status.textContent="Render failed — using live mode";
+    return null;
+  }
+}
+async function startRendered() {
+  await ctx.resume();
+  await loadFor(layers);
+  if(failed)return false;
+  const b=await renderCycle();
+  if(!b || !layers.length)return false;
+  if(renderedSource){try{renderedSource.stop();}catch(e){} renderedSource=null;}
+  renderedSource=ctx.createBufferSource(); renderedSource.buffer=b; renderedSource.loop=true;
+  renderedSource.connect(mnode);
+  S.t0=ctx.currentTime+.12; S.playing=true; setPlaying(true);
+  renderedSource.start(S.t0);
+  requestAnimationFrame(anim);
+  return true;
+}
+
 function schedule() {
   // Same Web Audio look-ahead scheduler as the stable Drums, DAW and Loops pages.
   // The UI timer fills the future queue; source nodes start at exact audio times.
@@ -344,6 +452,7 @@ function schedule() {
 }
 async function play() {
   if (S.playing) return;
+  if (barRenderEnabled()) { const ok = await startRendered(); if (ok) return; }
   if (!layers.length) { setName("Add a loop first"); setTimeout(() => setName(S.name), 1800); return; }
   await ctx.resume(); await loadFor(layers); if (failed) return;
   layers.forEach(l => { l.start = 0; });
@@ -351,7 +460,8 @@ async function play() {
   S.timer = setInterval(schedule, 25); schedule(); requestAnimationFrame(anim);
 }
 function stop() {
-  S.playing = false; clearInterval(S.timer); setPlaying(false); layers.forEach(l => fade(l, ctx.currentTime, .03)); showProgress();
+  S.playing = false;
+  renderGeneration++; if (renderedSource) { try { renderedSource.stop(); } catch(e) {} renderedSource = null; } clearInterval(S.timer); setPlaying(false); layers.forEach(l => fade(l, ctx.currentTime, .03)); showProgress();
 }
 function setPlaying(on) { [$("#playBtn"), $("#playTop")].forEach(b => { b.setAttribute("aria-pressed", on); b.setAttribute("aria-label", on ? "Stop" : "Play"); }); }
 [$("#playBtn"), $("#playTop")].forEach(b => { b.onclick = () => S.playing ? stop() : play(); });
@@ -429,6 +539,7 @@ $("#pick").onclick = () => { $("#types").hidden = !$("#types").hidden; };
 $("#types").innerHTML = TYPES.map(t => '<button type="button" class="ty ' + t[0] + '" data-t="' + t[0] + '"><i></i>' + t[1] + '</button>').join("");
 $("#types").onclick = e => { const b = e.target.closest("button"); if (b) { addLoop(b.dataset.t); } };
 $("#clear").onclick = () => { if (S.playing) stop(); clear(); refresh(); };
+$("#barRender").addEventListener("change", () => { $("#renderStatus").textContent = barRenderEnabled() ? "Renders a 4-bar cycle before playback" : "Live look-ahead scheduler"; if (S.playing) stop(); });
 addEventListener("keydown", e => {
   if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.code === "Space" && e.target.tagName !== "BUTTON") { e.preventDefault(); S.playing ? stop() : play(); }
