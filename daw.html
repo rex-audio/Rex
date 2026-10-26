@@ -140,6 +140,8 @@ select:focus-visible, button:focus-visible, input:focus-visible { outline: 2px s
 #playlistFoot { display:flex; justify-content:space-between; gap:8px; margin-top:10px; color:#8795a0; font-size:12px; flex-wrap:wrap; }
 #plStatus { color:#e4e9ec; }
 
+
+[hidden]{display:none!important}.intro,.topplay,.opts{display:none!important}#playlist{margin-top:20px}.pl-track-button{border:0;padding:0;background:transparent;text-align:left;cursor:pointer;color:#cbd4da;min-width:0}.pl-track-button:hover{color:#fff}#editor{margin-top:20px}.editorHead{display:flex;align-items:center;gap:14px;margin:0 0 14px;color:var(--fg)}.editorHead strong{font-size:20px}.editorHead .plbtn,.drumTools .plbtn{min-height:34px;padding:0 12px;border:1px solid #2a3845;border-radius:8px;background:#17212b;color:#e4e9ec;font:600 13px var(--sans);cursor:pointer}.drumTools{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px;margin-bottom:10px;background:#0d141b;color:#e4e9ec;border-radius:10px}.drumTools label{display:flex;align-items:center;gap:8px;font-size:13px}.drumTools select{background:#17212b;color:#e4e9ec;border-color:#2a3845}#drumGrid{padding:12px;overflow-x:auto;background:#0d141b;border-radius:12px;color:#e4e9ec}.drum-row{display:grid;grid-template-columns:130px repeat(var(--drum-steps),minmax(18px,1fr));gap:4px;margin-bottom:5px;min-width:500px}.drum-row-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;border:0;background:transparent;color:#cbd4da;font:600 11px var(--sans);cursor:pointer}.drum-step{height:32px;padding:0;border:1px solid #2a3845;border-radius:4px;background:#17212b;cursor:pointer}.drum-step.beat{border-color:#53616d}.drum-step.on{background:#2f86b8;border-color:#70c4f0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}#tracks{display:grid;gap:8px;margin-bottom:14px}#tracks:empty{display:none}.addrow{margin:10px 0 14px}.addrow button{flex:1;height:42px;border:1px dashed var(--line);border-radius:10px;background:transparent;color:var(--fg);font:700 14px var(--sans);cursor:pointer}
 </style>
 </head>
 <body>
@@ -157,23 +159,13 @@ select:focus-visible, button:focus-visible, input:focus-visible { outline: 2px s
     </nav>
   </header>
 
-  <section class="intro">
-    <p class="label">Notes</p>
-    <h1>DAW</h1>
-  </section>
-
   <section class="sec">
-    <div class="topplay"><button class="go2" id="playTop" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
-    <div class="opts">
-      <label>Key <select id="key"></select></label>
-      <label>Scale <select id="scale"></select></label>
-      <label>Tempo <input id="bpm" type="range" min="50" max="180" step="1" value="75"><output id="bpmV">75</output></label>
-    </div>
 
     <section id="playlist" aria-label="DAW playlist">
       <div id="playlistHead">
         <h2>Playlist</h2>
-        <span class="hint">Click an empty cell to add a clip</span>
+        <span class="hint">Add a clip, then write your own pattern</span>
+        <button class="plbtn" id="addInstrument" type="button">+ Instrument</button>
         <button class="plbtn" id="addBars" type="button">+ 4 bars</button>
         <button class="plbtn" id="clearPlaylist" type="button">Clear clips</button>
       </div>
@@ -184,9 +176,12 @@ select:focus-visible, button:focus-visible, input:focus-visible { outline: 2px s
       <div id="playlistFoot"><span>Arrangement overview · 4 beats per bar</span><span id="plStatus" aria-live="polite">8 bars · 0 clips</span></div>
     </section>
 
-    <div id="tracks"></div>
-    <div class="addrow"><select id="addKind" aria-label="Kind of track"><option value="bass">Bass</option><option value="arp">Arp</option><option value="stab">Chords</option><option value="lead">Lead</option></select><button id="addTrack" type="button">+ Add a track</button></div>
-
+    <section id="editor" hidden>
+      <div class="editorHead"><button class="plbtn" id="backPlaylist" type="button">← Playlist</button><strong id="editorHeading">Pattern editor</strong></div>
+      <div id="drumEditor" hidden><div class="drumTools"><label>Kit <select id="drumKit"></select></label><label>Steps <select id="drumSteps"><option value="16">16</option><option value="32">32</option></select></label><button class="plbtn" id="clearDrums" type="button">Clear pattern</button></div><div id="drumGrid"></div></div>
+      <div id="instrumentEditor" hidden>
+        <div id="tracks"></div>
+        <div class="addrow"><button id="addTrack" type="button">+ Add another instrument</button></div>
     <div id="roll">
       <div id="rollhead">
         <span id="rollTitle">Piano roll</span>
@@ -195,8 +190,10 @@ select:focus-visible, button:focus-visible, input:focus-visible { outline: 2px s
         <button class="hb" id="clearRoll" type="button">Clear</button><button class="hb" id="diceRoll" type="button" title="A variation of this pattern">Vary</button>
       </div>
       <div id="rollwrap"><div id="rollkeys"></div><div id="rollgrid"><div id="playhead"></div></div></div>
-      <div id="rollempty" style="display:none">Add a track to edit its notes here.</div>
+      <div id="rollempty" style="display:none">Add an instrument to edit its notes here.</div>
     </div>
+      </div>
+    </section>
   </section>
 
   <footer>
@@ -384,15 +381,9 @@ function drumHit(row, sound, t, vel, bar) {
   const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vel; s.connect(g); g.connect(drum.rg[row]);
   const h = { s, g, row }; drum.act.add(h); s.onended = () => drum.act.delete(h); s.start(t);
 }
-function drumStep(tick, t) {
-  const d = DR[drum.v], pat = PATTERNS[d.pat], len = pat.len || 16, steps = patSteps(d.pat), sound = KITS[d.kit].r, bar = Math.floor(tick / TPB);
-  let step;
-  if (d.speed === 2) step = len === 16 ? tick % 16 : tick % 32;
-  else { if (tick % 2) return; step = (tick / 2) % len; }
-  const stepDur = TICK() * (d.speed === 2 ? 1 : 2), tt = t + (step % 2 ? (pat.swing || 0) * stepDur * .66 : 0);
-  steps.forEach((row, r) => { if (d.rows && !d.rows.includes(r)) return; const v = row[step]; if (v) drumHit(r, sound[r], tt, v === 2 ? 1 : v === 3 ? .3 * (.85 + Math.random() * .3) : .62 * (.92 + Math.random() * .12), bar); });
-}
-const loadDrums = () => Promise.all(KITS[DR[drum.v].kit].r.map(ensureSound));
+const drumPattern=Array.from({length:8},()=>new Set());let drumKitIndex=0,drumStepCount=16;
+function drumStep(tick,t){if(tick%2)return;const step=(tick/2)%drumStepCount,bar=Math.floor(tick/TPB),sounds=KITS[drumKitIndex].r;drumPattern.forEach((row,r)=>{if(row.has(step))drumHit(r,sounds[r],t,.8,bar);});}
+const loadDrums = () => Promise.all(KITS[drumKitIndex].r.map(ensureSound));
 
 // ---------- the tracks ----------
 const clone = ns => ns.map(n => Object.assign({}, n));
@@ -403,10 +394,9 @@ function loadPat(tr, idx) {
 }
 function addTrack(kind, patIdx, instIdx) {
   if (tracks.length >= MAXT) return null;
-  const kd = KIND[kind], list = LIVE[kd.type], same = tracks.filter(t => t.kind === kind).length;
-  const tr = { id: ++uid, kind, kd, inst: instIdx === undefined ? same % list.length : instIdx, pat: 0, notes: [], base: [], by: new Map(), len: kd.len, level: kd.level, mute: false, solo: false, lo: kd.lo, lastLen: 1, act: new Set(), prev: null };
-  tr.item = list[tr.inst]; tr.out = ctx.createGain(); tr.out.connect(mnode);
-  loadPat(tr, patIdx === undefined ? same % PAT[kind].length : patIdx); tracks.push(tr); sel = tr; ensureLive(tr.item.file); updateMix(); renderTracks(); drawRoll(); return tr;
+  const kd=KIND[kind],list=LIVE[kd.type],same=tracks.filter(t=>t.kind===kind).length;
+  const tr={id:++uid,kind,kd,inst:instIdx===undefined?same%list.length:instIdx,pat:0,notes:[],base:[],by:new Map(),len:16,level:kd.level,mute:false,solo:false,lo:kd.lo,lastLen:1,act:new Set(),prev:null};
+  tr.item=list[tr.inst];tr.out=ctx.createGain();tr.out.connect(mnode);reindex(tr);tracks.push(tr);sel=tr;ensureLive(tr.item.file);updateMix();renderTracks();drawRoll();return tr;
 }
 function removeTrack(tr) { fadeTrack(tr, ctx.currentTime, .03); tr.out.disconnect(); tracks.splice(tracks.indexOf(tr), 1); if (sel === tr) sel = tracks[0] || null; updateMix(); renderTracks(); drawRoll(); }
 function fadeTrack(tr, t, tc) { tr.act.forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, tc); try { h.s.stop(t + tc * 8); } catch (e) {} }); }
@@ -451,13 +441,8 @@ function schedule() {
 
     // The playlist is the arrangement: only trigger a lane while its clip is active
     // in the current bar. Drum and instrument patterns repeat within each active bar.
-    if (plClips.has(plKey(0, bar))) drumStep(tick, t);
-    if (tick % 2 === 0) tracks.forEach(tr => {
-      const lane = ({ bass: 1, arp: 2, stab: 3, lead: 4 })[tr.kind];
-      if (lane === undefined || !plClips.has(plKey(lane, bar))) return;
-      const l = tr.by.get((tick / 2) % tr.len);
-      if (l) l.forEach(n => playNote(tr, n, t));
-    });
+    if(plClips.has(plKey("drums",bar)))drumStep(tick,t);
+    if(tick%2===0)tracks.forEach(tr=>{if(!plClips.has(plKey(laneForTrack(tr),bar)))return;const l=tr.by.get((tick/2)%tr.len);if(l)l.forEach(n=>playNote(tr,n,t));});
     S.tick++; S.next += TICK();
   }
 }
@@ -476,40 +461,18 @@ function setPlaying(on) { [$("#playBtn"), $("#playTop")].forEach(b => { b.setAtt
 
 
 // ---------- playlist arrangement ----------
-const plTracks = [
-  {name:"Drums", color:"#2f86b8", label:"Drums"},
-  {name:"Bass", color:"#e0a13a", label:"Bass"},
-  {name:"Arp", color:"#55ad88", label:"Arp"},
-  {name:"Chords", color:"#b17bd0", label:"Chords"},
-  {name:"Lead", color:"#d76c65", label:"Lead"}
-];
-let plBars = 8;
-const plClips = new Set();
-const plKey = (track, bar) => track + ":" + bar;
-function renderPlaylist() {
-  const grid = $("#playlistGrid"), ruler = $("#plRuler"), lanes = $("#plLanes");
-  grid.style.setProperty("--bars", plBars);
-  ruler.innerHTML = "<span>TRACK</span>" + Array.from({length:plBars}, (_,i)=>"<span>"+(i+1)+"</span>").join("");
-  lanes.innerHTML = "";
-  plTracks.forEach((tr, ti) => {
-    const lane = document.createElement("div"); lane.className = "pl-lane"; lane.style.setProperty("--track-color", tr.color);
-    const name = document.createElement("div"); name.className = "pl-name";
-    const sw = document.createElement("i"); sw.className = "pl-swatch"; name.append(sw, document.createTextNode(tr.name)); lane.appendChild(name);
-    for (let bar=0; bar<plBars; bar++) {
-      const cell = document.createElement("button"); cell.type="button"; cell.className="pl-cell"; cell.setAttribute("aria-label", tr.name + ", bar " + (bar+1));
-      const active = plClips.has(plKey(ti,bar));
-      if (active) { cell.classList.add("on"); const label=document.createElement("span"); label.className="cliplabel"; label.textContent=tr.label; cell.appendChild(label); cell.setAttribute("aria-pressed","true"); }
-      else cell.setAttribute("aria-pressed","false");
-      cell.onclick = () => { const key=plKey(ti,bar); if(plClips.has(key)) plClips.delete(key); else plClips.add(key); renderPlaylist(); };
-      lane.appendChild(cell);
-    }
-    lanes.appendChild(lane);
-  });
-  $("#plStatus").textContent = plBars + " bars · " + plClips.size + " clips";
-}
-$("#addBars").addEventListener("click", () => { plBars=Math.min(32,plBars+4); renderPlaylist(); $("#addBars").disabled=plBars>=32; });
-$("#clearPlaylist").addEventListener("click", () => { plClips.clear(); renderPlaylist(); });
-renderPlaylist();
+let plBars=8;
+const plClips=new Set();
+const plKey=(track,bar)=>track+":"+bar;
+const laneForTrack=tr=>"inst-"+tr.id;
+function playlistTracks(){return [{id:"drums",name:"Drums",label:"Drums",color:"#2f86b8",drums:true},...tracks.map((tr,i)=>({id:laneForTrack(tr),name:"Instrument "+(i+1),label:"Instrument "+(i+1),color:tr.kd.col,tr,drums:false}))];}
+function openEditor(type,tr){$("#playlist").hidden=true;$("#editor").hidden=false;$("#drumEditor").hidden=type!=="drums";$("#instrumentEditor").hidden=type!=="instrument";if(type==="drums"){ $("#editorHeading").textContent="Drum sequencer";drawDrumGrid();}else{if(tr)sel=tr;$("#editorHeading").textContent="Piano roll";renderTracks();drawRoll();}window.scrollTo(0,0);}
+function closeEditor(){$("#editor").hidden=true;$("#playlist").hidden=false;renderPlaylist();window.scrollTo(0,0);}
+$("#backPlaylist").addEventListener("click",closeEditor);
+function renderPlaylist(){const grid=$("#playlistGrid"),ruler=$("#plRuler"),lanes=$("#plLanes"),pts=playlistTracks();grid.style.setProperty("--bars",plBars);ruler.innerHTML="<span>TRACK</span>"+Array.from({length:plBars},(_,i)=>"<span>"+(i+1)+"</span>").join("");lanes.innerHTML="";pts.forEach(tr=>{const lane=document.createElement("div");lane.className="pl-lane";lane.style.setProperty("--track-color",tr.color);const name=document.createElement("button");name.type="button";name.className="pl-name pl-track-button";name.setAttribute("aria-label","Open "+tr.name+" editor");const sw=document.createElement("i");sw.className="pl-swatch";name.append(sw,document.createTextNode(tr.name));name.onclick=()=>openEditor(tr.drums?"drums":"instrument",tr.tr);lane.appendChild(name);for(let bar=0;bar<plBars;bar++){const cell=document.createElement("button");cell.type="button";cell.className="pl-cell";cell.setAttribute("aria-label",tr.name+", bar "+(bar+1));const key=plKey(tr.id,bar),active=plClips.has(key);if(active){cell.classList.add("on");const label=document.createElement("span");label.className="cliplabel";label.textContent=tr.label;cell.appendChild(label);cell.setAttribute("aria-pressed","true");}else cell.setAttribute("aria-pressed","false");cell.onclick=()=>{if(plClips.has(key)){plClips.delete(key);renderPlaylist();}else{plClips.add(key);renderPlaylist();openEditor(tr.drums?"drums":"instrument",tr.tr);}};lane.appendChild(cell);}lanes.appendChild(lane);});$("#plStatus").textContent=plBars+" bars · "+plClips.size+" clips";$("#addBars").disabled=plBars>=32;}
+$("#addBars").addEventListener("click",()=>{plBars=Math.min(32,plBars+4);renderPlaylist();});
+$("#clearPlaylist").addEventListener("click",()=>{plClips.clear();renderPlaylist();});
+$("#addInstrument").addEventListener("click",()=>{const tr=addTrack("bass");if(tr){renderPlaylist();openEditor("instrument",tr);}});
 
 // ---------- the track strips ----------
 const strips = $("#tracks");
@@ -526,9 +489,6 @@ function msBtns(o, tgt) {
 }
 function renderTracks() {
   strips.innerHTML = "";
-  const d = el("div", "strip drums"); d.append(el("i", "dot"), el("b", "kind", "Drums"));
-  const dn = el("span", "nm", DR[drum.v].n); d.append(arrowBtn(-1, () => setDrum(drum.v - 1), "Previous drum loop"), dn, arrowBtn(1, () => setDrum(drum.v + 1), "Next drum loop"));
-  const ctl = el("span", "ctl"); level(ctl, () => drum.level, v => { drum.level = v; }); msBtns(ctl, drum); d.append(ctl); d.style.setProperty("--c", "#2f86b8"); strips.appendChild(d);
   tracks.forEach(tr => {
     const s = el("div", "strip" + (tr === sel ? " sel" : "")); s.style.setProperty("--c", tr.kd.col);
     s.addEventListener("click", e => { if (e.target.closest("button,input")) return; sel = tr; renderTracks(); drawRoll(); });
@@ -543,8 +503,11 @@ function renderTracks() {
   $("#addTrack").disabled = tracks.length >= MAXT;
 }
 function go(tr, dd) { const pats = PAT[tr.kind]; loadPat(tr, (tr.pat + dd + pats.length) % pats.length); sel = tr; renderTracks(); drawRoll(); }
-function setDrum(v) { drum.v = (v + DR.length) % DR.length; renderTracks(); loadDrums(); }
-$("#addTrack").onclick = () => { addTrack($("#addKind").value); if (sel) audition(sel); };
+function setDrum(v){drumKitIndex=(v+KITS.length)%KITS.length;$("#drumKit").value=drumKitIndex;drawDrumGrid();loadDrums();}
+$("#addTrack").onclick=()=>{const tr=addTrack("bass");if(tr)openEditor("instrument",tr);};
+
+function drawDrumGrid(){const root=$("#drumGrid");if(!root)return;root.innerHTML="";const kit=KITS[drumKitIndex];root.style.setProperty("--drum-steps",drumStepCount);kit.r.forEach((sound,r)=>{const row=document.createElement("div");row.className="drum-row";const name=document.createElement("button");name.type="button";name.className="drum-row-name";name.textContent=sound;name.onclick=()=>{ensureSound(sound).then(()=>drumHit(r,sound,ctx.currentTime+.02,.8,0));};row.appendChild(name);for(let s=0;s<drumStepCount;s++){const b=document.createElement("button");b.type="button";b.className="drum-step"+(drumPattern[r].has(s)?" on":"")+(s%4===0?" beat":"");b.setAttribute("aria-label",sound+", step "+(s+1));b.setAttribute("aria-pressed",drumPattern[r].has(s));b.onclick=()=>{if(drumPattern[r].has(s))drumPattern[r].delete(s);else drumPattern[r].add(s);b.classList.toggle("on",drumPattern[r].has(s));b.setAttribute("aria-pressed",drumPattern[r].has(s));};row.appendChild(b);}root.appendChild(row);});}
+$("#drumKit").innerHTML=KITS.map((k,i)=>`<option value="${i}">${k.n}</option>`).join("");$("#drumKit").onchange=e=>{drumKitIndex=+e.target.value;drawDrumGrid();loadDrums();};$("#drumSteps").onchange=e=>{drumStepCount=+e.target.value;drumPattern.forEach(row=>{for(const s of [...row])if(s>=drumStepCount)row.delete(s);});drawDrumGrid();};$("#clearDrums").onclick=()=>{drumPattern.forEach(row=>row.clear());drawDrumGrid();};
 
 // ---------- the piano roll ----------
 const RN = 30, RH = 15, rkeys = $("#rollkeys"), rgrid = $("#rollgrid"), ph = $("#playhead");
@@ -589,22 +552,21 @@ $("#clearRoll").onclick = () => { if (sel) { sel.notes = []; sel.base = []; rein
 $("#diceRoll").onclick = () => { if (sel) { mutateTrack(sel, .5); drawRoll(); } };
 
 // ---------- key, scale, tempo ----------
-$("#key").innerHTML = NN.map((n, i) => '<option value="' + i + '">' + n + "</option>").join(""); $("#key").value = KS.root;
-$("#scale").innerHTML = Object.keys(SCALES).map(n => "<option>" + n + "</option>").join(""); $("#scale").value = KS.scale;
+
 function setKey(root, scale) {
   const oldRoot = KS.root, oldScale = KS.scale; KS.root = root; KS.scale = scale;
   let d = ((root - oldRoot) % 12 + 12) % 12; if (d > 6) d -= 12;
   tracks.forEach(tr => { [tr.notes, tr.base].forEach(ns => ns.forEach(n => { n.m += d; })); if (scale !== oldScale) { const L = scaleList(); [tr.notes, tr.base].forEach(ns => ns.forEach(n => { n.m = L[nearestIdx(L, n.m)]; })); } });
   drawRoll(); label();
 }
-$("#key").onchange = e => setKey(+e.target.value, KS.scale); $("#scale").onchange = e => setKey(KS.root, e.target.value);
+
 const bpm = $("#bpm"); bpm.oninput = () => { S.bpm = +bpm.value; $("#bpmV").textContent = S.bpm; };
 function label() { S.name = NN[KS.root] + " " + KS.scale.toLowerCase() + (S.n ? " · variation " + S.n : ""); if (!/^Loading/.test($("#barName").textContent)) setName(S.name); }
 
 // ---------- the bar arrows: a new variation of everything, in the same key ----------
 function variation(n) {
   S.n = n; const rng = mulberry(Math.imul(n + 7, 2654435761) ^ 0x9e3779b9), pick = k => Math.floor(rng() * k);
-  drum.v = pick(DR.length);
+  drumKitIndex=pick(KITS.length);$("#drumKit").value=drumKitIndex;drawDrumGrid();
   tracks.forEach(tr => { loadPat(tr, pick(PAT[tr.kind].length)); tr.inst = pick(LIVE[tr.kd.type].length); tr.item = LIVE[tr.kd.type][tr.inst]; mutateTrack(tr, .3, rng); });
   renderTracks(); drawRoll(); label(); loadDrums(); tracks.forEach(t => ensureLive(t.item.file));
 }
@@ -617,10 +579,8 @@ addEventListener("keydown", e => {
 const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); };
 fitSite(); addEventListener("resize", fitSite);
 
-// ---------- the start: drums, a bass, an arp and chords in A minor ----------
-drum.v = 0;
-addTrack("bass", 7 % PAT.bass.length, 0); addTrack("arp", 0, 0); addTrack("stab", 0, 0); sel = tracks[1];
-renderTracks(); drawRoll(); label(); loadDrums(); tracks.forEach(t => ensureLive(t.item.file));
+// ---------- start with an empty arrangement and empty editors ----------
+drumKitIndex=0;$("#drumKit").value="0";drawDrumGrid();renderPlaylist();renderTracks();drawRoll();label();loadDrums();
 </script>
 </body>
 </html>
