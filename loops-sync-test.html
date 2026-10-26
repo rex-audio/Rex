@@ -248,11 +248,16 @@ function drumStep(l, tick, tib, t) {
   steps.forEach((row, r) => { if (l.rows && !l.rows.includes(r)) return; const v = row[step]; if (v) drumHit(l, r, sound[r], tt, v === 2 ? 1 : v === 3 ? .3 * (.85 + Math.random() * .3) : .62 * (.92 + Math.random() * .12), bar); });
 }
 function fade(l, t, tc = .15) { l.act.forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, tc); try { h.s.stop(t + tc * 8); } catch (e) {} }); }
-function clipStart(l, t, off = 0) {   // restart clips on the shared four-bar boundary without leaving old takes running underneath
-  off += (l.type === "pads" && l.item.lead) || 0;
+function clipStart(l, t, phaseSeconds = 0) {
+  // Every recorded instrument loop represents exactly four bars on the 75 BPM grid.
+  // Match the source duration to that cycle so tiny differences in file length cannot
+  // accumulate as drift. Known pad lead-in is trimmed, then the remaining audio fills
+  // the full cycle rather than ending early.
   const b = CLIPS[clipUrl(l)]; if (!b) return;
-  // A buffer can be slightly longer than its musical cycle. Fade the previous pass
-  // out at the exact scheduled boundary so it cannot overlap the next pass.
+  const lead = (l.type === "pads" && l.item.lead) || 0;
+  const cycle = BAR_S * 4;
+  const usableDuration = Math.max(.1, b.duration - lead);
+  const rate = usableDuration / cycle;
   l.act.forEach(h => {
     if (!h.clip) return;
     h.g.gain.cancelScheduledValues(t);
@@ -261,10 +266,13 @@ function clipStart(l, t, off = 0) {   // restart clips on the shared four-bar bo
     try { h.s.stop(t + .025); } catch (e) {}
   });
   const s = ctx.createBufferSource(), g = ctx.createGain();
-  s.buffer = b; s.connect(g); g.connect(l.out);
+  s.buffer = b;
+  s.playbackRate.setValueAtTime(rate, t);
+  s.connect(g); g.connect(l.out);
   const h = { s, g, clip: true };
   l.act.add(h); s.onended = () => l.act.delete(h);
-  s.start(t, off % b.duration);
+  const sourceOffset = Math.min(b.duration - .001, lead + phaseSeconds * rate);
+  s.start(t, sourceOffset);
 }
 
 // ---------- music theory, played live from the recordings ----------
@@ -317,8 +325,8 @@ function schedule() {
       if (tick < l.start) return;
       if (l.type === "drums") drumStep(l, tick, tib, t);
       else if (isLive(l)) liveStep(l, tick, t);
-      else if (tick % (TPB * 4) === 0) clipStart(l, t);   // a recording restarts every four bars, in step with the chords of the others
-      else if (tick === l.start) clipStart(l, t, (tick % (TPB * 4)) * TICK);   // one that is added part way through joins part way through
+      else if (tick === l.start) clipStart(l, t, (tick % (TPB * 4)) * TICK); // newly added loops join at their scheduled bar
+      else if (tick % (TPB * 4) === 0) clipStart(l, t); // all recordings restart on the same four-bar boundary
     });
     S.tick++; S.next += TICK;
   }
