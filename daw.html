@@ -141,7 +141,7 @@ select:focus-visible, button:focus-visible, input:focus-visible { outline: 2px s
 #plStatus { color:#e4e9ec; }
 
 
-[hidden]{display:none!important}.intro,.topplay,.opts{display:none!important}#playlist{margin-top:20px}.pl-track-button{border:0;padding:0;background:transparent;text-align:left;cursor:pointer;color:#cbd4da;min-width:0}.pl-track-button:hover{color:#fff}#editor{margin-top:20px}.editorHead{display:flex;align-items:center;gap:14px;margin:0 0 14px;color:var(--fg)}.editorHead strong{font-size:20px}.editorHead .plbtn,.drumTools .plbtn{min-height:34px;padding:0 12px;border:1px solid #2a3845;border-radius:8px;background:#17212b;color:#e4e9ec;font:600 13px var(--sans);cursor:pointer}.drumTools{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px;margin-bottom:10px;background:#0d141b;color:#e4e9ec;border-radius:10px}.drumTools label{display:flex;align-items:center;gap:8px;font-size:13px}.drumTools select{background:#17212b;color:#e4e9ec;border-color:#2a3845}#drumGrid{padding:12px;overflow-x:auto;background:#0d141b;border-radius:12px;color:#e4e9ec}.drum-row{display:grid;grid-template-columns:130px repeat(var(--drum-steps),minmax(18px,1fr));gap:4px;margin-bottom:5px;min-width:500px}.drum-row-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;border:0;background:transparent;color:#cbd4da;font:600 11px var(--sans);cursor:pointer}.drum-step{height:32px;padding:0;border:1px solid #2a3845;border-radius:4px;background:#17212b;cursor:pointer}.drum-step.beat{border-color:#53616d}.drum-step.on{background:#2f86b8;border-color:#70c4f0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}#tracks{display:grid;gap:8px;margin-bottom:14px}#tracks:empty{display:none}.addrow{margin:10px 0 14px}.addrow button{flex:1;height:42px;border:1px dashed var(--line);border-radius:10px;background:transparent;color:var(--fg);font:700 14px var(--sans);cursor:pointer}
+[hidden]{display:none!important}.intro,.opts{display:none!important}.topplay{display:flex;justify-content:center;margin:0 0 18px}#topPlayBtn{width:62px;height:62px;padding:0;border:0;border-radius:50%;background:var(--fg);color:var(--panel);cursor:pointer;display:grid;place-items:center}#topPlayBtn svg{width:30px;height:30px}#topPlayBtn .i-stop,#topPlayBtn[aria-pressed="true"] .i-play{display:none}#topPlayBtn[aria-pressed="true"] .i-stop{display:block}#topPlayBtn:hover{background:#000}#playlist{margin-top:20px}.pl-track-button{border:0;padding:0;background:transparent;text-align:left;cursor:pointer;color:#cbd4da;min-width:0}.pl-track-button:hover{color:#fff}#editor{margin-top:20px}.editorHead{display:flex;align-items:center;gap:14px;margin:0 0 14px;color:var(--fg)}.editorHead strong{font-size:20px}.editorHead .plbtn,.drumTools .plbtn{min-height:34px;padding:0 12px;border:1px solid #2a3845;border-radius:8px;background:#17212b;color:#e4e9ec;font:600 13px var(--sans);cursor:pointer}.drumTools{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px;margin-bottom:10px;background:#0d141b;color:#e4e9ec;border-radius:10px}.drumTools label{display:flex;align-items:center;gap:8px;font-size:13px}.drumTools select{background:#17212b;color:#e4e9ec;border-color:#2a3845}#drumGrid{padding:12px;overflow-x:auto;background:#0d141b;border-radius:12px;color:#e4e9ec}.drum-row{display:grid;grid-template-columns:130px repeat(var(--drum-steps),minmax(18px,1fr));gap:4px;margin-bottom:5px;min-width:500px}.drum-row-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;border:0;background:transparent;color:#cbd4da;font:600 11px var(--sans);cursor:pointer}.drum-step{height:32px;padding:0;border:1px solid #2a3845;border-radius:4px;background:#17212b;cursor:pointer}.drum-step.beat{border-color:#53616d}.drum-step.on{background:#2f86b8;border-color:#70c4f0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}#tracks{display:grid;gap:8px;margin-bottom:14px}#tracks:empty{display:none}.addrow{margin:10px 0 14px}.addrow button{flex:1;height:42px;border:1px dashed var(--line);border-radius:10px;background:transparent;color:var(--fg);font:700 14px var(--sans);cursor:pointer}
 </style>
 </head>
 <body>
@@ -161,6 +161,8 @@ select:focus-visible, button:focus-visible, input:focus-visible { outline: 2px s
 
   <section class="sec">
 
+    <div class="topplay"><button id="topPlayBtn" type="button" aria-pressed="false" aria-label="Play" title="Play / stop"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
+
     <section id="playlist" aria-label="DAW playlist">
       <div id="playlistHead">
         <h2>Playlist</h2>
@@ -177,7 +179,7 @@ select:focus-visible, button:focus-visible, input:focus-visible { outline: 2px s
     </section>
 
     <section id="editor" hidden>
-      <div class="editorHead"><button class="plbtn" id="backPlaylist" type="button">← Playlist</button><strong id="editorHeading">Pattern editor</strong></div>
+      <div class="editorHead"><button class="plbtn" id="backPlaylist" type="button">Hide editor</button><strong id="editorHeading">Pattern editor</strong></div>
       <div id="drumEditor" hidden><div class="drumTools"><label>Kit <select id="drumKit"></select></label><label>Steps <select id="drumSteps"><option value="16">16</option><option value="32">32</option></select></label><button class="plbtn" id="clearDrums" type="button">Clear pattern</button></div><div id="drumGrid"></div></div>
       <div id="instrumentEditor" hidden>
         <div id="tracks"></div>
@@ -456,8 +458,9 @@ function stop() {
   S.playing = false; clearInterval(S.timer); setPlaying(false); fadeDrums(); tracks.forEach(t => fadeTrack(t, ctx.currentTime, .03)); ph.style.display = "none";
 }
 function fadeDrums() { drum.act.forEach(h => { h.g.gain.cancelScheduledValues(ctx.currentTime); h.g.gain.setTargetAtTime(0, ctx.currentTime, .03); try { h.s.stop(ctx.currentTime + .3); } catch (e) {} }); }
-function setPlaying(on) { const b=$("#playBtn"); b.setAttribute("aria-pressed",on); b.setAttribute("aria-label",on?"Stop":"Play"); }
+function setPlaying(on) { for(const b of [$("#playBtn"),$("#topPlayBtn")]) { b.setAttribute("aria-pressed",String(on)); b.setAttribute("aria-label",on?"Stop":"Play"); b.title=on?"Stop":"Play"; } }
 $("#playBtn").onclick=()=>S.playing?stop():play();
+$("#topPlayBtn").onclick=()=>S.playing?stop():play();
 
 
 // ---------- playlist arrangement ----------
@@ -466,8 +469,8 @@ const plClips=new Set();
 const plKey=(track,bar)=>track+":"+bar;
 const laneForTrack=tr=>"inst-"+tr.id;
 function playlistTracks(){return [{id:"drums",name:"Drums",label:"Drums",color:"#2f86b8",drums:true},...tracks.map((tr,i)=>({id:laneForTrack(tr),name:"Instrument "+(i+1),label:"Instrument "+(i+1),color:tr.kd.col,tr,drums:false}))];}
-function openEditor(type,tr){$("#playlist").hidden=true;$("#editor").hidden=false;$("#drumEditor").hidden=type!=="drums";$("#instrumentEditor").hidden=type!=="instrument";if(type==="drums"){ $("#editorHeading").textContent="Drum sequencer";drawDrumGrid();}else{if(tr)sel=tr;$("#editorHeading").textContent="Piano roll";renderTracks();drawRoll();}window.scrollTo(0,0);}
-function closeEditor(){$("#editor").hidden=true;$("#playlist").hidden=false;renderPlaylist();window.scrollTo(0,0);}
+function openEditor(type,tr){$("#playlist").hidden=false;$("#editor").hidden=false;$("#drumEditor").hidden=type!=="drums";$("#instrumentEditor").hidden=type!=="instrument";if(type==="drums"){ $("#editorHeading").textContent="Drum sequencer";drawDrumGrid();}else{if(tr)sel=tr;$("#editorHeading").textContent="Piano roll";renderTracks();drawRoll();}window.scrollTo(0,0);}
+function closeEditor(){$("#editor").hidden=true;$("#playlist").hidden=false;renderPlaylist();}
 $("#backPlaylist").addEventListener("click",closeEditor);
 function renderPlaylist(){const grid=$("#playlistGrid"),ruler=$("#plRuler"),lanes=$("#plLanes"),pts=playlistTracks();grid.style.setProperty("--bars",plBars);ruler.innerHTML="<span>TRACK</span>"+Array.from({length:plBars},(_,i)=>"<span>"+(i+1)+"</span>").join("");lanes.innerHTML="";pts.forEach(tr=>{const lane=document.createElement("div");lane.className="pl-lane";lane.style.setProperty("--track-color",tr.color);const name=document.createElement("button");name.type="button";name.className="pl-name pl-track-button";name.setAttribute("aria-label","Open "+tr.name+" editor");const sw=document.createElement("i");sw.className="pl-swatch";name.append(sw,document.createTextNode(tr.name));name.onclick=()=>openEditor(tr.drums?"drums":"instrument",tr.tr);lane.appendChild(name);for(let bar=0;bar<plBars;bar++){const cell=document.createElement("button");cell.type="button";cell.className="pl-cell";cell.setAttribute("aria-label",tr.name+", bar "+(bar+1));const key=plKey(tr.id,bar),active=plClips.has(key);if(active){cell.classList.add("on");const label=document.createElement("span");label.className="cliplabel";label.textContent=tr.label;cell.appendChild(label);cell.setAttribute("aria-pressed","true");}else cell.setAttribute("aria-pressed","false");cell.onclick=()=>{if(plClips.has(key)){plClips.delete(key);renderPlaylist();}else{plClips.add(key);renderPlaylist();openEditor(tr.drums?"drums":"instrument",tr.tr);}};lane.appendChild(cell);}lanes.appendChild(lane);});$("#plStatus").textContent=plBars+" bars · "+plClips.size+" clips";$("#addBars").disabled=plBars>=32;}
 $("#addBars").addEventListener("click",()=>{plBars=Math.min(32,plBars+4);renderPlaylist();});
