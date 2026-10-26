@@ -194,8 +194,68 @@ const loopTicks = l => CLIP(l.type) ? TPB * 4 : (PATTERNS[l.pat].len || 16) * (l
 // ---------- the recordings ----------
 const ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
 const SND = {}, CLIPS = {}, LB = {}, pending = new Map();
+
+// ---------- one-time pad click repair (test page only) ----------
+// Pads are decoded once into the shared pending/CLIPS cache, so this work is
+// performed once per sample load, never on each loop iteration.
+function removePadClicks(buffer) {
+  const out = ctx.createBuffer(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
+  const sr = buffer.sampleRate;
+  for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+    const src = buffer.getChannelData(ch), dst = out.getChannelData(ch);
+    dst.set(src);
+    const n = src.length;
+    if (n < 128) continue;
+    // Local mean absolute slope estimates the pad's texture without assuming
+    // silence. The residual test targets isolated broadband discontinuities,
+    // not ordinary loud notes or gradual modulation.
+    const diff = new Float32Array(n);
+    for (let i = 1; i < n; i++) diff[i] = Math.abs(src[i] - src[i - 1]);
+    const prefix = new Float64Array(n + 1);
+    for (let i = 0; i < n; i++) prefix[i + 1] = prefix[i] + diff[i];
+    const radius = Math.max(128, Math.round(sr * 0.004));
+    const hits = [];
+    for (let i = 2; i < n - 2; i++) {
+      const lo = Math.max(1, i - radius), hi = Math.min(n - 1, i + radius);
+      const localSlope = (prefix[hi] - prefix[lo]) / (hi - lo);
+      const prediction = (src[i - 1] + src[i + 1]) * 0.5;
+      const residual = Math.abs(src[i] - prediction);
+      // Conservative floor avoids chasing normal low-level floating-point detail.
+      if (residual > Math.max(0.055, localSlope * 14) &&
+          diff[i] > Math.max(0.035, localSlope * 9) &&
+          diff[i + 1] > Math.max(0.035, localSlope * 9)) hits.push(i);
+    }
+    if (!hits.length) continue;
+    // Merge nearby detections into a single damaged interval, then reconstruct
+    // its interior from both clean edges with a smooth, short boundary blend.
+    const pad = Math.max(12, Math.round(sr * 0.0007));
+    const groups = [];
+    for (const hit of hits) {
+      const last = groups[groups.length - 1];
+      if (last && hit - last[1] <= pad * 2) last[1] = hit;
+      else groups.push([hit, hit]);
+    }
+    for (const [first, last] of groups) {
+      const a = Math.max(1, first - pad), b = Math.min(n - 2, last + pad);
+      if (b - a < 2 || b - a > Math.round(sr * 0.012)) continue;
+      const left = src[a - 1], right = src[b + 1];
+      const span = b - a + 2;
+      // Linear trend is the stable fallback; a cosine blend at the boundaries
+      // avoids introducing a new edge where the repaired gap rejoins the pad.
+      for (let i = a; i <= b; i++) {
+        const t = (i - a + 1) / span;
+        const smooth = t * t * (3 - 2 * t);
+        const reconstructed = left + (right - left) * smooth;
+        const edge = Math.min(1, (i - a + 1) / pad, (b - i + 1) / pad);
+        const blend = edge * edge * (3 - 2 * edge);
+        dst[i] = src[i] * (1 - blend) + reconstructed * blend;
+      }
+    }
+  }
+  return out;
+}
 const loadBuf = url => {
-  if (!pending.has(url)) pending.set(url, fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(a => new Promise((ok, no) => ctx.decodeAudioData(a, ok, no))).catch(() => null));
+  if (!pending.has(url)) pending.set(url, fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(a => new Promise((ok, no) => ctx.decodeAudioData(a, ok, no))).then(b => url.startsWith("colours/") ? removePadClicks(b) : b).catch(() => null));
   return pending.get(url);
 };
 async function ensureSound(name) {
