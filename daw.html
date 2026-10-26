@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="A piano roll: write bass, arps, chords and leads over a drum loop, played from recordings.">
+<meta name="description" content="Rex Audio in-browser DAW with playlist arrangement and piano roll."><title>DAW | Rex Audio</title>
+<style>
+/* Same page frame as the other pages: a 720px "desktop" page scaled to the window. */
+:root {
+  --bg: #e4e7e9;
+  --panel: #f3f4f5;
+  --fg: #15181a;
+  --muted: #5a6166;
+  --line: #c3c9cc;
+  --focus: #c8321e;
+  --sans: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; padding-bottom: 100px; }
+#site { width: 720px; margin: 0 auto; zoom: 0.54; }
+a { color: inherit; }
+a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, p { margin: 0; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 26px 36px 0; }
+.brand { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+.top nav a:hover, .top nav a[aria-current] { border-bottom-color: var(--fg); }
+
+.intro { text-align: center; padding: 36px 36px 0; }
+.intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
+.sec { padding: 36px 36px 0; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--muted); }
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
+
+.topplay { display: flex; justify-content: center; margin-bottom: 26px; }
+.go2 { width: 62px; height: 62px; padding: 0; border: 0; border-radius: 50%; background: var(--fg); color: var(--panel); cursor: pointer; display: grid; place-items: center; }
+.go2:hover { background: #000; }
+.go2:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.go2 svg { width: 30px; height: 30px; }
+.go2 .i-stop, .go2[aria-pressed="true"] .i-play { display: none; } .go2[aria-pressed="true"] .i-stop { display: block; }
+
+
+.topplay { display: flex; justify-content: center; margin-bottom: 20px; }
+.go2 { width: 62px; height: 62px; padding: 0; border: 0; border-radius: 50%; background: var(--fg); color: var(--panel); cursor: pointer; display: grid; place-items: center; }
+.go2:hover { background: #000; } .go2:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; } .go2 svg { width: 30px; height: 30px; }
+.go2 .i-stop, .go2[aria-pressed="true"] .i-play { display: none; } .go2[aria-pressed="true"] .i-stop { display: block; }
+.sec { padding: 36px 36px 0; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--muted); }
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
+.intro { text-align: center; padding: 36px 36px 0; } .intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
+
+/* the settings above the tracks */
+.opts { display: flex; flex-wrap: wrap; gap: 14px 22px; justify-content: center; margin-bottom: 18px; font-size: 15px; }
+.opts label { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+select { font: inherit; color: var(--fg); height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); font-size: 15px; }
+select:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.opts input[type=range] { width: 120px; accent-color: var(--fg); }
+.opts output { min-width: 28px; color: var(--fg); font-weight: 700; }
+
+/* a strip for each track */
+#tracks { display: grid; gap: 10px; }
+.strip { --c: #2f86b8; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 10px 16px; background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--c); border-radius: 12px; cursor: pointer; }
+.strip.sel { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c); }
+.strip.drums { flex-direction: row; align-items: center; gap: 8px; cursor: default; flex-wrap: wrap; }
+.r1, .r2 { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.dot { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+.kind { flex: none; min-width: 64px; font-size: 16px; }
+.nm, .pn { flex: 1; min-width: 0; text-align: center; font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pn { font-size: 13px; }
+.arr { flex: none; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--fg); cursor: pointer; display: grid; place-items: center; }
+.arr svg { width: 19px; height: 19px; } .arr:hover { background: rgba(21, 24, 26, .08); }
+.ctl { flex: none; display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.lv { width: 90px; accent-color: var(--c); }
+.ms { flex: none; min-width: 30px; height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--fg); font: 700 13px var(--sans); cursor: pointer; }
+.ms:hover { border-color: var(--fg); } .ms.on { background: var(--fg); color: var(--panel); border-color: var(--fg); }
+.addrow { display: flex; gap: 10px; margin-top: 12px; align-items: center; }
+.addrow select { flex: none; height: 56px; } .addrow button { flex: 1; height: 56px; border: 2px dashed var(--line); border-radius: 14px; background: transparent; color: var(--fg); font: 700 16px var(--sans); cursor: pointer; }
+.addrow button:hover:not(:disabled) { border-color: var(--fg); } .addrow button:disabled { opacity: .45; cursor: default; }
+
+/* the piano roll: a dark panel */
+#roll { margin-top: 26px; background: #0d141b; color: #e4e9ec; border-radius: 14px; padding: 16px; }
+#rollhead { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 12px; }
+#rollTitle { font-size: 16px; font-weight: 700; margin-right: auto; }
+#roll select { background: #17212b; color: #e4e9ec; border-color: #2a3845; height: 32px; font-size: 14px; }
+#roll .hb { height: 32px; padding: 0 12px; border: 1px solid #2a3845; border-radius: 8px; background: #17212b; color: #e4e9ec; font: 600 13px var(--sans); cursor: pointer; }
+#roll .hb:hover { border-color: #e4e9ec; }
+#rollwrap { display: flex; max-height: 470px; overflow-y: auto; border: 1px solid #2a3845; border-radius: 6px; background: #111b24; }
+#rollkeys { width: 44px; flex: none; border-right: 1px solid #2a3845; }
+.rk { height: 15px; font: 700 9px Arial; color: #8795a0; padding-left: 4px; line-height: 15px; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,.04); background: #17212b; }
+.rk.bk { background: #111b24; } .rk.sc { color: #e4e9ec; }
+#rollgrid { position: relative; flex: 1; min-width: 0; cursor: crosshair; touch-action: none; background-image: linear-gradient(to right, rgba(255,255,255,.14) 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px); background-size: calc(100% / var(--b)) 100%, calc(100% / var(--n)) 100%; }
+.rr { height: 15px; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,.04); pointer-events: none; }
+.rr.bk { background: rgba(0,0,0,.2); } .rr.sc { box-shadow: inset 0 0 0 100px rgba(41,162,222,.07); } .rr.c { border-bottom-color: rgba(255,255,255,.22); }
+.rn { position: absolute; height: 15px; box-sizing: border-box; border: 1px solid rgba(0,0,0,.45); border-radius: 3px; pointer-events: none; }
+#playhead { position: absolute; top: 0; bottom: 0; background: rgba(255,255,255,.14); pointer-events: none; display: none; }
+#rollempty { padding: 24px; text-align: center; color: #8795a0; font-size: 15px; }
+
+/* the play bar: large and minimal, fills the bottom of the window and never moves */
+#bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; }
+#bar .pill { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px max(16px, calc((100% - 680px) / 2)) calc(12px + env(safe-area-inset-bottom)); background: var(--fg); color: var(--panel); box-shadow: 0 -6px 24px rgba(0, 0, 0, .18); }
+#bar button { flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .14); color: inherit; cursor: pointer; display: grid; place-items: center; }
+#bar button svg { width: 26px; height: 26px; }
+#bar button:hover { background: rgba(255, 255, 255, .26); }
+#bar button:focus-visible { outline: 2px solid var(--panel); outline-offset: 2px; }
+#bar .go { width: 62px; height: 62px; background: var(--panel); color: var(--fg); }
+#bar .go:hover { background: #fff; }
+#bar .go svg { width: 30px; height: 30px; }
+#bar .go .i-stop, #bar .go[aria-pressed="true"] .i-play { display: none; } #bar .go[aria-pressed="true"] .i-stop { display: block; }
+#bar .name { flex: 1; min-width: 0; padding: 0 8px; text-align: center; font: 600 13px/1.3 var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+
+/* ---------- DAW playlist ---------- */
+#playlist { margin: 26px 0 30px; padding: 16px; background: #0d141b; color: #e4e9ec; border-radius: 14px; }
+#playlistHead { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:14px; }
+#playlistHead h2 { font-size:20px; margin-right:auto; }
+#playlistHead .hint { color:#8795a0; font-size:12px; }
+#playlist .plbtn { min-height:34px; padding:0 12px; border:1px solid #2a3845; border-radius:8px; background:#17212b; color:#e4e9ec; font:600 13px var(--sans); cursor:pointer; }
+#playlist .plbtn:hover { border-color:#e4e9ec; }
+#playlistScroll { overflow-x:auto; padding-bottom:4px; }
+#playlistGrid { min-width:600px; }
+.pl-ruler, .pl-lane { display:grid; grid-template-columns:100px repeat(var(--bars), minmax(48px,1fr)); }
+.pl-ruler { margin-bottom:5px; color:#8795a0; font:700 11px var(--sans); text-align:center; }
+.pl-ruler span { padding:4px 0; }
+.pl-ruler span:first-child { text-align:left; }
+.pl-lane { min-height:48px; margin-bottom:5px; gap:3px; }
+.pl-name { display:flex; align-items:center; gap:7px; font:700 12px var(--sans); color:#cbd4da; }
+.pl-swatch { width:8px; height:24px; border-radius:4px; background:var(--track-color); flex:none; }
+.pl-cell { position:relative; min-width:0; border:1px solid #263440; border-radius:5px; background:#111b24; cursor:pointer; padding:4px; touch-action:manipulation; }
+.pl-cell:hover { border-color:#82919b; }
+.pl-cell.on { background:color-mix(in srgb, var(--track-color) 25%, #111b24); border-color:var(--track-color); }
+.pl-cell.on::after { content:""; display:block; height:100%; min-height:30px; border-radius:3px; background:var(--track-color); opacity:.88; }
+.pl-cell .cliplabel { position:absolute; z-index:1; left:6px; right:4px; top:50%; transform:translateY(-50%); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:#fff; font:700 10px var(--sans); pointer-events:none; }
+.pl-cell.on .cliplabel { text-shadow:0 1px 2px #000; }
+#playlistFoot { display:flex; justify-content:space-between; gap:8px; margin-top:10px; color:#8795a0; font-size:12px; flex-wrap:wrap; }
+#plStatus { color:#e4e9ec; }
+
+</style>
+</head>
+<body>
+<div id="site">
+  <header class="top">
+    <a class="brand" href="index.html">Rex Audio</a>
+    <nav aria-label="Main">
+      <a href="shapes.html">Shapes</a>
+      <a href="tunings.html">Tunings</a>
+      <a href="drums.html">Drums</a>
+      <a href="colours.html">Colours</a>
+      <a href="loops.html">Loops</a>
+      <a href="roll.html">Piano roll</a>
+      <a href="daw.html" aria-current="page">DAW</a>
+    </nav>
+  </header>
+
+  <section class="intro">
+    <p class="label">Notes</p>
+    <h1>DAW</h1>
+  </section>
+
+  <section class="sec">
+    <div class="topplay"><button class="go2" id="playTop" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
+    <div class="opts">
+      <label>Key <select id="key"></select></label>
+      <label>Scale <select id="scale"></select></label>
+      <label>Tempo <input id="bpm" type="range" min="50" max="180" step="1" value="75"><output id="bpmV">75</output></label>
+    </div>
+
+    <section id="playlist" aria-label="DAW playlist">
+      <div id="playlistHead">
+        <h2>Playlist</h2>
+        <span class="hint">Click an empty cell to add a clip</span>
+        <button class="plbtn" id="addBars" type="button">+ 4 bars</button>
+        <button class="plbtn" id="clearPlaylist" type="button">Clear clips</button>
+      </div>
+      <div id="playlistScroll"><div id="playlistGrid" style="--bars:8">
+        <div class="pl-ruler" id="plRuler"><span>TRACK</span></div>
+        <div id="plLanes"></div>
+      </div></div>
+      <div id="playlistFoot"><span>Arrangement overview · 4 beats per bar</span><span id="plStatus" aria-live="polite">8 bars · 0 clips</span></div>
+    </section>
+
+    <div id="tracks"></div>
+    <div class="addrow"><select id="addKind" aria-label="Kind of track"><option value="bass">Bass</option><option value="arp">Arp</option><option value="stab">Chords</option><option value="lead">Lead</option></select><button id="addTrack" type="button">+ Add a track</button></div>
+
+    <div id="roll">
+      <div id="rollhead">
+        <span id="rollTitle">Piano roll</span>
+        <select id="steps" aria-label="Steps"><option>16</option><option>32</option></select>
+        <button class="hb" id="octUp" type="button">Oct &#9650;</button><button class="hb" id="octDown" type="button">Oct &#9660;</button>
+        <button class="hb" id="clearRoll" type="button">Clear</button><button class="hb" id="diceRoll" type="button" title="A variation of this pattern">Vary</button>
+      </div>
+      <div id="rollwrap"><div id="rollkeys"></div><div id="rollgrid"><div id="playhead"></div></div></div>
+      <div id="rollempty" style="display:none">Add a track to edit its notes here.</div>
+    </div>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 Rex Audio</span>
+    <nav><a href="drums/COPYRIGHT.txt">Drum recordings: copyright notice</a><a href="loops/COPYRIGHT.txt">Instrument recordings: copyright notice</a></nav>
+  </footer>
+</div>
+<div id="bar"><div class="pill" role="group" aria-label="Player">
+  <button id="bp" type="button" aria-label="Previous variation" title="Previous variation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button class="go" id="playBtn" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button>
+  <button id="bn" type="button" aria-label="Next variation" title="Next variation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <span class="name" id="barName" aria-live="polite"></span>
+</div></div>
+<script>
+const $ = s => document.querySelector(s);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const DM = {"sampleRate":44100,"kits":[{"n":"Jungle 909","r":["909 Kick Hard","Fat Snare","909 Clap","909 Closed Hat","909 Open Hat","808 Tom","Conga","Rimshot 808"]},{"n":"DnB Tight","r":["Punch Kick","Tight Snare","Tight Clap","Tick Hat","Ride","Tom 2","Woodblock","Side Stick"]},{"n":"Flower of Life","r":["Flower Kick","Flower Snare","Flower Clap","Flower Closed Hat","Flower Open Hat","Flower Tom","Flower Bell","Flower Accent"]},{"n":"Pentagram","r":["Penta Kick","Penta Snare","Penta Clap","Penta Closed Hat","Penta Open Hat","Penta Tom","Penta Bell","Penta Accent"]},{"n":"Merkaba","r":["Merkaba Kick","Merkaba Snare","Merkaba Clap","Merkaba Closed Hat","Merkaba Open Hat","Merkaba Tom","Merkaba Bell","Merkaba Accent"]},{"n":"Vesica","r":["Vesica Kick","Vesica Snare","Vesica Clap","Vesica Closed Hat","Vesica Open Hat","Vesica Tom","Vesica Bell","Vesica Accent"]},{"n":"Fibonacci","r":["Fibo Kick","Fibo Snare","Fibo Clap","Fibo Closed Hat","Fibo Open Hat","Fibo Tom","Fibo Bell","Fibo Accent"]},{"n":"Sri Yantra","r":["Yantra Kick","Yantra Snare","Yantra Clap","Yantra Closed Hat","Yantra Open Hat","Yantra Tom","Yantra Bell","Yantra Accent"]},{"n":"Seed of Life","r":["Seed Kick","Seed Snare","Seed Clap","Seed Closed Hat","Seed Open Hat","Seed Tom","Seed Bell","Seed Accent"]},{"n":"808","r":["808 Kick","808 Snare","808 Clap","808 Closed Hat","808 Open Hat","808 Tom","808 Cowbell","Rimshot 808"]},{"n":"909","r":["909 Kick","909 Snare","909 Clap","909 Closed Hat","909 Open Hat","Tom 2","Claves","Side Stick"]},{"n":"Hard 909","r":["909 Kick Hard","Fat Snare","Tight Clap","909 Closed Hat","909 Open Hat","808 Tom","Timbale","Rimshot 808"]},{"n":"Electro","r":["Electro Kick","Electro Snare","Snap","Tick Hat","Wide Hat","Tom 2","808 Cowbell","Claves"]},{"n":"Sub & Tight","r":["Sub Kick","Tight Snare","Tight Clap","Pedal Hat","Ride","Conga","Woodblock","Side Stick"]},{"n":"Industrial","r":["Dist Kick","Industrial Snare","Crackle Clap","Chaos Hat","Clank","Industrial Hit","Zap","Noise Hit"]},{"n":"Chaos","r":["Dirty Kick","Chaos Snare","Wide Clap","Crackle Hat","Splash","Laser","Bell Kick","Buzz Snare"]},{"n":"Lo-Fi","r":["Lo-Fi Kick","Crackle Snare","Crackle Clap","Shaker","Tambourine","Conga","Maracas","Woodblock"]},{"n":"Punchy","r":["Punch Kick","Fat Snare","909 Clap","808 Closed Hat","808 Crash","808 Tom","Timbale","Rimshot 808"]},{"n":"Colour Northern lights","r":["Colour Kick Northern lights","Colour Snare Northern lights","Colour Clap Northern lights","Colour Closed hat Northern lights","Colour Open hat Northern lights","Colour Tom Northern lights","Colour Perc A Northern lights","Colour Perc B Northern lights"]},{"n":"Colour Volcanic ember","r":["Colour Kick Volcanic ember","Colour Snare Volcanic ember","Colour Clap Volcanic ember","Colour Closed hat Volcanic ember","Colour Open hat Volcanic ember","Colour Tom Volcanic ember","Colour Perc A Volcanic ember","Colour Perc B Volcanic ember"]},{"n":"Colour Glacier","r":["Colour Kick Glacier","Colour Snare Glacier","Colour Clap Glacier","Colour Closed hat Glacier","Colour Open hat Glacier","Colour Tom Glacier","Colour Perc A Glacier","Colour Perc B Glacier"]},{"n":"Colour Cherry blossom","r":["Colour Kick Cherry blossom","Colour Snare Cherry blossom","Colour Clap Cherry blossom","Colour Closed hat Cherry blossom","Colour Open hat Cherry blossom","Colour Tom Cherry blossom","Colour Perc A Cherry blossom","Colour Perc B Cherry blossom"]},{"n":"Colour Sunflower field","r":["Colour Kick Sunflower field","Colour Snare Sunflower field","Colour Clap Sunflower field","Colour Closed hat Sunflower field","Colour Open hat Sunflower field","Colour Tom Sunflower field","Colour Perc A Sunflower field","Colour Perc B Sunflower field"]},{"n":"Colour Blood orange","r":["Colour Kick Blood orange","Colour Snare Blood orange","Colour Clap Blood orange","Colour Closed hat Blood orange","Colour Open hat Blood orange","Colour Tom Blood orange","Colour Perc A Blood orange","Colour Perc B Blood orange"]},{"n":"Colour Sky cobalt","r":["Colour Kick Sky cobalt","Colour Snare Sky cobalt","Colour Clap Sky cobalt","Colour Closed hat Sky cobalt","Colour Open hat Sky cobalt","Colour Tom Sky cobalt","Colour Perc A Sky cobalt","Colour Perc B Sky cobalt"]},{"n":"Colour Emerald depths","r":["Colour Kick Emerald depths","Colour Snare Emerald depths","Colour Clap Emerald depths","Colour Closed hat Emerald depths","Colour Open hat Emerald depths","Colour Tom Emerald depths","Colour Perc A Emerald depths","Colour Perc B Emerald depths"]},{"n":"Colour Obsidian","r":["Colour Kick Obsidian","Colour Snare Obsidian","Colour Clap Obsidian","Colour Closed hat Obsidian","Colour Open hat Obsidian","Colour Tom Obsidian","Colour Perc A Obsidian","Colour Perc B Obsidian"]},{"n":"Colour Desert dusk","r":["Colour Kick Desert dusk","Colour Snare Desert dusk","Colour Clap Desert dusk","Colour Closed hat Desert dusk","Colour Open hat Desert dusk","Colour Tom Desert dusk","Colour Perc A Desert dusk","Colour Perc B Desert dusk"]},{"n":"Rainbow 1","r":["Rainbow 1 Kick","Rainbow 1 Snare","Rainbow 1 Clap","Rainbow 1 Closed hat","Rainbow 1 Open hat","Rainbow 1 Tom","Rainbow 1 Perc A","Rainbow 1 Perc B"]},{"n":"Rainbow 2","r":["Rainbow 2 Kick","Rainbow 2 Snare","Rainbow 2 Clap","Rainbow 2 Closed hat","Rainbow 2 Open hat","Rainbow 2 Tom","Rainbow 2 Perc A","Rainbow 2 Perc B"]}],"sounds":{"909 Kick Hard":{"cat":"Kick","v":1,"file":"909-kick-hard","base":false},"Fat Snare":{"cat":"Snare","v":1,"file":"fat-snare","base":false},"909 Clap":{"cat":"Clap","v":1,"file":"909-clap","base":false},"909 Closed Hat":{"cat":"Hat","v":1,"file":"909-closed-hat","base":false},"909 Open Hat":{"cat":"Hat","v":1,"file":"909-open-hat","base":false},"808 Tom":{"cat":"Perc","v":1,"file":"808-tom","base":false},"Conga":{"cat":"Perc","v":1,"file":"conga","base":false},"Rimshot 808":{"cat":"Snare","v":1,"file":"rimshot-808","base":false},"Punch Kick":{"cat":"Kick","v":1,"file":"punch-kick","base":false},"Tight Snare":{"cat":"Snare","v":1,"file":"tight-snare","base":false},"Tight Clap":{"cat":"Clap","v":1,"file":"tight-clap","base":false},"Tick Hat":{"cat":"Hat","v":1,"file":"tick-hat","base":false},"Ride":{"cat":"Cymbal","v":1,"file":"ride","base":false},"Woodblock":{"cat":"Perc","v":1,"file":"woodblock","base":false},"Side Stick":{"cat":"Snare","v":1,"file":"side-stick","base":false},"Flower Kick":{"cat":"Kick","v":5,"file":"flower-kick","base":true},"Flower Snare":{"cat":"Snare","v":5,"file":"flower-snare","base":true},"Flower Clap":{"cat":"Clap","v":5,"file":"flower-clap","base":true},"Flower Closed Hat":{"cat":"Hat","v":5,"file":"flower-closed-hat","base":true},"Flower Open Hat":{"cat":"Hat","v":5,"file":"flower-open-hat","base":true},"Flower Tom":{"cat":"Perc","v":5,"file":"flower-tom","base":true},"Flower Bell":{"cat":"Perc","v":5,"file":"flower-bell","base":true},"Flower Accent":{"cat":"Perc","v":5,"file":"flower-accent","base":true},"Penta Kick":{"cat":"Kick","v":5,"file":"penta-kick","base":true},"Penta Snare":{"cat":"Snare","v":5,"file":"penta-snare","base":true},"Penta Clap":{"cat":"Clap","v":5,"file":"penta-clap","base":true},"Penta Closed Hat":{"cat":"Hat","v":5,"file":"penta-closed-hat","base":true},"Penta Open Hat":{"cat":"Hat","v":5,"file":"penta-open-hat","base":true},"Penta Tom":{"cat":"Perc","v":5,"file":"penta-tom","base":true},"Penta Bell":{"cat":"Perc","v":5,"file":"penta-bell","base":true},"Penta Accent":{"cat":"Perc","v":5,"file":"penta-accent","base":true},"Merkaba Kick":{"cat":"Kick","v":5,"file":"merkaba-kick","base":true},"Merkaba Snare":{"cat":"Snare","v":5,"file":"merkaba-snare","base":true},"Merkaba Clap":{"cat":"Clap","v":5,"file":"merkaba-clap","base":true},"Merkaba Closed Hat":{"cat":"Hat","v":5,"file":"merkaba-closed-hat","base":true},"Merkaba Open Hat":{"cat":"Hat","v":5,"file":"merkaba-open-hat","base":true},"Merkaba Tom":{"cat":"Perc","v":5,"file":"merkaba-tom","base":true},"Merkaba Bell":{"cat":"Perc","v":5,"file":"merkaba-bell","base":true},"Merkaba Accent":{"cat":"Perc","v":5,"file":"merkaba-accent","base":true},"Vesica Kick":{"cat":"Kick","v":5,"file":"vesica-kick","base":true},"Vesica Snare":{"cat":"Snare","v":5,"file":"vesica-snare","base":true},"Vesica Clap":{"cat":"Clap","v":5,"file":"vesica-clap","base":true},"Vesica Closed Hat":{"cat":"Hat","v":5,"file":"vesica-closed-hat","base":true},"Vesica Open Hat":{"cat":"Hat","v":5,"file":"vesica-open-hat","base":true},"Vesica Tom":{"cat":"Perc","v":5,"file":"vesica-tom","base":true},"Vesica Bell":{"cat":"Perc","v":5,"file":"vesica-bell","base":true},"Vesica Accent":{"cat":"Perc","v":5,"file":"vesica-accent","base":true},"Fibo Kick":{"cat":"Kick","v":5,"file":"fibo-kick","base":true},"Fibo Snare":{"cat":"Snare","v":5,"file":"fibo-snare","base":true},"Fibo Clap":{"cat":"Clap","v":5,"file":"fibo-clap","base":true},"Fibo Closed Hat":{"cat":"Hat","v":5,"file":"fibo-closed-hat","base":true},"Fibo Open Hat":{"cat":"Hat","v":5,"file":"fibo-open-hat","base":true},"Fibo Tom":{"cat":"Perc","v":5,"file":"fibo-tom","base":true},"Fibo Bell":{"cat":"Perc","v":5,"file":"fibo-bell","base":true},"Fibo Accent":{"cat":"Perc","v":5,"file":"fibo-accent","base":true},"Yantra Kick":{"cat":"Kick","v":5,"file":"yantra-kick","base":true},"Yantra Snare":{"cat":"Snare","v":5,"file":"yantra-snare","base":true},"Yantra Clap":{"cat":"Clap","v":5,"file":"yantra-clap","base":true},"Yantra Closed Hat":{"cat":"Hat","v":5,"file":"yantra-closed-hat","base":true},"Yantra Open Hat":{"cat":"Hat","v":5,"file":"yantra-open-hat","base":true},"Yantra Tom":{"cat":"Perc","v":5,"file":"yantra-tom","base":true},"Yantra Bell":{"cat":"Perc","v":5,"file":"yantra-bell","base":true},"Yantra Accent":{"cat":"Perc","v":5,"file":"yantra-accent","base":true},"Seed Kick":{"cat":"Kick","v":5,"file":"seed-kick","base":true},"Seed Snare":{"cat":"Snare","v":5,"file":"seed-snare","base":true},"Seed Clap":{"cat":"Clap","v":5,"file":"seed-clap","base":true},"Seed Closed Hat":{"cat":"Hat","v":5,"file":"seed-closed-hat","base":true},"Seed Open Hat":{"cat":"Hat","v":5,"file":"seed-open-hat","base":true},"Seed Tom":{"cat":"Perc","v":5,"file":"seed-tom","base":true},"Seed Bell":{"cat":"Perc","v":5,"file":"seed-bell","base":true},"Seed Accent":{"cat":"Perc","v":5,"file":"seed-accent","base":true},"808 Kick":{"cat":"Kick","v":1,"file":"808-kick","base":false},"808 Snare":{"cat":"Snare","v":1,"file":"808-snare","base":false},"808 Clap":{"cat":"Clap","v":1,"file":"808-clap","base":false},"808 Closed Hat":{"cat":"Hat","v":1,"file":"808-closed-hat","base":false},"808 Open Hat":{"cat":"Hat","v":1,"file":"808-open-hat","base":false},"808 Cowbell":{"cat":"Perc","v":1,"file":"808-cowbell","base":false},"909 Kick":{"cat":"Kick","v":1,"file":"909-kick","base":false},"909 Snare":{"cat":"Snare","v":1,"file":"909-snare","base":false},"Claves":{"cat":"Perc","v":1,"file":"claves","base":false},"Timbale":{"cat":"Perc","v":1,"file":"timbale","base":false},"Electro Kick":{"cat":"Kick","v":1,"file":"electro-kick","base":false},"Electro Snare":{"cat":"Snare","v":1,"file":"electro-snare","base":false},"Snap":{"cat":"Clap","v":1,"file":"snap","base":false},"Sub Kick":{"cat":"Kick","v":1,"file":"sub-kick","base":false},"Pedal Hat":{"cat":"Hat","v":1,"file":"pedal-hat","base":false},"Industrial Snare":{"cat":"Snare","v":1,"file":"industrial-snare","base":false},"Crackle Clap":{"cat":"Clap","v":1,"file":"crackle-clap","base":false},"Chaos Hat":{"cat":"Hat","v":1,"file":"chaos-hat","base":false},"Industrial Hit":{"cat":"FX","v":1,"file":"industrial-hit","base":false},"Zap":{"cat":"FX","v":1,"file":"zap","base":false},"Noise Hit":{"cat":"FX","v":1,"file":"noise-hit","base":false},"Chaos Snare":{"cat":"Snare","v":1,"file":"chaos-snare","base":false},"Wide Clap":{"cat":"Clap","v":1,"file":"wide-clap","base":false},"Crackle Hat":{"cat":"Hat","v":1,"file":"crackle-hat","base":false},"Splash":{"cat":"Cymbal","v":1,"file":"splash","base":false},"Laser":{"cat":"FX","v":1,"file":"laser","base":false},"Bell Kick":{"cat":"Kick","v":1,"file":"bell-kick","base":false},"Lo-Fi Kick":{"cat":"Kick","v":1,"file":"lo-fi-kick","base":false},"Crackle Snare":{"cat":"Snare","v":1,"file":"crackle-snare","base":false},"Shaker":{"cat":"Hat","v":1,"file":"shaker","base":false},"Tambourine":{"cat":"Hat","v":1,"file":"tambourine","base":false},"Maracas":{"cat":"Hat","v":1,"file":"maracas","base":false},"808 Crash":{"cat":"Cymbal","v":1,"file":"808-crash","base":false},"Dist Kick":{"cat":"Kick","v":1,"file":"dist-kick","base":false},"Dirty Kick":{"cat":"Kick","v":1,"file":"dirty-kick","base":false},"Buzz Snare":{"cat":"Snare","v":1,"file":"buzz-snare","base":false},"Clank":{"cat":"FX","v":1,"file":"clank","base":false},"Tom 2":{"cat":"Perc","v":1,"file":"tom-2","base":false},"Wide Hat":{"cat":"Hat","v":1,"file":"wide-hat","base":false},"Colour Kick Northern lights":{"cat":"Kick","v":1,"file":"col-0-kick","base":false},"Colour Snare Northern lights":{"cat":"Snare","v":1,"file":"col-0-snare","base":false},"Colour Clap Northern lights":{"cat":"Clap","v":1,"file":"col-0-clap","base":false},"Colour Closed hat Northern lights":{"cat":"Hat","v":1,"file":"col-0-closed-hat","base":false},"Colour Open hat Northern lights":{"cat":"Hat","v":1,"file":"col-0-open-hat","base":false},"Colour Tom Northern lights":{"cat":"Perc","v":1,"file":"col-0-tom","base":false},"Colour Perc A Northern lights":{"cat":"Perc","v":1,"file":"col-0-perc-a","base":false},"Colour Perc B Northern lights":{"cat":"Perc","v":1,"file":"col-0-perc-b","base":false},"Colour Kick Volcanic ember":{"cat":"Kick","v":1,"file":"col-1-kick","base":false},"Colour Snare Volcanic ember":{"cat":"Snare","v":1,"file":"col-1-snare","base":false},"Colour Clap Volcanic ember":{"cat":"Clap","v":1,"file":"col-1-clap","base":false},"Colour Closed hat Volcanic ember":{"cat":"Hat","v":1,"file":"col-1-closed-hat","base":false},"Colour Open hat Volcanic ember":{"cat":"Hat","v":1,"file":"col-1-open-hat","base":false},"Colour Tom Volcanic ember":{"cat":"Perc","v":1,"file":"col-1-tom","base":false},"Colour Perc A Volcanic ember":{"cat":"Perc","v":1,"file":"col-1-perc-a","base":false},"Colour Perc B Volcanic ember":{"cat":"Perc","v":1,"file":"col-1-perc-b","base":false},"Colour Kick Glacier":{"cat":"Kick","v":1,"file":"col-2-kick","base":false},"Colour Snare Glacier":{"cat":"Snare","v":1,"file":"col-2-snare","base":false},"Colour Clap Glacier":{"cat":"Clap","v":1,"file":"col-2-clap","base":false},"Colour Closed hat Glacier":{"cat":"Hat","v":1,"file":"col-2-closed-hat","base":false},"Colour Open hat Glacier":{"cat":"Hat","v":1,"file":"col-2-open-hat","base":false},"Colour Tom Glacier":{"cat":"Perc","v":1,"file":"col-2-tom","base":false},"Colour Perc A Glacier":{"cat":"Perc","v":1,"file":"col-2-perc-a","base":false},"Colour Perc B Glacier":{"cat":"Perc","v":1,"file":"col-2-perc-b","base":false},"Colour Kick Cherry blossom":{"cat":"Kick","v":1,"file":"col-3-kick","base":false},"Colour Snare Cherry blossom":{"cat":"Snare","v":1,"file":"col-3-snare","base":false},"Colour Clap Cherry blossom":{"cat":"Clap","v":1,"file":"col-3-clap","base":false},"Colour Closed hat Cherry blossom":{"cat":"Hat","v":1,"file":"col-3-closed-hat","base":false},"Colour Open hat Cherry blossom":{"cat":"Hat","v":1,"file":"col-3-open-hat","base":false},"Colour Tom Cherry blossom":{"cat":"Perc","v":1,"file":"col-3-tom","base":false},"Colour Perc A Cherry blossom":{"cat":"Perc","v":1,"file":"col-3-perc-a","base":false},"Colour Perc B Cherry blossom":{"cat":"Perc","v":1,"file":"col-3-perc-b","base":false},"Colour Kick Sunflower field":{"cat":"Kick","v":1,"file":"col-4-kick","base":false},"Colour Snare Sunflower field":{"cat":"Snare","v":1,"file":"col-4-snare","base":false},"Colour Clap Sunflower field":{"cat":"Clap","v":1,"file":"col-4-clap","base":false},"Colour Closed hat Sunflower field":{"cat":"Hat","v":1,"file":"col-4-closed-hat","base":false},"Colour Open hat Sunflower field":{"cat":"Hat","v":1,"file":"col-4-open-hat","base":false},"Colour Tom Sunflower field":{"cat":"Perc","v":1,"file":"col-4-tom","base":false},"Colour Perc A Sunflower field":{"cat":"Perc","v":1,"file":"col-4-perc-a","base":false},"Colour Perc B Sunflower field":{"cat":"Perc","v":1,"file":"col-4-perc-b","base":false},"Colour Kick Blood orange":{"cat":"Kick","v":1,"file":"col-5-kick","base":false},"Colour Snare Blood orange":{"cat":"Snare","v":1,"file":"col-5-snare","base":false},"Colour Clap Blood orange":{"cat":"Clap","v":1,"file":"col-5-clap","base":false},"Colour Closed hat Blood orange":{"cat":"Hat","v":1,"file":"col-5-closed-hat","base":false},"Colour Open hat Blood orange":{"cat":"Hat","v":1,"file":"col-5-open-hat","base":false},"Colour Tom Blood orange":{"cat":"Perc","v":1,"file":"col-5-tom","base":false},"Colour Perc A Blood orange":{"cat":"Perc","v":1,"file":"col-5-perc-a","base":false},"Colour Perc B Blood orange":{"cat":"Perc","v":1,"file":"col-5-perc-b","base":false},"Colour Kick Sky cobalt":{"cat":"Kick","v":1,"file":"col-6-kick","base":false},"Colour Snare Sky cobalt":{"cat":"Snare","v":1,"file":"col-6-snare","base":false},"Colour Clap Sky cobalt":{"cat":"Clap","v":1,"file":"col-6-clap","base":false},"Colour Closed hat Sky cobalt":{"cat":"Hat","v":1,"file":"col-6-closed-hat","base":false},"Colour Open hat Sky cobalt":{"cat":"Hat","v":1,"file":"col-6-open-hat","base":false},"Colour Tom Sky cobalt":{"cat":"Perc","v":1,"file":"col-6-tom","base":false},"Colour Perc A Sky cobalt":{"cat":"Perc","v":1,"file":"col-6-perc-a","base":false},"Colour Perc B Sky cobalt":{"cat":"Perc","v":1,"file":"col-6-perc-b","base":false},"Colour Kick Emerald depths":{"cat":"Kick","v":1,"file":"col-7-kick","base":false},"Colour Snare Emerald depths":{"cat":"Snare","v":1,"file":"col-7-snare","base":false},"Colour Clap Emerald depths":{"cat":"Clap","v":1,"file":"col-7-clap","base":false},"Colour Closed hat Emerald depths":{"cat":"Hat","v":1,"file":"col-7-closed-hat","base":false},"Colour Open hat Emerald depths":{"cat":"Hat","v":1,"file":"col-7-open-hat","base":false},"Colour Tom Emerald depths":{"cat":"Perc","v":1,"file":"col-7-tom","base":false},"Colour Perc A Emerald depths":{"cat":"Perc","v":1,"file":"col-7-perc-a","base":false},"Colour Perc B Emerald depths":{"cat":"Perc","v":1,"file":"col-7-perc-b","base":false},"Colour Kick Obsidian":{"cat":"Kick","v":1,"file":"col-8-kick","base":false},"Colour Snare Obsidian":{"cat":"Snare","v":1,"file":"col-8-snare","base":false},"Colour Clap Obsidian":{"cat":"Clap","v":1,"file":"col-8-clap","base":false},"Colour Closed hat Obsidian":{"cat":"Hat","v":1,"file":"col-8-closed-hat","base":false},"Colour Open hat Obsidian":{"cat":"Hat","v":1,"file":"col-8-open-hat","base":false},"Colour Tom Obsidian":{"cat":"Perc","v":1,"file":"col-8-tom","base":false},"Colour Perc A Obsidian":{"cat":"Perc","v":1,"file":"col-8-perc-a","base":false},"Colour Perc B Obsidian":{"cat":"Perc","v":1,"file":"col-8-perc-b","base":false},"Colour Kick Desert dusk":{"cat":"Kick","v":1,"file":"col-9-kick","base":false},"Colour Snare Desert dusk":{"cat":"Snare","v":1,"file":"col-9-snare","base":false},"Colour Clap Desert dusk":{"cat":"Clap","v":1,"file":"col-9-clap","base":false},"Colour Closed hat Desert dusk":{"cat":"Hat","v":1,"file":"col-9-closed-hat","base":false},"Colour Open hat Desert dusk":{"cat":"Hat","v":1,"file":"col-9-open-hat","base":false},"Colour Tom Desert dusk":{"cat":"Perc","v":1,"file":"col-9-tom","base":false},"Colour Perc A Desert dusk":{"cat":"Perc","v":1,"file":"col-9-perc-a","base":false},"Colour Perc B Desert dusk":{"cat":"Perc","v":1,"file":"col-9-perc-b","base":false},"Rainbow 1 Kick":{"cat":"Kick","v":5,"file":"col-0-kick","vf":["col-0-kick","col-1-kick","col-2-kick","col-3-kick","col-4-kick"],"base":false},"Rainbow 1 Snare":{"cat":"Snare","v":5,"file":"col-0-snare","vf":["col-0-snare","col-1-snare","col-2-snare","col-3-snare","col-4-snare"],"base":false},"Rainbow 1 Clap":{"cat":"Clap","v":5,"file":"col-0-clap","vf":["col-0-clap","col-1-clap","col-2-clap","col-3-clap","col-4-clap"],"base":false},"Rainbow 1 Closed hat":{"cat":"Hat","v":5,"file":"col-0-closed-hat","vf":["col-0-closed-hat","col-1-closed-hat","col-2-closed-hat","col-3-closed-hat","col-4-closed-hat"],"base":false},"Rainbow 1 Open hat":{"cat":"Hat","v":5,"file":"col-0-open-hat","vf":["col-0-open-hat","col-1-open-hat","col-2-open-hat","col-3-open-hat","col-4-open-hat"],"base":false},"Rainbow 1 Tom":{"cat":"Perc","v":5,"file":"col-0-tom","vf":["col-0-tom","col-1-tom","col-2-tom","col-3-tom","col-4-tom"],"base":false},"Rainbow 1 Perc A":{"cat":"Perc","v":5,"file":"col-0-perc-a","vf":["col-0-perc-a","col-1-perc-a","col-2-perc-a","col-3-perc-a","col-4-perc-a"],"base":false},"Rainbow 1 Perc B":{"cat":"Perc","v":5,"file":"col-0-perc-b","vf":["col-0-perc-b","col-1-perc-b","col-2-perc-b","col-3-perc-b","col-4-perc-b"],"base":false},"Rainbow 2 Kick":{"cat":"Kick","v":5,"file":"col-5-kick","vf":["col-5-kick","col-6-kick","col-7-kick","col-8-kick","col-9-kick"],"base":false},"Rainbow 2 Snare":{"cat":"Snare","v":5,"file":"col-5-snare","vf":["col-5-snare","col-6-snare","col-7-snare","col-8-snare","col-9-snare"],"base":false},"Rainbow 2 Clap":{"cat":"Clap","v":5,"file":"col-5-clap","vf":["col-5-clap","col-6-clap","col-7-clap","col-8-clap","col-9-clap"],"base":false},"Rainbow 2 Closed hat":{"cat":"Hat","v":5,"file":"col-5-closed-hat","vf":["col-5-closed-hat","col-6-closed-hat","col-7-closed-hat","col-8-closed-hat","col-9-closed-hat"],"base":false},"Rainbow 2 Open hat":{"cat":"Hat","v":5,"file":"col-5-open-hat","vf":["col-5-open-hat","col-6-open-hat","col-7-open-hat","col-8-open-hat","col-9-open-hat"],"base":false},"Rainbow 2 Tom":{"cat":"Perc","v":5,"file":"col-5-tom","vf":["col-5-tom","col-6-tom","col-7-tom","col-8-tom","col-9-tom"],"base":false},"Rainbow 2 Perc A":{"cat":"Perc","v":5,"file":"col-5-perc-a","vf":["col-5-perc-a","col-6-perc-a","col-7-perc-a","col-8-perc-a","col-9-perc-a"],"base":false},"Rainbow 2 Perc B":{"cat":"Perc","v":5,"file":"col-5-perc-b","vf":["col-5-perc-b","col-6-perc-b","col-7-perc-b","col-8-perc-b","col-9-perc-b"],"base":false}}}, LV = {"bass-sub":{"n":"Sub","type":"bass","file":"bass-sub","notes":[[26,0,1.976],[29,2.076,1.974],[32,4.15,1.98],[35,6.23,1.977],[38,8.307,1.979],[41,10.386,1.976],[44,12.462,1.978],[47,14.54,1.978],[50,16.618,1.98]]},"bass-808":{"n":"808","type":"bass","file":"bass-808","notes":[[26,0,1.673],[29,1.773,1.673],[32,3.546,1.67],[35,5.316,1.674],[38,7.09,1.676],[41,8.865,1.675],[44,10.64,1.672],[47,12.412,1.676],[50,14.188,1.674]]},"bass-reese":{"n":"Reese","type":"bass","file":"bass-reese","notes":[[26,0,2.074],[29,2.174,2.061],[32,4.336,2.074],[35,6.51,2.074],[38,8.685,2.068],[41,10.852,2.062],[44,13.014,2.038],[47,15.152,2.072],[50,17.324,2.07]]},"bass-wobble":{"n":"Wobble","type":"bass","file":"bass-wobble","notes":[[26,0,1.977],[29,2.077,1.958],[32,4.135,1.977],[35,6.212,1.969],[38,8.281,1.981],[41,10.362,1.976],[44,12.437,1.972],[47,14.509,1.977],[50,16.585,1.976]]},"bass-amber":{"n":"Amber","type":"bass","file":"bass-amber","notes":[[26,0,2.158],[29,2.258,2.182],[32,4.54,2.189],[35,6.829,2.193],[38,9.121,2.197],[41,11.419,2.177],[44,13.696,2.174],[47,15.97,2.186],[50,18.256,2.18]]},"bass-ember":{"n":"Ember","type":"bass","file":"bass-ember","notes":[[26,0,1.83],[29,1.93,1.823],[32,3.853,1.825],[35,5.778,1.826],[38,7.705,1.815],[41,9.619,1.813],[44,11.533,1.808],[47,13.441,1.805],[50,15.346,1.8]]},"bass-bloom":{"n":"Bloom","type":"bass","file":"bass-bloom","notes":[[26,0,1.973],[29,2.073,1.955],[32,4.127,1.979],[35,6.206,1.97],[38,8.275,1.977],[41,10.352,1.971],[44,12.423,1.969],[47,14.492,1.977],[50,16.57,1.97]]},"bass-slate":{"n":"Slate","type":"bass","file":"bass-slate","notes":[[26,0,1.919],[29,2.019,1.908],[32,4.026,1.915],[35,6.042,1.906],[38,8.047,1.906],[41,10.053,1.919],[44,12.072,1.912],[47,14.083,1.918],[50,16.102,1.916]]},"arp-pluck":{"n":"Pluck","type":"arp","file":"arp-pluck","notes":[[48,0,0.58],[52,0.68,0.58],[56,1.36,0.58],[60,2.041,0.581],[64,2.722,0.581],[68,3.402,0.581],[72,4.083,0.581],[76,4.764,0.581],[80,5.445,0.581],[84,6.126,0.582],[88,6.808,0.581]]},"arp-bell":{"n":"Bell","type":"arp","file":"arp-bell","notes":[[48,0,0.717],[52,0.817,0.718],[56,1.635,0.719],[60,2.453,0.717],[64,3.27,0.717],[68,4.087,0.717],[72,4.904,0.716],[76,5.72,0.717],[80,6.537,0.717],[84,7.354,0.717],[88,8.171,0.717]]},"arp-kalimba":{"n":"Kalimba","type":"arp","file":"arp-kalimba","notes":[[48,0,0.363],[52,0.463,0.365],[56,0.927,0.363],[60,1.391,0.365],[64,1.856,0.365],[68,2.321,0.365],[72,2.786,0.365],[76,3.25,0.365],[80,3.715,0.365],[84,4.18,0.365],[88,4.645,0.365]]},"arp-seed":{"n":"Seed","type":"arp","file":"arp-seed","notes":[[48,0,0.669],[52,0.769,0.667],[56,1.536,0.664],[60,2.3,0.66],[64,3.059,0.655],[68,3.814,0.649],[72,4.563,0.642],[76,5.305,0.635],[80,6.04,0.628],[84,6.768,0.624],[88,7.492,0.623]]},"arp-spark":{"n":"Spark","type":"arp","file":"arp-spark","notes":[[48,0,0.687],[52,0.787,0.689],[56,1.575,0.686],[60,2.361,0.686],[64,3.147,0.685],[68,3.932,0.683],[72,4.715,0.678],[76,5.493,0.676],[80,6.269,0.673],[84,7.042,0.665],[88,7.807,0.654]]},"arp-silver":{"n":"Silver","type":"arp","file":"arp-silver","notes":[[48,0,0.289],[52,0.389,0.292],[56,0.782,0.292],[60,1.174,0.292],[64,1.566,0.292],[68,1.958,0.292],[72,2.351,0.292],[76,2.743,0.29],[80,3.133,0.291],[84,3.525,0.292],[88,3.917,0.293]]},"arp-tide":{"n":"Tide","type":"arp","file":"arp-tide","notes":[[48,0,0.538],[52,0.638,0.54],[56,1.278,0.539],[60,1.917,0.543],[64,2.56,0.541],[68,3.201,0.542],[72,3.843,0.541],[76,4.484,0.541],[80,5.125,0.541],[84,5.766,0.54],[88,6.406,0.538]]},"chords-organ":{"n":"Organ","type":"chords","file":"chords-organ","notes":[[40,0,0.832],[44,0.932,0.831],[48,1.862,0.832],[52,2.794,0.828],[56,3.722,0.83],[60,4.652,0.831],[64,5.583,0.83],[68,6.514,0.832],[72,7.445,0.831],[76,8.376,0.832]]},"chords-rave":{"n":"Rave","type":"chords","file":"chords-rave","notes":[[40,0,0.633],[44,0.733,0.627],[48,1.46,0.654],[52,2.214,0.663],[56,2.978,0.64],[60,3.718,0.619],[64,4.437,0.64],[68,5.177,0.663],[72,5.94,0.627],[76,6.666,0.664]]},"chords-yantra":{"n":"Yantra","type":"chords","file":"chords-yantra","notes":[[40,0,0.623],[44,0.723,0.631],[48,1.454,0.64],[52,2.194,0.663],[56,2.957,0.642],[60,3.699,0.614],[64,4.413,0.653],[68,5.167,0.618],[72,5.884,0.657],[76,6.641,0.643]]},"chords-deep":{"n":"Deep","type":"chords","file":"chords-deep","notes":[[40,0,0.527],[44,0.627,0.555],[48,1.283,0.507],[52,1.889,0.511],[56,2.5,0.553],[60,3.153,0.559],[64,3.812,0.58],[68,4.492,0.57],[72,5.162,0.544],[76,5.807,0.569]]},"chords-crisp":{"n":"Crisp","type":"chords","file":"chords-crisp","notes":[[40,0,0.246],[44,0.346,0.248],[48,0.694,0.244],[52,1.038,0.244],[56,1.381,0.246],[60,1.728,0.247],[64,2.075,0.247],[68,2.421,0.247],[72,2.768,0.247],[76,3.115,0.246]]},"leads-geo":{"n":"Geo","type":"leads","file":"leads-geo","notes":[[55,0,1.868],[59,1.968,1.859],[63,3.928,1.868],[67,5.896,1.868],[71,7.864,1.868],[75,9.832,1.867],[79,11.799,1.868],[83,13.767,1.868],[87,15.735,1.868],[91,17.703,1.839]]},"leads-fib":{"n":"Fibonacci","type":"leads","file":"leads-fib","notes":[[55,0,1.861],[59,1.961,1.865],[63,3.925,1.844],[67,5.869,1.839],[71,7.808,1.856],[75,9.764,1.864],[79,11.728,1.863],[83,13.691,1.859],[87,15.65,1.854],[91,17.604,1.85]]},"leads-glass":{"n":"Glass","type":"leads","file":"leads-glass","notes":[[55,0,1.777],[59,1.877,1.772],[63,3.75,1.778],[67,5.628,1.776],[71,7.504,1.778],[75,9.382,1.778],[79,11.261,1.776],[83,13.136,1.778],[87,15.015,1.778],[91,16.893,1.778]]},"leads-wide":{"n":"Wide","type":"leads","file":"leads-wide","notes":[[55,0,1.766],[59,1.866,1.768],[63,3.735,1.768],[67,5.603,1.767],[71,7.469,1.767],[75,9.336,1.768],[79,11.204,1.768],[83,13.073,1.768],[87,14.941,1.767],[91,16.809,1.767]]},"leads-s-crystal-lead":{"n":"Crystal Lead","type":"leads","file":"leads-s-crystal-lead","notes":[[72,0.0,1.192],[80,1.292,2.392]]},"bass-s-flower-growl":{"n":"Flower Growl","type":"bass","file":"bass-s-flower-growl","notes":[[41,0.0,1.592]]},"arp-s-harp-pluck":{"n":"Harp Pluck","type":"arp","file":"arp-s-harp-pluck","notes":[[56,0.0,2.192]]},"bass-s-hexagram-wub":{"n":"Hexagram Wub","type":"bass","file":"bass-s-hexagram-wub","notes":[[31,0.0,2.392],[34,2.492,1.488],[38,4.08,1.492]]},"bass-s-ripple-growl":{"n":"Ripple Growl","type":"bass","file":"bass-s-ripple-growl","notes":[[31,0.0,2.092],[36,2.192,0.988],[39,3.28,0.992],[41,4.372,0.992]]},"arp-s-ripple-pluck":{"n":"Ripple Pluck","type":"arp","file":"arp-s-ripple-pluck","notes":[[65,0.0,1.342]]},"bass-s-twist-wub":{"n":"Twist Wub","type":"bass","file":"bass-s-twist-wub","notes":[[34,0.0,0.742],[36,0.842,0.738],[39,1.68,0.742],[41,2.522,1.842],[48,4.464,0.742]]},"bass-s-vesica-wub":{"n":"Vesica Wub","type":"bass","file":"bass-s-vesica-wub","notes":[[34,0.0,2.392],[36,2.492,1.488],[39,4.08,1.492]]},"bass-s-2-step-bass":{"n":"Two-step Bass","type":"bass","file":"bass-s-2-step-bass","notes":[[34,0.0,0.742],[36,0.842,1.642],[39,2.584,0.742],[41,3.426,0.742]]},"bass-s-acid-lotus":{"n":"Acid Lotus","type":"bass","file":"bass-s-acid-lotus","notes":[[41,0.0,1.292]]},"leads-s-angel-lead":{"n":"Angel Lead","type":"leads","file":"leads-s-angel-lead","notes":[[76,0.0,1.688],[79,1.788,1.092],[81,2.98,2.392],[83,5.472,2.192]]},"leads-s-blade-lead":{"n":"Blade Lead","type":"leads","file":"leads-s-blade-lead","notes":[[67,0.0,1.288],[72,1.388,2.392],[75,3.88,1.792]]},"arp-s-formant-chop":{"n":"Chop","type":"arp","file":"arp-s-formant-chop","notes":[[60,0.0,1.467]]},"bass-s-hex-acid":{"n":"Hex Acid","type":"bass","file":"bass-s-hex-acid","notes":[[43,0.0,1.292]]},"arp-s-mandala-squelch-lead":{"n":"Mandala Squelch Lead","type":"arp","file":"arp-s-mandala-squelch-lead","notes":[[60,0.0,1.292]]},"leads-s-merkaba-lead":{"n":"Merkaba Lead","type":"leads","file":"leads-s-merkaba-lead","notes":[[74,0.0,2.392],[79,2.492,1.592]]},"bass-s-pentagram-acid":{"n":"Pentagram Acid","type":"bass","file":"bass-s-pentagram-acid","notes":[[36,0.0,1.292]]},"bass-s-reese-garage":{"n":"Reese Garage","type":"bass","file":"bass-s-reese-garage","notes":[[34,0.0,2.392],[36,2.492,1.488],[39,4.08,1.492]]},"leads-s-seed-lead":{"n":"Seed Lead","type":"leads","file":"leads-s-seed-lead","notes":[[74,0.0,1.192],[79,1.292,2.392],[81,3.784,1.142]]},"leads-s-temple-bell":{"n":"Temple Bell","type":"leads","file":"leads-s-temple-bell","notes":[[67,0.0,2.392],[72,2.492,1.588],[76,4.18,0.992],[79,5.272,1.392],[84,6.764,0.992]]},"arp-s-flower-harp":{"n":"Flower Harp","type":"arp","file":"arp-s-flower-harp","notes":[[56,0.0,2.192]]},"arp-s-flower-music-box":{"n":"Flower Music Box","type":"arp","file":"arp-s-flower-music-box","notes":[[79,0.0,2.392]]},"leads-s-golden-trumpet":{"n":"Golden Trumpet","type":"leads","file":"leads-s-golden-trumpet","notes":[[72,0.0,1.292],[76,1.392,2.392]]},"bass-s-hex-trombone":{"n":"Hex Trombone","type":"bass","file":"bass-s-hex-trombone","notes":[[46,0.0,0.988],[50,1.088,2.392],[53,3.58,0.992],[58,4.672,1.192]]},"arp-s-hexa-harp":{"n":"Hexa Harp","type":"arp","file":"arp-s-hexa-harp","notes":[[64,0.0,0.852],[66,0.952,2.392]]},"arp-s-hexa-xylophone":{"n":"Hexa Xylophone","type":"arp","file":"arp-s-hexa-xylophone","notes":[[62,0.0,1.272]]},"bass-s-hexagon-cello":{"n":"Hexagon Cello","type":"bass","file":"bass-s-hexagon-cello","notes":[[43,0.0,2.392],[46,2.492,0.742],[48,3.334,0.742],[50,4.176,1.092]]},"chords-s-lotus-horn":{"n":"Lotus Horn","type":"chords","file":"chords-s-lotus-horn","notes":[[55,0.0,2.392],[59,2.492,0.892],[60,3.484,0.892],[62,4.476,1.292]]},"arp-s-lotus-vibraphone":{"n":"Lotus Vibraphone","type":"arp","file":"arp-s-lotus-vibraphone","notes":[[74,0.0,2.392]]},"arp-s-nylon-mandala":{"n":"Nylon Mandala","type":"arp","file":"arp-s-nylon-mandala","notes":[[56,0.0,1.712]]},"arp-s-pentagram-pizz":{"n":"Pentagram Pizz","type":"arp","file":"arp-s-pentagram-pizz","notes":[[76,0.0,1.292]]},"arp-s-rose-steel-drum":{"n":"Rose Steel Drum","type":"arp","file":"arp-s-rose-steel-drum","notes":[[62,0.0,1.642],[71,1.742,0.742]]},"leads-s-rose-violin":{"n":"Rose Violin","type":"leads","file":"leads-s-rose-violin","notes":[[67,0.0,1.138],[74,1.238,2.392],[79,3.73,1.692]]},"leads-s-seed-flute":{"n":"Seed Flute","type":"leads","file":"leads-s-seed-flute","notes":[[79,0.0,2.392],[84,2.492,1.392]]},"arp-s-seed-glockenspiel":{"n":"Seed Glockenspiel","type":"arp","file":"arp-s-seed-glockenspiel","notes":[[84,0.0,2.392],[91,2.492,0.792],[96,3.384,0.792]]},"arp-s-steel-lotus":{"n":"Steel Lotus","type":"arp","file":"arp-s-steel-lotus","notes":[[64,0.0,2.392],[69,2.492,1.442],[71,4.034,1.442]]},"leads-s-twin-clarinet":{"n":"Twin Clarinet","type":"leads","file":"leads-s-twin-clarinet","notes":[[60,0.0,2.392],[72,2.492,0.942]]},"leads-s-vesica-oboe":{"n":"Vesica Oboe","type":"leads","file":"leads-s-vesica-oboe","notes":[[69,0.0,2.392],[74,2.492,1.092]]},"chords-s-vesica-rhodes":{"n":"Vesica Rhodes","type":"chords","file":"chords-s-vesica-rhodes","notes":[[64,0.0,2.392],[74,2.492,1.492]]}};
+const KITS = DM.kits, SOUNDS = DM.sounds;
+  const euc = (k, n = 16, rot = 0) => { const a = new Array(n).fill("."); for (let j = 0; j < k; j++) a[(Math.floor(j * n / k) + rot) % n] = j === 0 ? "X" : "x"; return a.join(""); };
+  const at = (...ix) => { const a = new Array(16).fill("."); ix.forEach((k, j) => { a[k] = j === 0 ? "X" : "x"; }); return a.join(""); };
+  const PATTERNS = {
+    // 'X' accent, 'x' hit, 'o' ghost note. Two-bar patterns are 32 steps. The classic breaks are approximate transcriptions: edit the steps or roll the dice.
+    "Amen Break": { bpm: 165, swing: 0, len: 32, p: ["X.x.......x.....X.x.......xx....", "....X..o.o..X..o....X..o.o..X.oo", "", "x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.", "..............x.................", "", "", "X..............................."] },
+    "Amen (B bars)": { bpm: 165, swing: 0, len: 32, p: ["X.x.......x.....X.x.....x.x.....", "....X..o.o..X..o....X.o.X..oX.XX", "", "x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.", "......x.......x.......x.......x.", "", "", ""] },
+    "Think Break": { bpm: 160, swing: 0, len: 32, p: ["X.....x..x......X.....x...x.x...", "....X.o.o...X..o....X.o.o...X..o", "", "x.xxx.x.x.xxx.x.x.xxx.x.x.xxx.x.", "..............x.................", "", "", ""] },
+    "Two-Step DnB": { bpm: 172, swing: 0, len: 16, p: ["X.........x.....", "....X.......X...", "", "x.x.x.x.x.x.x.x.", "......x.......x.", "", "", "X..............."] },
+    "Jungle Roller": { bpm: 168, swing: 0, len: 32, p: ["X.x.....x.x.....X.x.....x.......", "....X..o.o..X...o...X..o.o..X.oo", "", "xoxoxoxoxoxoxoxoxoxoxoxoxoxoxoxo", "..............x.................", "..........x.....................", "", "X..............................."] },
+    "Ragga Jungle": { bpm: 160, swing: 0, len: 16, p: ["X..x..x...x.....", "....X.....o.X.o.", "", "x.x.x.x.x.x.x.xo", "......x.........", "............o.x.", "", "X..............."] },
+    "Neurofunk": { bpm: 174, swing: 0, len: 16, p: ["X.....x...x.....", "....X.......X...", "", "xoxoxoxoxoxoxoxo", "....o.......o...", "", "..o.......o.....", ""] },
+    "Liquid DnB": { bpm: 172, swing: .08, len: 16, p: ["X.........x.x...", "....X.......X..o", "", "x.x.x.x.x.x.x.xo", "", "", "..o.....o.......", ""] },
+    "Halftime DnB": { bpm: 172, swing: 0, len: 16, p: ["X.......x.x.....", "........X......o", "........x.......", "x.x.x.x.x.x.x.x.", "......x.......x.", "", "", ""] },
+    "Breakcore": { bpm: 190, swing: 0, len: 16, p: ["X.x.X.x.X.x.X.x.", "..o.X.o.o.X.o.XX", "", "xxxxxxxxxxxxxxxx", "", "..x...x...x...x.", "", "X..............."] },
+    "Fibonacci 3·5·8": { bpm: 112, swing: 0, p: [euc(3), euc(5, 16, 4), euc(5, 16, 7), euc(8), euc(2, 16, 6), euc(3, 16, 5), euc(5, 16, 9), euc(1, 16, 15)] },
+    "Golden Spiral": { bpm: 100, swing: .06, p: [at(0, 1, 4, 7, 12), at(4, 12), at(12, 3), euc(8, 16, 1), at(6, 14), at(2, 8, 13), at(5, 10), at(15)] },
+    "Pentagram 5": { bpm: 118, swing: 0, p: [euc(5), euc(5, 16, 2), euc(5, 16, 3), euc(10, 16, 1), euc(3, 16, 7), euc(5, 16, 1), euc(5, 16, 4), euc(1, 16, 10)] },
+    "Hexagram 6": { bpm: 124, swing: .04, p: [euc(6), euc(6, 16, 3), euc(3, 16, 1), euc(12), euc(2, 16, 5), euc(4, 16, 2), euc(6, 16, 8), euc(1, 16, 13)] },
+    "Seed 7": { bpm: 108, swing: .1, p: [euc(7), euc(4, 16, 3), euc(7, 16, 2), euc(11, 16, 1), euc(3, 16, 9), euc(7, 16, 5), euc(5, 16, 11), euc(2, 16, 14)] },
+    "Vesica 2:3": { bpm: 96, swing: .12, p: [at(0, 6, 10), at(4, 12), at(12), euc(6, 16, 1), at(14), at(3, 7, 9), at(2, 11), at(8)] },
+    "Yantra 9": { bpm: 128, swing: 0, p: [euc(9), euc(3, 16, 4), euc(3, 16, 5), euc(16), euc(4, 16, 2), euc(9, 16, 3), euc(3, 16, 11), euc(1, 16, 15)] },
+    "Boom Bap": { bpm: 90, swing: .22, p: ["X.....x..xx.....", "....X.......X...", "....x.......x...", "x.x.x.x.x.x.x.x.", "..............x.", "", "", "......x........."] },
+    "Four on the Floor": { bpm: 124, swing: 0, p: ["X...X...X...X...", "", "....X.......X...", "x.xxx.xxx.xxx.xx", "..x...x...x...x.", "", "", ""] },
+    "Breakbeat": { bpm: 132, swing: .1, p: ["X.......x.x.....", "....X..x.x..X...", "", "x.x.x.x.x.x.x.x.", "......x.......x.", "", "", ""] },
+    "Electro": { bpm: 120, swing: 0, p: ["X..x..x...X..x..", "....X.......X...", "....x.......x...", "x.x.x.x.x.x.x.x.", "", "", "..x.......x.....", "...x.....x.....x"] },
+    "Trap": { bpm: 70, swing: 0, p: ["X.....x...X.....", "........X.......", "........x.......", "x.x.x.xxx.x.xxxx", "..............x.", "", "", ""] },
+    "Funk": { bpm: 104, swing: .15, p: ["X..x..x...x.x...", "....X..x.x..X..x", "", "xxxxxxxxxxxxxxxx", "..x.......x.....", "", "", "...x......x....."] },
+    "Techno": { bpm: 132, swing: 0, p: ["X...X...X...X...", "", "....x.......x...", "..x...x...x...x.", "x...x...x...x...", "", "...x.......x....", ""] },
+    "Drum & Bass": { bpm: 172, swing: 0, p: ["X.........x.....", "....X.......X...", "", "x.x.x.x.x.x.x.x.", "", "", "", "..x.....x......."] },
+    "Halftime": { bpm: 76, swing: .12, p: ["X.......X.x.....", "........X.......", "........x.......", "x.x.x.x.x.x.x.x.", "......x.......x.", "", "", "....x.......x..."] },
+    "Dub": { bpm: 78, swing: .08, p: ["X.......X.......", "........X...x...", "", "..x...x...x...x.", "", "x...............", "......x.........", "x.....x......x.."] },
+    "Empty": { bpm: 96, swing: 0, p: ["", "", "", "", "", "", "", ""] }
+  };
+
+const PAT = (() => {
+  const arpGen = (ord, ch, rate, len = 16) => { const o = []; for (let i = 0, k = 0; i < len; i += rate, k++) o.push([i, rate, ord(k, ch)]); return o; };
+  const CH = [0, 2, 4, 7], up = (k, c) => c[k % c.length], down = (k, c) => c[c.length - 1 - (k % c.length)];
+  const ud = (k, c) => { const p = c.concat(c.slice(1, -1).reverse()); return p[k % p.length]; };
+  const euc = (k, n = 16, rot = 0) => Array.from({ length: k }, (_, j) => (Math.floor(j * n / k) + rot) % n);
+  const hits = (steps, len, degs) => steps.map((s, j) => [s, len, degs[j % degs.length]]);
+  const rr = seed => { let a = seed; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+  const walk = (seed, len, pool, rate) => { const r = rr(seed), o = []; let p = 0; for (let i = 0; i < len; i += rate) { if (r() < .22) continue; p = Math.max(0, Math.min(pool.length - 1, p + Math.round((r() - .5) * 4))); o.push([i, rate * (r() < .3 ? 2 : 1), pool[p]]); } return o; };
+  const chords = (roots, every, tri = [0, 2, 4]) => roots.flatMap((r, j) => tri.map(t => [j * every, every, r + t]));
+  const PAT = {
+    bass: [
+      { n: "Root Pulse", notes: [[0, 2, 0], [4, 2, 0], [8, 2, 0], [12, 2, 0]] },
+      { n: "Offbeat Sub", notes: [[2, 2, 0], [6, 2, 0], [10, 2, 0], [14, 2, 0]] },
+      { n: "DnB Two-Step", notes: [[0, 3, 0], [3, 1, 0], [10, 3, 0], [13, 2, 2]] },
+      { n: "Reese Roll", notes: [[0, 6, 0], [6, 2, -2], [8, 6, -1], [14, 2, -3]] },
+      { n: "Jungle Bounce", notes: [[0, 2, 0], [3, 1, 0], [6, 2, 3], [10, 2, 0], [12, 1, -2], [14, 2, 2]] },
+      { n: "Fibonacci", notes: [[0, 1, 0], [1, 1, 0], [2, 2, 2], [4, 3, 0], [7, 5, 3], [12, 4, -2]] },
+      { n: "Euclid 5", notes: hits(euc(5), 2, [0, 0, 3, 2, -2]) },
+      { n: "Halftime Drone", len: 32, notes: [[0, 16, 0], [16, 12, -2], [28, 4, -3]] },
+      { n: "Walking", notes: hits([0, 2, 4, 6, 8, 10, 12, 14], 2, [0, 2, 3, 4, 3, 2, 1, 0]) }
+    ],
+    arp: [
+      { n: "Up 16ths", notes: arpGen(up, CH, 1) }, { n: "Down 8ths", notes: arpGen(down, CH, 2) }, { n: "Up-Down", notes: arpGen(ud, CH, 1) },
+      { n: "Skip", notes: arpGen((k, c) => c[[0, 2, 1, 3][k % 4]], CH, 1) }, { n: "Octave Bounce", notes: arpGen(k => [0, 7, 4, 7][k % 4], CH, 1) },
+      { n: "Gate 3-3-2", notes: hits([0, 3, 6, 8, 11, 14], 2, CH) }, { n: "Fibonacci Arp", notes: hits([0, 1, 2, 4, 7, 12], 1, [0, 2, 4, 7, 4, 2]) },
+      { n: "Euclid 7", notes: hits(euc(7), 1, [0, 4, 2, 7, 4, 9, 7]) }, { n: "Wide 32", len: 32, notes: arpGen((k, c) => c[k % 4] + (k % 8 > 3 ? 7 : 0), CH, 1, 32) }
+    ],
+    pad: [
+      { n: "i VI III VII", notes: chords([0, 5, 2, 6], 8) }, { n: "i iv v i", notes: chords([0, 3, 4, 0], 8) }, { n: "i VII VI VII", notes: chords([0, 6, 5, 6], 8) },
+      { n: "Drone", notes: [[0, 32, 0], [0, 32, 4], [0, 32, 7], [0, 32, 9]] }, { n: "Stepped", notes: chords([0, 0, 3, 3, 5, 5, 4, 4], 4, [0, 4]) },
+      { n: "Open 5ths", notes: chords([0, 5, 3, 4], 8, [0, 4, 7]) }
+    ],
+    lead: [
+      { n: "Rising", len: 32, notes: [[0, 2, 4], [2, 2, 5], [4, 4, 7], [8, 2, 5], [10, 2, 4], [12, 4, 2], [16, 2, 4], [18, 2, 5], [20, 4, 9], [24, 4, 7], [28, 4, 4]] },
+      { n: "Pentatonic Walk", len: 32, notes: walk(11, 32, [0, 2, 3, 4, 6, 7, 9, 10], 2) }, { n: "Call & Response", len: 32, notes: [[0, 1, 7], [2, 1, 7], [3, 2, 9], [6, 2, 7], [16, 1, 4], [18, 1, 4], [19, 2, 5], [22, 4, 2]] },
+      { n: "Sparse", len: 32, notes: [[0, 4, 4], [8, 2, 5], [12, 6, 7], [24, 8, 2]] }, { n: "Runs", len: 32, notes: walk(29, 32, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 1) },
+      { n: "Golden Steps", len: 32, notes: hits([0, 3, 5, 8, 13, 21], 2, [4, 7, 5, 9, 7, 4]) }
+    ],
+    stab: [
+      { n: "Offbeat", notes: [2, 6, 10, 14].flatMap(s => [0, 2, 4].map(d => [s, 1, d])) }, { n: "Syncopated", notes: [0, 3, 6, 10, 13].flatMap(s => [0, 2, 4].map(d => [s, 1, d])) },
+      { n: "Rave Hits", notes: [0, 6, 12].flatMap(s => [0, 2, 4, 7].map(d => [s, 2, d])) }, { n: "Jungle", notes: [3, 7, 11, 14].flatMap(s => [0, 3, 5].map(d => [s, 1, d])) },
+      { n: "Two Chords", notes: [[0, 2, 0], [0, 2, 2], [0, 2, 4], [8, 2, 3], [8, 2, 5], [8, 2, 7]] }
+    ],
+    perc: [
+      { n: "Shaker 16ths", notes: Array.from({ length: 16 }, (_, i) => [i, 1, 0, i % 2 ? .45 : .8]) }, { n: "Offbeat", notes: [2, 6, 10, 14].map(s => [s, 1, 0]) },
+      { n: "8ths", notes: Array.from({ length: 8 }, (_, i) => [i * 2, 1, 0, i % 2 ? .55 : .85]) }, { n: "Tom Fill", notes: [[0, 1, 0], [8, 1, 0], [12, 1, 5], [13, 1, 3], [14, 1, 0], [15, 1, -2]] },
+      { n: "Euclid 7", notes: euc(7).map(s => [s, 1, 0]) }, { n: "Sparse", notes: [[3, 1, 0], [7, 1, 0, .6], [11, 1, 0], [15, 1, 0, .6]] }
+    ]
+  };
+
+  return PAT;
+})();
+
+// ---------- the sounds: recordings of single notes, and the drum recordings ----------
+const ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
+const SND = {}, LB = {}, pending = new Map();
+const loadBuf = url => {
+  if (!pending.has(url)) pending.set(url, fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(a => new Promise((ok, no) => ctx.decodeAudioData(a, ok, no))).catch(() => null));
+  return pending.get(url);
+};
+async function ensureSound(name) {
+  if (SND[name]) return SND[name];
+  const s = SOUNDS[name], m = new Map();
+  if (s.vf) {
+    const vs = await Promise.all(s.vf.map(f => loadBuf("drums/" + f + "-0.flac")));
+    if (vs[0]) m.set(-1, vs[0]); vs.forEach((x, v) => { if (x) m.set(v, x); });
+  } else if (s.v > 1) {
+    const [b, ...vs] = await Promise.all([loadBuf("drums/" + s.file + "-b.flac")].concat([0, 1, 2, 3, 4].map(v => loadBuf("drums/" + s.file + "-" + v + ".flac"))));
+    if (b) m.set(-1, b); vs.forEach((x, v) => { if (x) m.set(v, x); });
+  } else { const b = await loadBuf("drums/" + s.file + "-0.flac"); if (b) m.set(-1, b); }
+  return (SND[name] = m);
+}
+const ensureLive = async id => LB[id] || (LB[id] = await loadBuf("loops/live/" + id + ".mp3"));
+const setName = t => { $("#barName").textContent = t; };
+
+// ---------- the instruments for each kind of track ----------
+const LIVE = {};
+Object.values(LV).sort((a, b) => (b.file.includes("-s-") ? 1 : 0) - (a.file.includes("-s-") ? 1 : 0)).forEach(i => { (LIVE[i.type] = LIVE[i.type] || []).push(i); });
+const KIND = {   // base: where degree 0 sits above the key's note; lo: lowest note shown in the roll
+  bass: { label: "Bass", type: "bass", mono: true, len: 16, base: 36, lo: 29, level: .9, col: "#e08a3c" },
+  arp: { label: "Arp", type: "arp", mono: true, len: 16, base: 60, lo: 53, level: .8, col: "#d6b53a" },
+  lead: { label: "Lead", type: "leads", mono: true, len: 32, base: 60, lo: 53, level: .7, col: "#e0628e" },
+  stab: { label: "Chords", type: "chords", mono: false, len: 16, base: 52, lo: 45, level: .7, col: "#3fbf8a" }
+};
+const SCALES = { "Minor": [0, 2, 3, 5, 7, 8, 10], "Major": [0, 2, 4, 5, 7, 9, 11], "Dorian": [0, 2, 3, 5, 7, 9, 10], "Phrygian": [0, 1, 3, 5, 7, 8, 10], "Harmonic minor": [0, 2, 3, 5, 7, 8, 11], "Minor pentatonic": [0, 3, 5, 7, 10] };
+const NN = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"], BLACK = [1, 3, 6, 8, 10];
+const KS = { root: 9, scale: "Minor" };   // A minor, the key of the default pads on the Loops page
+const degSemi = d => { const sc = SCALES[KS.scale], n = sc.length, o = Math.floor(d / n), i = ((d % n) + n) % n; return sc[i] + 12 * o; };
+const toMidi = (kd, d) => kd.base + KS.root + degSemi(d);
+const inScale = m => SCALES[KS.scale].includes((((m - KS.root) % 12) + 12) % 12);
+const scaleList = () => { const o = []; for (let m = 12; m < 110; m++) if (inScale(m)) o.push(m); return o; };
+const nearestIdx = (L, m) => { let b = 0; for (let i = 1; i < L.length; i++) if (Math.abs(L[i] - m) < Math.abs(L[b] - m)) b = i; return b; };
+const shiftScale = (m, st) => { const L = scaleList(); return L[clamp(nearestIdx(L, m) + st, 0, L.length - 1)]; };
+const mulberry = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+// ---------- timing: 16 steps to a bar; the drums use 32 ticks to a bar ----------
+const TPB = 32, MAXT = 6;
+const S = { playing: false, tick: 0, next: 0, t0: 0, timer: 0, bpm: 75, name: "", n: 0 };
+const barS = () => 240 / S.bpm, TICK = () => barS() / TPB;   // a bar is four beats
+let tracks = [], uid = 0, sel = null;
+const drum = { id: 0, level: .9, mute: false, solo: false, v: 0, start: 0 };
+
+const mnode = ctx.createGain(); mnode.gain.value = .7;
+const sh = ctx.createWaveShaper(), cv = new Float32Array(4097);
+for (let i = 0; i < cv.length; i++) { const x = 2 * i / 4096 - 1, a = Math.abs(x), T = .7; cv[i] = (x < 0 ? -1 : 1) * (a <= T ? a : T + (1 - T) * Math.tanh((a - T) / (1 - T))); }   // soft limiter
+sh.curve = cv; sh.oversample = "2x"; mnode.connect(sh); sh.connect(ctx.destination);
+
+// ---------- drums: the loops of the Loops page ----------
+const KIT = n => KITS.findIndex(k => k.n === n);
+const DR = [];
+[["Break", [["Amen Break", "Jungle 909", 2], ["Halftime DnB", "Sub & Tight", 2], ["Boom Bap", "808", 1], ["Neurofunk", "Industrial", 2], ["Four on the Floor", "909", 1]]],
+ ["Colour break", [["Amen Break", "Rainbow 1", 2], ["Breakcore", "Rainbow 2", 2], ["Neurofunk", "Colour Obsidian", 2], ["Halftime DnB", "Colour Glacier", 2], ["Liquid DnB", "Colour Northern lights", 2], ["Boom Bap", "Colour Sunflower field", 1], ["Four on the Floor", "Colour Volcanic ember", 1]]],
+ ["Hats", [["Jungle Roller", "Jungle 909", 2, [3, 4]], ["Liquid DnB", "Sub & Tight", 2, [3]], ["Funk", "808", 1, [3, 4]], ["Breakcore", "Industrial", 2, [3, 4]], ["Techno", "909", 1, [3, 4]]]],
+ ["Percussion", [["Seed 7", "Jungle 909", 2, [5, 6, 7]], ["Dub", "Sub & Tight", 2, [5, 6, 7]], ["Golden Spiral", "808", 1, [5, 6, 7]], ["Electro", "Industrial", 2, [5, 6, 7]], ["Electro", "909", 1, [6, 7]]]]]
+  .forEach(([kind, list]) => list.forEach(([pat, kit, speed, rows]) => DR.push({ n: kind + " · " + pat + " · " + kit, pat, kit: KIT(kit), speed, rows })));
+const LEVELS = [.95, .85, .75, .6, .6, .75, .55, .6], NV = 5;
+drum.out = ctx.createGain(); drum.out.connect(mnode); drum.act = new Set();
+drum.rg = LEVELS.map(v => { const g = ctx.createGain(); g.gain.value = v; g.connect(drum.out); return g; });
+const stepsOf = {};
+const patSteps = n => stepsOf[n] || (stepsOf[n] = PATTERNS[n].p.map(s => Array.from({ length: PATTERNS[n].len || 16 }, (_, k) => s[k] === "X" ? 2 : s[k] === "x" ? 1 : s[k] === "o" ? 3 : 0)));
+function pickVi(sound, row, bar) {
+  if (!SOUNDS[sound] || SOUNDS[sound].v < 2) return -1;
+  const ph = ((bar / 4) + row * .19) % 1; return Math.round((1 - Math.abs(2 * ph - 1)) * (NV - 1));
+}
+function bufOf(sound, vi) {
+  const m = SND[sound]; if (!m) return null; let b = m.get(vi);
+  for (let d = 1; d < NV && !b; d++) b = m.get(vi + d) || m.get(vi - d);
+  return b || m.get(-1) || null;
+}
+function drumHit(row, sound, t, vel, bar) {
+  const b = bufOf(sound, pickVi(sound, row, bar)); if (!b) return;
+  if (row === 3 || row === 4) drum.act.forEach(h => { if (h.row === 3 || h.row === 4) { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, .004); try { h.s.stop(t + .04); } catch (e) {} } });
+  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; g.gain.value = vel; s.connect(g); g.connect(drum.rg[row]);
+  const h = { s, g, row }; drum.act.add(h); s.onended = () => drum.act.delete(h); s.start(t);
+}
+function drumStep(tick, t) {
+  const d = DR[drum.v], pat = PATTERNS[d.pat], len = pat.len || 16, steps = patSteps(d.pat), sound = KITS[d.kit].r, bar = Math.floor(tick / TPB);
+  let step;
+  if (d.speed === 2) step = len === 16 ? tick % 16 : tick % 32;
+  else { if (tick % 2) return; step = (tick / 2) % len; }
+  const stepDur = TICK() * (d.speed === 2 ? 1 : 2), tt = t + (step % 2 ? (pat.swing || 0) * stepDur * .66 : 0);
+  steps.forEach((row, r) => { if (d.rows && !d.rows.includes(r)) return; const v = row[step]; if (v) drumHit(r, sound[r], tt, v === 2 ? 1 : v === 3 ? .3 * (.85 + Math.random() * .3) : .62 * (.92 + Math.random() * .12), bar); });
+}
+const loadDrums = () => Promise.all(KITS[DR[drum.v].kit].r.map(ensureSound));
+
+// ---------- the tracks ----------
+const clone = ns => ns.map(n => Object.assign({}, n));
+const reindex = tr => { tr.by = new Map(); tr.notes.forEach(n => { (tr.by.get(n.s) || tr.by.set(n.s, []).get(n.s)).push(n); }); };
+function loadPat(tr, idx) {
+  const p = PAT[tr.kind][idx], kd = tr.kd; tr.pat = idx; tr.len = p.len || kd.len;
+  tr.notes = p.notes.map(([s, l, d, v]) => ({ s, l, m: toMidi(kd, d), v: v || .8 })); tr.base = clone(tr.notes); reindex(tr);
+}
+function addTrack(kind, patIdx, instIdx) {
+  if (tracks.length >= MAXT) return null;
+  const kd = KIND[kind], list = LIVE[kd.type], same = tracks.filter(t => t.kind === kind).length;
+  const tr = { id: ++uid, kind, kd, inst: instIdx === undefined ? same % list.length : instIdx, pat: 0, notes: [], base: [], by: new Map(), len: kd.len, level: kd.level, mute: false, solo: false, lo: kd.lo, lastLen: 1, act: new Set(), prev: null };
+  tr.item = list[tr.inst]; tr.out = ctx.createGain(); tr.out.connect(mnode);
+  loadPat(tr, patIdx === undefined ? same % PAT[kind].length : patIdx); tracks.push(tr); sel = tr; ensureLive(tr.item.file); updateMix(); renderTracks(); drawRoll(); return tr;
+}
+function removeTrack(tr) { fadeTrack(tr, ctx.currentTime, .03); tr.out.disconnect(); tracks.splice(tracks.indexOf(tr), 1); if (sel === tr) sel = tracks[0] || null; updateMix(); renderTracks(); drawRoll(); }
+function fadeTrack(tr, t, tc) { tr.act.forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, tc); try { h.s.stop(t + tc * 8); } catch (e) {} }); }
+function setInst(tr, i) {
+  const list = LIVE[tr.kd.type]; tr.inst = (i + list.length) % list.length; tr.item = list[tr.inst]; ensureLive(tr.item.file).then(() => { if (!S.playing) audition(tr); });
+}
+const spanOf = it => it.w || (() => { const ms = it.notes.map(n => n[0]), lo = Math.min(...ms), hi = Math.max(...ms), c = (lo + hi) / 2; return (it.w = [Math.min(lo - 5, c - 6), Math.max(hi + 6, c + 5.5)]); })();
+function playNote(tr, n, t) {   // the nearest recorded note, moved to the pitch asked for
+  const it = tr.item, b = LB[it.file]; if (!b) return;
+  let m = n.m; const [lo, hi] = spanOf(it); while (m < lo - 7) m += 12; while (m > hi + 7) m -= 12;
+  let nn = it.notes[0]; it.notes.forEach(x => { if (Math.abs(x[0] - m) < Math.abs(nn[0] - m)) nn = x; });
+  if (tr.kd.mono) tr.act.forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, .012); try { h.s.stop(t + .1); } catch (e) {} });
+  const s = ctx.createBufferSource(), g = ctx.createGain(), r = Math.pow(2, (m - nn[0]) / 12), gate = n.l * TICK() * 2 * .95;
+  s.buffer = b; s.playbackRate.value = r; s.connect(g); g.connect(tr.out);
+  g.gain.setValueAtTime(n.v, t); g.gain.setTargetAtTime(0, t + gate, .05);
+  const h = { s, g }; tr.act.add(h); s.onended = () => tr.act.delete(h); s.start(t, nn[1], nn[2]); s.stop(t + Math.min(gate + .4, nn[2] / r));
+}
+async function audition(tr) {
+  await ctx.resume(); await ensureLive(tr.item.file); const m = tr.notes.length ? tr.notes[0].m : toMidi(tr.kd, 0);
+  playNote(tr, { m, l: 2, v: .8 }, ctx.currentTime + .02);
+}
+function updateMix() {
+  const any = drum.solo || tracks.some(t => t.solo), now = ctx.currentTime;
+  drum.out.gain.setTargetAtTime(drum.mute || (any && !drum.solo) ? 0 : drum.level, now, .01);
+  tracks.forEach(t => t.out.gain.setTargetAtTime(t.mute || (any && !t.solo) ? 0 : t.level, now, .01));
+}
+function mutateTrack(tr, a, rng = Math.random) {
+  let ns = clone(tr.base), L = tr.len;
+  ns = ns.filter(() => rng() >= a * (tr.kd.mono ? .22 : .12));
+  ns.forEach(n => { if (rng() < a * .4) n.m = shiftScale(n.m, (rng() < .5 ? -1 : 1) * (1 + Math.floor(rng() * 2))); if (rng() < a * .2) n.s = clamp(n.s + (rng() < .5 ? -1 : 1), 0, L - 1); });
+  const adds = Math.round(a * (tr.kd.mono ? 5 : 2) * rng()), pool = tr.base.length ? tr.base : [{ m: toMidi(tr.kd, 0) }];
+  for (let k = 0; k < adds; k++) ns.push({ s: Math.floor(rng() * L), l: 1 + Math.floor(rng() * 2), m: shiftScale(pool[Math.floor(rng() * pool.length)].m, Math.floor((rng() - .5) * 5)), v: .75 });
+  if (tr.kd.mono) { ns.sort((x, y) => x.s - y.s); for (let i = 0; i < ns.length - 1; i++) if (ns[i + 1].s < ns[i].s + ns[i].l) ns[i].l = Math.max(1, ns[i + 1].s - ns[i].s); }
+  tr.notes = ns; reindex(tr);
+}
+
+// ---------- transport ----------
+function schedule() {
+  while (S.next < ctx.currentTime + .45) {
+    const t = S.next, tick = S.tick;
+    drumStep(tick, t);
+    if (tick % 2 === 0) tracks.forEach(tr => { const l = tr.by.get((tick / 2) % tr.len); if (l) l.forEach(n => playNote(tr, n, t)); });
+    S.tick++; S.next += TICK();
+  }
+}
+async function play() {
+  if (S.playing) return;
+  await ctx.resume(); setName("Loading..."); await Promise.all(tracks.map(t => ensureLive(t.item.file)).concat(loadDrums())); setName(S.name);
+  S.tick = 0; S.t0 = ctx.currentTime + .08; S.next = S.t0; S.playing = true; setPlaying(true);
+  S.timer = setInterval(schedule, 25); schedule(); requestAnimationFrame(anim);
+}
+function stop() {
+  S.playing = false; clearInterval(S.timer); setPlaying(false); fadeDrums(); tracks.forEach(t => fadeTrack(t, ctx.currentTime, .03)); ph.style.display = "none";
+}
+function fadeDrums() { drum.act.forEach(h => { h.g.gain.cancelScheduledValues(ctx.currentTime); h.g.gain.setTargetAtTime(0, ctx.currentTime, .03); try { h.s.stop(ctx.currentTime + .3); } catch (e) {} }); }
+function setPlaying(on) { [$("#playBtn"), $("#playTop")].forEach(b => { b.setAttribute("aria-pressed", on); b.setAttribute("aria-label", on ? "Stop" : "Play"); }); }
+[$("#playBtn"), $("#playTop")].forEach(b => { b.onclick = () => S.playing ? stop() : play(); });
+
+
+// ---------- playlist arrangement ----------
+const plTracks = [
+  {name:"Drums", color:"#2f86b8", label:"Drums"},
+  {name:"Bass", color:"#e0a13a", label:"Bass"},
+  {name:"Arp", color:"#55ad88", label:"Arp"},
+  {name:"Chords", color:"#b17bd0", label:"Chords"},
+  {name:"Lead", color:"#d76c65", label:"Lead"}
+];
+let plBars = 8;
+const plClips = new Set();
+const plKey = (track, bar) => track + ":" + bar;
+function renderPlaylist() {
+  const grid = $("#playlistGrid"), ruler = $("#plRuler"), lanes = $("#plLanes");
+  grid.style.setProperty("--bars", plBars);
+  ruler.innerHTML = "<span>TRACK</span>" + Array.from({length:plBars}, (_,i)=>"<span>"+(i+1)+"</span>").join("");
+  lanes.innerHTML = "";
+  plTracks.forEach((tr, ti) => {
+    const lane = document.createElement("div"); lane.className = "pl-lane"; lane.style.setProperty("--track-color", tr.color);
+    const name = document.createElement("div"); name.className = "pl-name";
+    const sw = document.createElement("i"); sw.className = "pl-swatch"; name.append(sw, document.createTextNode(tr.name)); lane.appendChild(name);
+    for (let bar=0; bar<plBars; bar++) {
+      const cell = document.createElement("button"); cell.type="button"; cell.className="pl-cell"; cell.setAttribute("aria-label", tr.name + ", bar " + (bar+1));
+      const active = plClips.has(plKey(ti,bar));
+      if (active) { cell.classList.add("on"); const label=document.createElement("span"); label.className="cliplabel"; label.textContent=tr.label; cell.appendChild(label); cell.setAttribute("aria-pressed","true"); }
+      else cell.setAttribute("aria-pressed","false");
+      cell.onclick = () => { const key=plKey(ti,bar); if(plClips.has(key)) plClips.delete(key); else plClips.add(key); renderPlaylist(); };
+      lane.appendChild(cell);
+    }
+    lanes.appendChild(lane);
+  });
+  $("#plStatus").textContent = plBars + " bars · " + plClips.size + " clips";
+}
+$("#addBars").addEventListener("click", () => { plBars=Math.min(32,plBars+4); renderPlaylist(); $("#addBars").disabled=plBars>=32; });
+$("#clearPlaylist").addEventListener("click", () => { plClips.clear(); renderPlaylist(); });
+renderPlaylist();
+
+// ---------- the track strips ----------
+const strips = $("#tracks");
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; };
+const btn = (txt, cls, fn, title) => { const b = el("button", cls, txt); b.type = "button"; b.onclick = fn; if (title) { b.title = title; b.setAttribute("aria-label", title); } return b; };
+const ARROW = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + (d < 0 ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7") + '" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const arrowBtn = (d, fn, title) => { const b = btn("", "arr", fn, title); b.innerHTML = ARROW(d); return b; };
+function level(o, get, set) {
+  const r = el("input", "lv"); r.type = "range"; r.min = 0; r.max = 1; r.step = .01; r.value = get(); r.setAttribute("aria-label", "Level"); r.oninput = () => { set(+r.value); updateMix(); }; o.appendChild(r);
+}
+function msBtns(o, tgt) {
+  const m = btn("M", "ms" + (tgt.mute ? " on" : ""), () => { tgt.mute = !tgt.mute; m.classList.toggle("on", tgt.mute); updateMix(); }, "Mute");
+  const s = btn("S", "ms" + (tgt.solo ? " on" : ""), () => { tgt.solo = !tgt.solo; s.classList.toggle("on", tgt.solo); updateMix(); }, "Solo"); o.append(m, s);
+}
+function renderTracks() {
+  strips.innerHTML = "";
+  const d = el("div", "strip drums"); d.append(el("i", "dot"), el("b", "kind", "Drums"));
+  const dn = el("span", "nm", DR[drum.v].n); d.append(arrowBtn(-1, () => setDrum(drum.v - 1), "Previous drum loop"), dn, arrowBtn(1, () => setDrum(drum.v + 1), "Next drum loop"));
+  const ctl = el("span", "ctl"); level(ctl, () => drum.level, v => { drum.level = v; }); msBtns(ctl, drum); d.append(ctl); d.style.setProperty("--c", "#2f86b8"); strips.appendChild(d);
+  tracks.forEach(tr => {
+    const s = el("div", "strip" + (tr === sel ? " sel" : "")); s.style.setProperty("--c", tr.kd.col);
+    s.addEventListener("click", e => { if (e.target.closest("button,input")) return; sel = tr; renderTracks(); drawRoll(); });
+    const inst = el("span", "nm", tr.item.n), pats = PAT[tr.kind], pn = el("span", "pn", pats[tr.pat].n);
+    const row1 = el("div", "r1"), row2 = el("div", "r2");
+    row1.append(el("i", "dot"), el("b", "kind", tr.kd.label), arrowBtn(-1, () => { setInst(tr, tr.inst - 1); inst.textContent = tr.item.n; sel = tr; drawRoll(); }, "Previous sound"), inst, arrowBtn(1, () => { setInst(tr, tr.inst + 1); inst.textContent = tr.item.n; sel = tr; drawRoll(); }, "Next sound"));
+    row2.append(arrowBtn(-1, () => go(tr, -1), "Previous pattern"), pn, arrowBtn(1, () => go(tr, 1), "Next pattern"));
+    const ctl = el("span", "ctl"); level(ctl, () => tr.level, v => { tr.level = v; }); msBtns(ctl, tr);
+    ctl.append(btn("↻", "ms", () => { mutateTrack(tr, .5); sel = tr; drawRoll(); }, "A variation of this pattern"), btn("×", "ms", () => removeTrack(tr), "Remove this track")); row2.append(ctl);
+    s.append(row1, row2); strips.appendChild(s);
+  });
+  $("#addTrack").disabled = tracks.length >= MAXT;
+}
+function go(tr, dd) { const pats = PAT[tr.kind]; loadPat(tr, (tr.pat + dd + pats.length) % pats.length); sel = tr; renderTracks(); drawRoll(); }
+function setDrum(v) { drum.v = (v + DR.length) % DR.length; renderTracks(); loadDrums(); }
+$("#addTrack").onclick = () => { addTrack($("#addKind").value); if (sel) audition(sel); };
+
+// ---------- the piano roll ----------
+const RN = 30, RH = 15, rkeys = $("#rollkeys"), rgrid = $("#rollgrid"), ph = $("#playhead");
+function drawRoll() {
+  const have = !!sel; $("#rollwrap").style.display = have ? "" : "none"; $("#rollempty").style.display = have ? "none" : "";
+  $("#rollTitle").textContent = have ? sel.kd.label + " · " + sel.item.n : "Piano roll"; if (!have) return;
+  $("#steps").value = sel.len; const hi = sel.lo + RN - 1;
+  rkeys.innerHTML = ""; rgrid.querySelectorAll(".rr,.rn").forEach(e => e.remove());
+  for (let m = hi; m >= sel.lo; m--) {
+    const pc = m % 12, sc = inScale(m), k = el("div", "rk" + (BLACK.includes(pc) ? " bk" : "") + (sc ? " sc" : ""), pc === 0 || pc === KS.root ? NN[pc] + (Math.floor(m / 12) - 1) : ""); rkeys.appendChild(k);
+    rgrid.insertBefore(el("div", "rr" + (BLACK.includes(pc) ? " bk" : "") + (sc ? " sc" : "") + (pc === 0 ? " c" : "")), ph);
+  }
+  rgrid.style.height = RN * RH + "px"; rgrid.style.setProperty("--n", sel.len); rgrid.style.setProperty("--b", sel.len / 4);
+  sel.notes.forEach(n => {
+    if (n.m < sel.lo || n.m > hi) return; const d = el("div", "rn");
+    d.style.cssText = "left:" + n.s / sel.len * 100 + "%;width:" + n.l / sel.len * 100 + "%;top:" + (hi - n.m) * RH + "px;opacity:" + (.45 + n.v * .55) + ";background:" + sel.kd.col; rgrid.insertBefore(d, ph);
+  });
+}
+let dragN = null;
+rgrid.addEventListener("pointerdown", e => {
+  if (!sel) return; e.preventDefault(); rgrid.setPointerCapture(e.pointerId);
+  const z = +document.getElementById("site").style.zoom || 1, r = rgrid.getBoundingClientRect(), x = (e.clientX - r.left) / z, y = (e.clientY - r.top) / z, w = r.width / z;
+  const s = clamp(Math.floor(x / w * sel.len), 0, sel.len - 1), m = sel.lo + RN - 1 - Math.floor(y / RH);
+  const hit = sel.notes.findIndex(n => n.m === m && s >= n.s && s < n.s + n.l);
+  if (hit >= 0) { sel.notes.splice(hit, 1); commit(); return; }
+  const n = { s, l: Math.min(sel.lastLen || 1, sel.len - s), m, v: .8 }; sel.notes.push(n); dragN = { n, s }; commit(true);
+});
+rgrid.addEventListener("pointermove", e => {
+  if (!dragN) return; const z = +document.getElementById("site").style.zoom || 1, r = rgrid.getBoundingClientRect(), s = Math.floor((e.clientX - r.left) / z / (r.width / z) * sel.len), l = Math.max(1, Math.min(sel.len - dragN.s, s - dragN.s + 1));
+  if (l !== dragN.n.l) { dragN.n.l = l; drawRoll(); }
+});
+rgrid.addEventListener("pointerup", () => { if (!dragN) return; sel.lastLen = dragN.n.l; dragN = null; commit(); });
+function commit(aud) { sel.base = clone(sel.notes); reindex(sel); drawRoll(); const n = sel.notes[sel.notes.length - 1]; if (aud && n) ensureLive(sel.item.file).then(() => { ctx.resume(); playNote(sel, { m: n.m, l: 2, v: .8 }, ctx.currentTime + .02); }); }
+function anim() {
+  if (!S.playing) return; const tk = (ctx.currentTime - S.t0) / TICK();
+  if (sel && tk >= 0) { const stp = (tk / 2) % sel.len; ph.style.display = ""; ph.style.left = (Math.floor(stp) / sel.len * 100) + "%"; ph.style.width = 100 / sel.len + "%"; }
+  requestAnimationFrame(anim);
+}
+$("#steps").onchange = e => { if (sel) { sel.len = +e.target.value; sel.notes = sel.notes.filter(n => n.s < sel.len); sel.base = clone(sel.notes); reindex(sel); drawRoll(); } };
+$("#octUp").onclick = () => { if (sel) { sel.lo += 12; drawRoll(); } }; $("#octDown").onclick = () => { if (sel) { sel.lo -= 12; drawRoll(); } };
+$("#clearRoll").onclick = () => { if (sel) { sel.notes = []; sel.base = []; reindex(sel); drawRoll(); } };
+$("#diceRoll").onclick = () => { if (sel) { mutateTrack(sel, .5); drawRoll(); } };
+
+// ---------- key, scale, tempo ----------
+$("#key").innerHTML = NN.map((n, i) => '<option value="' + i + '">' + n + "</option>").join(""); $("#key").value = KS.root;
+$("#scale").innerHTML = Object.keys(SCALES).map(n => "<option>" + n + "</option>").join(""); $("#scale").value = KS.scale;
+function setKey(root, scale) {
+  const oldRoot = KS.root, oldScale = KS.scale; KS.root = root; KS.scale = scale;
+  let d = ((root - oldRoot) % 12 + 12) % 12; if (d > 6) d -= 12;
+  tracks.forEach(tr => { [tr.notes, tr.base].forEach(ns => ns.forEach(n => { n.m += d; })); if (scale !== oldScale) { const L = scaleList(); [tr.notes, tr.base].forEach(ns => ns.forEach(n => { n.m = L[nearestIdx(L, n.m)]; })); } });
+  drawRoll(); label();
+}
+$("#key").onchange = e => setKey(+e.target.value, KS.scale); $("#scale").onchange = e => setKey(KS.root, e.target.value);
+const bpm = $("#bpm"); bpm.oninput = () => { S.bpm = +bpm.value; $("#bpmV").textContent = S.bpm; };
+function label() { S.name = NN[KS.root] + " " + KS.scale.toLowerCase() + (S.n ? " · variation " + S.n : ""); if (!/^Loading/.test($("#barName").textContent)) setName(S.name); }
+
+// ---------- the bar arrows: a new variation of everything, in the same key ----------
+function variation(n) {
+  S.n = n; const rng = mulberry(Math.imul(n + 7, 2654435761) ^ 0x9e3779b9), pick = k => Math.floor(rng() * k);
+  drum.v = pick(DR.length);
+  tracks.forEach(tr => { loadPat(tr, pick(PAT[tr.kind].length)); tr.inst = pick(LIVE[tr.kd.type].length); tr.item = LIVE[tr.kd.type][tr.inst]; mutateTrack(tr, .3, rng); });
+  renderTracks(); drawRoll(); label(); loadDrums(); tracks.forEach(t => ensureLive(t.item.file));
+}
+$("#bp").onclick = () => variation(S.n - 1); $("#bn").onclick = () => variation(S.n + 1);
+addEventListener("keydown", e => {
+  if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.code === "Space" && e.target.tagName !== "BUTTON") { e.preventDefault(); S.playing ? stop() : play(); }
+});
+[$("#bar"), $(".topplay")].forEach(e => e.addEventListener("click", ev => { const b = ev.target.closest("button"); if (b && ev.detail) b.blur(); }));
+const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); };
+fitSite(); addEventListener("resize", fitSite);
+
+// ---------- the start: drums, a bass, an arp and chords in A minor ----------
+drum.v = 0;
+addTrack("bass", 7 % PAT.bass.length, 0); addTrack("arp", 0, 0); addTrack("stab", 0, 0); sel = tracks[1];
+renderTracks(); drawRoll(); label(); loadDrums(); tracks.forEach(t => ensureLive(t.item.file));
+</script>
+</body>
+</html>
