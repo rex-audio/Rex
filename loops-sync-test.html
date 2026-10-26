@@ -117,7 +117,7 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
   </section>
 
   <section class="sec">
-<div id="renderMode"><label><input id="barRender" type="checkbox" checked> Bar render mode</label><small id="renderStatus">Renders a 4-bar cycle before playback</small></div>
+<div id="renderMode"><label><input id="barRender" type="checkbox" checked> Bar render mode</label><small id="renderStatus">Edits apply at the next bar</small></div>
         <div class="topplay"><button class="go2" id="playTop" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
     <div id="loops"></div>
     <p id="empty" hidden>Add a loop</p>
@@ -409,7 +409,7 @@ async function renderCycle(startBar = 0) {
           const g=off.createGain();g.gain.value=v===2?1:v===3?.3:.62;g.connect(rowGains.get(l)[r]);source(b,g,tt);
         });
       } else if(isLive(l)){
-        const [root,ct]=PROGS[bar][0] ? PROGS[bar] : PROGS[0][0], iv=INT[ct], ext=iv.concat(iv.map(x=>x+12)), pat=PAT[l.type][l.pi%PAT[l.type].length][1];
+        const [root,ct]=PROGS[hi][bar], iv=INT[ct], ext=iv.concat(iv.map(x=>x+12)), pat=PAT[l.type][l.pi%PAT[l.type].length][1];
         for(let k=0;k<3;k++){
           const u=(globalTick%TPB)*3+k,tt=t+k*TICK/3;
           pat.forEach(e=>{
