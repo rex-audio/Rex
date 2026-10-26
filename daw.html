@@ -382,7 +382,7 @@ function drumHit(row, sound, t, vel, bar) {
   const h = { s, g, row }; drum.act.add(h); s.onended = () => drum.act.delete(h); s.start(t);
 }
 const drumPattern=Array.from({length:8},()=>new Set());let drumKitIndex=0,drumStepCount=16;
-function drumStep(tick,t){if(tick%2)return;const step=(tick/2)%drumStepCount,bar=Math.floor(tick/TPB),sounds=KITS[drumKitIndex].r;drumPattern.forEach((row,r)=>{if(row.has(step))drumHit(r,sounds[r],t,.8,bar);});}
+function drumStep(tick,t){if(drumStepCount===16&&tick%2)return;const step=drumStepCount===32?tick%32:(tick/2)%16,bar=Math.floor(tick/TPB),sounds=KITS[drumKitIndex].r;drumPattern.forEach((row,r)=>{if(row.has(step))drumHit(r,sounds[r],t,.8,bar);});}
 const loadDrums = () => Promise.all(KITS[drumKitIndex].r.map(ensureSound));
 
 // ---------- the tracks ----------
@@ -456,8 +456,8 @@ function stop() {
   S.playing = false; clearInterval(S.timer); setPlaying(false); fadeDrums(); tracks.forEach(t => fadeTrack(t, ctx.currentTime, .03)); ph.style.display = "none";
 }
 function fadeDrums() { drum.act.forEach(h => { h.g.gain.cancelScheduledValues(ctx.currentTime); h.g.gain.setTargetAtTime(0, ctx.currentTime, .03); try { h.s.stop(ctx.currentTime + .3); } catch (e) {} }); }
-function setPlaying(on) { [$("#playBtn"), $("#playTop")].forEach(b => { b.setAttribute("aria-pressed", on); b.setAttribute("aria-label", on ? "Stop" : "Play"); }); }
-[$("#playBtn"), $("#playTop")].forEach(b => { b.onclick = () => S.playing ? stop() : play(); });
+function setPlaying(on) { const b=$("#playBtn"); b.setAttribute("aria-pressed",on); b.setAttribute("aria-label",on?"Stop":"Play"); }
+$("#playBtn").onclick=()=>S.playing?stop():play();
 
 
 // ---------- playlist arrangement ----------
@@ -560,7 +560,7 @@ function setKey(root, scale) {
   drawRoll(); label();
 }
 
-const bpm = $("#bpm"); bpm.oninput = () => { S.bpm = +bpm.value; $("#bpmV").textContent = S.bpm; };
+
 function label() { S.name = NN[KS.root] + " " + KS.scale.toLowerCase() + (S.n ? " · variation " + S.n : ""); if (!/^Loading/.test($("#barName").textContent)) setName(S.name); }
 
 // ---------- the bar arrows: a new variation of everything, in the same key ----------
@@ -575,7 +575,7 @@ addEventListener("keydown", e => {
   if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.code === "Space" && e.target.tagName !== "BUTTON") { e.preventDefault(); S.playing ? stop() : play(); }
 });
-[$("#bar"), $(".topplay")].forEach(e => e.addEventListener("click", ev => { const b = ev.target.closest("button"); if (b && ev.detail) b.blur(); }));
+$("#bar").addEventListener("click",ev=>{const b=ev.target.closest("button");if(b&&ev.detail)b.blur();});
 const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); };
 fitSite(); addEventListener("resize", fitSite);
 
