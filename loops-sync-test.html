@@ -253,15 +253,11 @@ function drumStep(l, tick, tib, t) {
 }
 function fade(l, t, tc = .15) { l.act.forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, tc); try { h.s.stop(t + tc * 8); } catch (e) {} }); }
 function clipStart(l, t, phaseSeconds = 0) {
-  // Every recorded instrument loop represents exactly four bars on the 75 BPM grid.
-  // Match the source duration to that cycle so tiny differences in file length cannot
-  // accumulate as drift. Known pad lead-in is trimmed, then the remaining audio fills
-  // the full cycle rather than ending early.
+  // Keep recorded clips at their original playback rate: changing playbackRate to
+  // force every file to exactly four bars also changes its pitch.
+  // Preserve the known pad lead-in and seek by musical phase without resampling.
   const b = CLIPS[clipUrl(l)]; if (!b) return;
   const lead = (l.type === "pads" && l.item.lead) || 0;
-  const cycle = BAR_S * 4;
-  const usableDuration = Math.max(.1, b.duration - lead);
-  const rate = usableDuration / cycle;
   l.act.forEach(h => {
     if (!h.clip) return;
     h.g.gain.cancelScheduledValues(t);
@@ -271,11 +267,10 @@ function clipStart(l, t, phaseSeconds = 0) {
   });
   const s = ctx.createBufferSource(), g = ctx.createGain();
   s.buffer = b;
-  s.playbackRate.setValueAtTime(rate, t);
   s.connect(g); g.connect(l.out);
   const h = { s, g, clip: true };
   l.act.add(h); s.onended = () => l.act.delete(h);
-  const sourceOffset = Math.min(b.duration - .001, lead + phaseSeconds * rate);
+  const sourceOffset = Math.min(b.duration - .001, lead + phaseSeconds);
   s.start(t, sourceOffset);
 }
 
