@@ -427,7 +427,8 @@ async function startRendered() {
   if(!b || !layers.length)return false;
   if(renderedSource){try{renderedSource.stop();}catch(e){} renderedSource=null;}
   renderedSource=ctx.createBufferSource(); renderedSource.buffer=b; renderedSource.loop=true;
-  renderedSource.connect(mnode);
+  // The offline buffer already includes master gain and limiting.
+  renderedSource.connect(ctx.destination);
   S.t0=ctx.currentTime+.12; S.playing=true; setPlaying(true);
   renderedSource.start(S.t0);
   requestAnimationFrame(anim);
