@@ -447,8 +447,17 @@ function mutateTrack(tr, a, rng = Math.random) {
 function schedule() {
   while (S.next < ctx.currentTime + .45) {
     const t = S.next, tick = S.tick;
-    drumStep(tick, t);
-    if (tick % 2 === 0) tracks.forEach(tr => { const l = tr.by.get((tick / 2) % tr.len); if (l) l.forEach(n => playNote(tr, n, t)); });
+    const bar = Math.floor(tick / TPB);
+
+    // The playlist is the arrangement: only trigger a lane while its clip is active
+    // in the current bar. Drum and instrument patterns repeat within each active bar.
+    if (plClips.has(plKey(0, bar))) drumStep(tick, t);
+    if (tick % 2 === 0) tracks.forEach(tr => {
+      const lane = ({ bass: 1, arp: 2, stab: 3, lead: 4 })[tr.kind];
+      if (lane === undefined || !plClips.has(plKey(lane, bar))) return;
+      const l = tr.by.get((tick / 2) % tr.len);
+      if (l) l.forEach(n => playNote(tr, n, t));
+    });
     S.tick++; S.next += TICK();
   }
 }
