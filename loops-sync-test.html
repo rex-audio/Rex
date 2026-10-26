@@ -119,7 +119,7 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
   </section>
 
   <footer>
-    <span>&copy; 2026 Rex Audio · Sync test build 2026-10-26.1</span>
+    <span>&copy; 2026 Rex Audio · Sync test build 2026-10-26.2 · sample-block clock</span>
     <nav><a href="drums/COPYRIGHT.txt">Drum recordings: copyright notice</a><a href="colours/COPYRIGHT.txt">Pad recordings: copyright notice</a><a href="loops/COPYRIGHT.txt">Loop recordings: copyright notice</a></nav>
   </footer>
 </div>
@@ -171,11 +171,15 @@ const KITS = DM.kits, SOUNDS = DM.sounds;
 const PNAMES = Object.keys(PATTERNS).filter(n => n !== "Empty");
 
 // ---------- the loops: every one plays in time with the others ----------
-const BAR_S = 3.2, TPB = 32, TICK = BAR_S / TPB, MAXL = 10;   // 75 BPM: a bar is 3.2 s, the length of one pad chord
+const BAR_S = 3.2, TPB = 32, TICK = BAR_S / TPB, MAXL = 10;   // 75 BPM: a bar is 3.2 s
+// DAW-style event clock: musical ticks are mapped to absolute audio sample frames,
+// then drained in fixed-size blocks. AudioBufferSource nodes still render on the
+// browser's native audio thread; UI timers only refill the future event queue.
+const BLOCK_SIZE = 128, LOOKAHEAD_S = .45, START_DELAY_S = .25, GRID_TICKS = 2;
 const LEVELS = [.95, .85, .75, .6, .6, .75, .55, .6], NV = 5;
-const S = { playing: false, tick: 0, next: 0, t0: 0, timer: 0, name: "" };
+const S = { playing: false, tick: 0, tickFrame: 0, cursorFrame: 0, originFrame: 0, t0: 0, timer: 0, name: "" };
 let layers = [], uid = 0;
-const nextBar = () => Math.ceil(S.tick / TPB) * TPB;   // a loop that starts while the others play waits for the next bar
+const nextGridTick = () => Math.ceil(S.tick / GRID_TICKS) * GRID_TICKS;   // next sixteenth-note boundary in the queued timeline
 const CLIP = t => t !== "drums";   // pads, bass, chords, arp and leads are recordings of four bars
 const LIVE = {};   // instruments recorded note by note: the notes are chosen live, so they always fit the key
 Object.values(LV).sort((a, b) => (b.file.includes("-s-") ? 1 : 0) - (a.file.includes("-s-") ? 1 : 0)).forEach(i => { i.kind = "live"; (LIVE[i.type] = LIVE[i.type] || []).push(i); });
@@ -248,11 +252,16 @@ function drumStep(l, tick, tib, t) {
   steps.forEach((row, r) => { if (l.rows && !l.rows.includes(r)) return; const v = row[step]; if (v) drumHit(l, r, sound[r], tt, v === 2 ? 1 : v === 3 ? .3 * (.85 + Math.random() * .3) : .62 * (.92 + Math.random() * .12), bar); });
 }
 function fade(l, t, tc = .15) { l.act.forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, tc); try { h.s.stop(t + tc * 8); } catch (e) {} }); }
-function clipStart(l, t, off = 0) {   // restart clips on the shared four-bar boundary without leaving old takes running underneath
-  off += (l.type === "pads" && l.item.lead) || 0;
+function clipStart(l, t, phaseSeconds = 0) {
+  // Every recorded instrument loop represents exactly four bars on the 75 BPM grid.
+  // Match the source duration to that cycle so tiny differences in file length cannot
+  // accumulate as drift. Known pad lead-in is trimmed, then the remaining audio fills
+  // the full cycle rather than ending early.
   const b = CLIPS[clipUrl(l)]; if (!b) return;
-  // A buffer can be slightly longer than its musical cycle. Fade the previous pass
-  // out at the exact scheduled boundary so it cannot overlap the next pass.
+  const lead = (l.type === "pads" && l.item.lead) || 0;
+  const cycle = BAR_S * 4;
+  const usableDuration = Math.max(.1, b.duration - lead);
+  const rate = usableDuration / cycle;
   l.act.forEach(h => {
     if (!h.clip) return;
     h.g.gain.cancelScheduledValues(t);
@@ -261,10 +270,13 @@ function clipStart(l, t, off = 0) {   // restart clips on the shared four-bar bo
     try { h.s.stop(t + .025); } catch (e) {}
   });
   const s = ctx.createBufferSource(), g = ctx.createGain();
-  s.buffer = b; s.connect(g); g.connect(l.out);
+  s.buffer = b;
+  s.playbackRate.setValueAtTime(rate, t);
+  s.connect(g); g.connect(l.out);
   const h = { s, g, clip: true };
   l.act.add(h); s.onended = () => l.act.delete(h);
-  s.start(t, off % b.duration);
+  const sourceOffset = Math.min(b.duration - .001, lead + phaseSeconds * rate);
+  s.start(t, sourceOffset);
 }
 
 // ---------- music theory, played live from the recordings ----------
@@ -306,21 +318,44 @@ function liveStep(l, tick, t) {
 
 // ---------- transport ----------
 function schedule() {
-  // If the browser throttles a timer (for example after switching tabs), discard
-  // stale ticks rather than firing a burst of overdue notes. Tick count still advances
-  // on the original grid, so playback resumes on the musical phase, not a new clock.
-  const now = ctx.currentTime;
-  while (S.next < now - .02) { S.tick++; S.next += TICK; }
-  while (S.next < now + .45) {
-    const t = S.next, tick = S.tick, tib = tick % TPB;
-    layers.forEach(l => {
-      if (tick < l.start) return;
-      if (l.type === "drums") drumStep(l, tick, tib, t);
-      else if (isLive(l)) liveStep(l, tick, t);
-      else if (tick % (TPB * 4) === 0) clipStart(l, t);   // a recording restarts every four bars, in step with the chords of the others
-      else if (tick === l.start) clipStart(l, t, (tick % (TPB * 4)) * TICK);   // one that is added part way through joins part way through
-    });
-    S.tick++; S.next += TICK;
+  // Refill a future sample-frame timeline in fixed-size audio blocks. The queue is
+  // anchored to one origin frame, so timer jitter cannot accumulate into musical drift.
+  const sr = ctx.sampleRate;
+  const nowFrame = Math.floor(ctx.currentTime * sr);
+  const earliestFrame = nowFrame + BLOCK_SIZE * 2; // leave a couple of render blocks for safe scheduling
+  const horizonFrame = Math.ceil((nowFrame + LOOKAHEAD_S * sr) / BLOCK_SIZE) * BLOCK_SIZE;
+
+  // If the main thread was paused long enough to miss queued time, discard stale
+  // blocks/events but retain the original origin and phase.
+  const catchUpFrame = Math.floor(earliestFrame / BLOCK_SIZE) * BLOCK_SIZE;
+  while (S.cursorFrame < catchUpFrame) {
+    const blockEnd = S.cursorFrame + BLOCK_SIZE;
+    while (S.tickFrame < blockEnd) {
+      S.tick++;
+      S.tickFrame = S.originFrame + Math.round(S.tick * TICK * sr);
+    }
+    S.cursorFrame = blockEnd;
+  }
+
+  // Each block drains the musical events whose exact sample frame falls inside it.
+  while (S.cursorFrame < horizonFrame) {
+    const blockEnd = S.cursorFrame + BLOCK_SIZE;
+    while (S.tickFrame < blockEnd) {
+      const frame = S.tickFrame, tick = S.tick;
+      if (frame >= earliestFrame) {
+        const t = frame / sr, tib = tick % TPB;
+        layers.forEach(l => {
+          if (tick < l.start) return;
+          if (l.type === "drums") drumStep(l, tick, tib, t);
+          else if (isLive(l)) liveStep(l, tick, t);
+          else if (tick === l.start) clipStart(l, t, (tick % (TPB * 4)) * TICK);
+          else if (tick % (TPB * 4) === 0) clipStart(l, t);
+        });
+      }
+      S.tick++;
+      S.tickFrame = S.originFrame + Math.round(S.tick * TICK * sr);
+    }
+    S.cursorFrame = blockEnd;
   }
 }
 async function play() {
@@ -328,9 +363,15 @@ async function play() {
   if (!layers.length) { setName("Add a loop first"); setTimeout(() => setName(S.name), 1800); return; }
   await ctx.resume(); await loadFor(layers); if (failed) return;
   layers.forEach(l => { l.start = 0; });
-  // Give the browser a larger scheduling runway after all recordings have decoded.
-  // Every layer still uses the same AudioContext clock and exact start timestamp.
-  S.tick = 0; S.t0 = ctx.currentTime + .25; S.next = S.t0; S.playing = true; setPlaying(true);
+  // Align the transport origin to an audio block boundary after all recordings decode.
+  // Every layer derives its event frames from this one origin; no per-layer timer exists.
+  const sr = ctx.sampleRate;
+  S.originFrame = Math.ceil((ctx.currentTime + START_DELAY_S) * sr / BLOCK_SIZE) * BLOCK_SIZE;
+  S.t0 = S.originFrame / sr;
+  S.tick = 0;
+  S.tickFrame = S.originFrame;
+  S.cursorFrame = S.originFrame;
+  S.playing = true; setPlaying(true);
   S.timer = setInterval(schedule, 20); schedule(); requestAnimationFrame(anim);
 }
 function stop() {
@@ -402,7 +443,7 @@ function addNext() {
 }
 function addLoop(type, v, k) {   // starts on the next bar if the others are playing; each new one begins on a different recording
   const same = layers.filter(l => l.type === type).length;
-  const l = { id: ++uid, type, v: v === undefined ? same * (type === "drums" ? 5 : 1) : v, k, start: S.playing ? nextBar() : 0 };
+  const l = { id: ++uid, type, v: v === undefined ? same * (type === "drums" ? 5 : 1) : v, k, start: S.playing ? nextGridTick() : 0 };
   wire(l); layers.push(l); build(l); refresh(); loadFor([l]); return l;
 }
 function refresh() { const full = layers.length >= MAXL; $("#add").disabled = full; $("#add").textContent = full ? "That is plenty of loops" : "+ Add a loop"; $("#pick").disabled = full; $("#empty").hidden = layers.length > 0; $("#clear").hidden = layers.length === 0; }
