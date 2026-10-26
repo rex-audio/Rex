@@ -338,12 +338,21 @@ function liveStep(l, tick, t) {
 // Render a complete four-bar musical cycle offline, then loop one prepared buffer.
 // This moves clip decoding, drum scheduling and note scheduling out of real-time playback.
 // The renderer is a snapshot: changes made while it plays take effect after stop/restart.
-let renderedSource = null, renderedBuffer = null, renderGeneration = 0;
+let renderedSource = null, renderedGain = null, renderedBuffer = null, renderGeneration = 0;
+let renderUpdateTimer = 0, renderUpdateRequest = 0;
 const barRenderEnabled = () => $("#barRender").checked;
-async function renderCycle() {
+function nextSafeBarBoundary() {
+  const elapsed = Math.max(0, ctx.currentTime - S.t0);
+  let bar = Math.floor(elapsed / BAR_S) + 1;
+  let at = S.t0 + bar * BAR_S;
+  // If the next boundary is too close to finish and queue the new buffer, skip one bar.
+  if (at - ctx.currentTime < .14) { bar++; at += BAR_S; }
+  return { bar, at };
+}
+async function renderCycle(startBar = 0) {
   const gen = ++renderGeneration;
   const status = $("#renderStatus");
-  status.textContent = "Rendering 4 bars…";
+  status.textContent = "Rendering mix…";
   const frames = Math.ceil(BAR_S * 4 * ctx.sampleRate);
   const off = new OfflineAudioContext(2, frames, ctx.sampleRate);
   const master = off.createGain(); master.gain.value = .7;
@@ -359,33 +368,36 @@ async function renderCycle() {
   });
   const source = (buf, dest, t, offset=0, rate=1, duration) => {
     if (!buf || t >= BAR_S*4) return;
-    const s=off.createBufferSource(); s.buffer=buf; s.playbackRate.value=rate; s.connect(dest);
-    try { if (duration) s.start(Math.max(0,t), offset, duration); else s.start(Math.max(0,t), offset); } catch(e) {}
-    return s;
+    const node=off.createBufferSource(); node.buffer=buf; node.playbackRate.value=rate; node.connect(dest);
+    try { if (duration) node.start(Math.max(0,t), offset, duration); else node.start(Math.max(0,t), offset); } catch(e) {}
+    return node;
   };
   const localNote = (l,m,t,gate,vel) => {
     const it=l.item, b=LB[it.file]; if(!b || t<0 || t>=BAR_S*4) return;
     const [lo,hi]=spanOf(it); while(m<lo)m+=12; while(m>hi)m-=12;
     let n=it.notes[0]; it.notes.forEach(x=>{if(Math.abs(x[0]-m)<Math.abs(n[0]-m))n=x;});
     if(l.type==="bass"||l.type==="leads") (active.get(l)||[]).forEach(h=>{try{h.g.gain.setTargetAtTime(0,Math.max(0,t),.012);h.s.stop(Math.max(0,t)+.1);}catch(e){}});
-    const g=off.createGain(), s=off.createBufferSource(), rate=Math.pow(2,(m-n[0])/12);
-    s.buffer=b; s.playbackRate.value=rate; g.gain.setValueAtTime(vel,t); g.gain.setTargetAtTime(0,t+gate,.05);
-    s.connect(g); g.connect(out.get(l)); active.get(l).push({s,g});
-    try{s.start(t,n[1],n[2]);s.stop(t+Math.min(gate+.4,n[2]/rate));}catch(e){}
+    const g=off.createGain(), node=off.createBufferSource(), rate=Math.pow(2,(m-n[0])/12);
+    node.buffer=b; node.playbackRate.value=rate; g.gain.setValueAtTime(vel,t); g.gain.setTargetAtTime(0,t+gate,.05);
+    node.connect(g); g.connect(out.get(l)); active.get(l).push({s:node,g});
+    try{node.start(t,n[1],n[2]);node.stop(t+Math.min(gate+.4,n[2]/rate));}catch(e){}
   };
-  // Clips are four-bar recordings. Start them at cycle origin, preserving the pad lead-in.
+  // Render the four bars beginning at startBar. Existing clips keep their musical phase;
+  // a newly-added layer begins at its scheduled start bar.
+  const baseTick = startBar * TPB;
   layers.forEach(l=>{
-    if(l.type!=="drums"&&!isLive(l)){
-      const b=CLIPS[clipUrl(l)], lead=(l.type==="pads"&&l.item.lead)||0;
-      if(b) source(b,out.get(l),0,Math.min(b.duration-.001,lead));
-    }
+    if(l.type==="drums"||isLive(l)||baseTick<l.start) return;
+    const b=CLIPS[clipUrl(l)], lead=(l.type==="pads"&&l.item.lead)||0;
+    const phaseBars = Math.max(0, Math.floor((baseTick-l.start)/TPB)) % 4;
+    if(b) source(b,out.get(l),0,Math.min(b.duration-.001,lead+phaseBars*BAR_S));
   });
   for(let tick=0;tick<TPB*4;tick++){
-    const t=tick*TICK, tib=tick%TPB, bar=Math.floor(tick/TPB);
+    const globalTick=baseTick+tick, t=tick*TICK, bar=Math.floor(globalTick/TPB)%4;
     layers.forEach(l=>{
-      if(tick<l.start) return;
+      if(globalTick<l.start) return;
+      const rel=globalTick-l.start;
       if(l.type==="drums"){
-        const pat=PATTERNS[l.pat],len=pat.len||16,stepsNow=patSteps(l.pat),sound=KITS[l.kit].r,rel=tick-l.start;
+        const pat=PATTERNS[l.pat],len=pat.len||16,stepsNow=patSteps(l.pat),sound=KITS[l.kit].r;
         let step;
         if(l.speed===2) step=len===16?rel%16:rel%32;
         else {if(rel%2)return;step=(rel/2)%len;}
@@ -397,9 +409,9 @@ async function renderCycle() {
           const g=off.createGain();g.gain.value=v===2?1:v===3?.3:.62;g.connect(rowGains.get(l)[r]);source(b,g,tt);
         });
       } else if(isLive(l)){
-        const [root,ct]=PROGS[hi][bar%4],iv=INT[ct],ext=iv.concat(iv.map(x=>x+12)),pat=PAT[l.type][l.pi%PAT[l.type].length][1];
+        const [root,ct]=PROGS[bar][0] ? PROGS[bar] : PROGS[0][0], iv=INT[ct], ext=iv.concat(iv.map(x=>x+12)), pat=PAT[l.type][l.pi%PAT[l.type].length][1];
         for(let k=0;k<3;k++){
-          const u=(tick%TPB)*3+k,tt=t+k*TICK/3;
+          const u=(globalTick%TPB)*3+k,tt=t+k*TICK/3;
           pat.forEach(e=>{
             if(e[0]!==u)return;const gate=e[1]*TICK/3*.95,vel=u%24===0?1:.75;
             if(l.type==="chords")iv.forEach(x=>localNote(l,root+BASE.chords+x,tt,gate,vel*.55));
@@ -412,10 +424,10 @@ async function renderCycle() {
   try {
     const b=await off.startRendering();
     if(gen!==renderGeneration)return null;
-    renderedBuffer=b; status.textContent="Rendered · edits apply after restart";
+    renderedBuffer=b; status.textContent="Rendered · updates queued for next bar";
     return b;
   } catch(e) {
-    if(gen===renderGeneration) status.textContent="Render failed — using live mode";
+    if(gen===renderGeneration) status.textContent="Render failed — keeping current mix";
     return null;
   }
 }
@@ -423,16 +435,54 @@ async function startRendered() {
   await ctx.resume();
   await loadFor(layers);
   if(failed)return false;
-  const b=await renderCycle();
-  if(!b || !layers.length)return false;
+  const b=await renderCycle(0);
+  if(!b)return false;
   if(renderedSource){try{renderedSource.stop();}catch(e){} renderedSource=null;}
   renderedSource=ctx.createBufferSource(); renderedSource.buffer=b; renderedSource.loop=true;
-  // The offline buffer already includes master gain and limiting.
-  renderedSource.connect(ctx.destination);
+  renderedGain=ctx.createGain(); renderedGain.gain.value=1;
+  renderedSource.connect(renderedGain); renderedGain.connect(ctx.destination);
   S.t0=ctx.currentTime+.12; S.playing=true; setPlaying(true);
   renderedSource.start(S.t0);
+  $("#renderStatus").textContent="Playing · edits apply at the next bar";
   requestAnimationFrame(anim);
   return true;
+}
+function queueRenderedUpdate() {
+  if(!S.playing || !barRenderEnabled()) return;
+  const request=++renderUpdateRequest;
+  clearTimeout(renderUpdateTimer);
+  $("#renderStatus").textContent="Preparing next-bar update…";
+  renderUpdateTimer=setTimeout(()=>refreshRenderedMix(request),90);
+}
+async function refreshRenderedMix(request) {
+  if(request!==renderUpdateRequest || !S.playing || !barRenderEnabled()) return;
+  await loadFor(layers);
+  if(request!==renderUpdateRequest || !S.playing || !barRenderEnabled()) return;
+  let target=nextSafeBarBoundary();
+  for(let attempt=0;attempt<4;attempt++){
+    layers.forEach(l=>{if(l.pendingStart) l.start=target.bar*TPB;});
+    const b=await renderCycle(target.bar);
+    if(!b || request!==renderUpdateRequest || !S.playing || !barRenderEnabled()) return;
+    const safe=nextSafeBarBoundary();
+    if(safe.bar!==target.bar){target=safe;continue;}
+    layers.forEach(l=>{if(l.pendingStart) l.pendingStart=false;});
+    const next=ctx.createBufferSource(), gain=ctx.createGain();
+    next.buffer=b; next.loop=true;
+    gain.gain.setValueAtTime(0,target.at);
+    gain.gain.linearRampToValueAtTime(1,target.at+.008);
+    next.connect(gain); gain.connect(ctx.destination);
+    if(renderedSource && renderedGain){
+      renderedGain.gain.cancelScheduledValues(target.at);
+      renderedGain.gain.setValueAtTime(Math.max(0,renderedGain.gain.value),target.at);
+      renderedGain.gain.linearRampToValueAtTime(0,target.at+.008);
+      try{renderedSource.stop(target.at+.012);}catch(e){}
+    }
+    renderedSource=next; renderedGain=gain; renderedBuffer=b;
+    next.start(target.at);
+    $("#renderStatus").textContent="Updated at bar "+(target.bar+1);
+    return;
+  }
+  $("#renderStatus").textContent="Update delayed — preparing another bar";
 }
 
 function schedule() {
@@ -462,7 +512,8 @@ async function play() {
 }
 function stop() {
   S.playing = false;
-  renderGeneration++; if (renderedSource) { try { renderedSource.stop(); } catch(e) {} renderedSource = null; } clearInterval(S.timer); setPlaying(false); layers.forEach(l => fade(l, ctx.currentTime, .03)); showProgress();
+  renderGeneration++; renderUpdateRequest++; clearTimeout(renderUpdateTimer);
+  if (renderedSource) { try { renderedSource.stop(); } catch(e) {} renderedSource = null; } renderedGain = null; clearInterval(S.timer); setPlaying(false); layers.forEach(l => fade(l, ctx.currentTime, .03)); showProgress();
 }
 function setPlaying(on) { [$("#playBtn"), $("#playTop")].forEach(b => { b.setAttribute("aria-pressed", on); b.setAttribute("aria-label", on ? "Stop" : "Play"); }); }
 [$("#playBtn"), $("#playTop")].forEach(b => { b.onclick = () => S.playing ? stop() : play(); });
@@ -505,10 +556,12 @@ function applyItem(l, keep) {
 }
 async function pick(l, v) {   // the arrows: switch this loop to another recording of its type, in time
   const list = itemsOf(l), was = l.item; l.v = (v + list.length) % list.length; applyItem(l);
-  if (l.type === "drums") { loadFor([l]); return; }
+  if (l.type === "drums") { await loadFor([l]); queueRenderedUpdate(); return; }
   const mine = l.item;
-  if (isLive(l)) { await ensureLive(mine.file); if (l.item === mine && !isLive({ item: was })) fade(l, ctx.currentTime + .02, .02); return; }   // a live one plays the next notes in the new sound
-  await ensureClip(clipUrl(l)); if (l.item !== mine || !S.playing) return;
+  if (isLive(l)) { await ensureLive(mine.file); if (l.item === mine && !isLive({ item: was })) fade(l, ctx.currentTime + .02, .02); queueRenderedUpdate(); return; }   // a live one plays the next notes in the new sound
+  await ensureClip(clipUrl(l)); if (l.item !== mine) return;
+  if (barRenderEnabled() && S.playing) { queueRenderedUpdate(); return; }
+  if (!S.playing) return;
   const t = ctx.currentTime + .05, tk = (t - S.t0) / TICK;
   if (tk < l.start) return;   // still waiting for its bar: it starts with the new recording
   fade(l, t, .02); clipStart(l, t, (tk % (TPB * 4)) * TICK);
@@ -517,9 +570,9 @@ function build(l) {
   const el = document.createElement("div"); el.className = "loop " + l.type; l.el = el;
   el.innerHTML = '<div class="lbar"></div><i class="ld"></i><b class="lt"></b><button class="la lp" type="button" aria-label="Previous recording" title="Previous"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="lm"></span><button class="la ln" type="button" aria-label="Next recording" title="Next"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="lpat" type="button" title="Change the pattern" hidden></button><button class="lx" type="button" aria-label="Remove this loop" title="Remove">&times;</button>';
   el.querySelector(".lt").textContent = TYPES.find(t => t[0] === l.type)[1]; l.bar = el.querySelector(".lbar");
-  el.querySelector(".lpat").onclick = () => { l.pi = (l.pi + 1) % PAT[l.type].length; applyItem(l, true); };
+  el.querySelector(".lpat").onclick = () => { l.pi = (l.pi + 1) % PAT[l.type].length; applyItem(l, true); queueRenderedUpdate(); };
   el.querySelector(".lp").onclick = () => pick(l, l.v - 1); el.querySelector(".ln").onclick = () => pick(l, l.v + 1);
-  el.querySelector(".lx").onclick = () => { fade(l, ctx.currentTime, .05); layers = layers.filter(q => q !== l); el.remove(); refresh(); };
+  el.querySelector(".lx").onclick = () => { fade(l, ctx.currentTime, .05); layers = layers.filter(q => q !== l); el.remove(); refresh(); queueRenderedUpdate(); };
   pile.appendChild(el); applyItem(l);
 }
 const DEFAULT = [["drums", 0], ["pads", 0], ["drums", 8], ["pads", 1], ["drums", 10]];   // the usual order: break, pad, hats, another pad, percussion
@@ -530,8 +583,8 @@ function addNext() {
 }
 function addLoop(type, v, k) {   // starts on the next bar if the others are playing; each new one begins on a different recording
   const same = layers.filter(l => l.type === type).length;
-  const l = { id: ++uid, type, v: v === undefined ? same * (type === "drums" ? 5 : 1) : v, k, start: S.playing ? nextGridTick() : 0 };
-  wire(l); layers.push(l); build(l); refresh(); loadFor([l]); return l;
+  const l = { id: ++uid, type, v: v === undefined ? same * (type === "drums" ? 5 : 1) : v, k, start: S.playing ? (barRenderEnabled() ? Number.POSITIVE_INFINITY : nextGridTick()) : 0, pendingStart: S.playing && barRenderEnabled() };
+  wire(l); layers.push(l); build(l); refresh(); loadFor([l]).then(queueRenderedUpdate); return l;
 }
 function refresh() { const full = layers.length >= MAXL; $("#add").disabled = full; $("#add").textContent = full ? "That is plenty of loops" : "+ Add a loop"; $("#pick").disabled = full; $("#empty").hidden = layers.length > 0; $("#clear").hidden = layers.length === 0; }
 function clear() { layers.forEach(l => { fade(l, ctx.currentTime, .03); l.el.remove(); }); layers = []; }
@@ -539,7 +592,7 @@ $("#add").onclick = addNext;
 $("#pick").onclick = () => { $("#types").hidden = !$("#types").hidden; };
 $("#types").innerHTML = TYPES.map(t => '<button type="button" class="ty ' + t[0] + '" data-t="' + t[0] + '"><i></i>' + t[1] + '</button>').join("");
 $("#types").onclick = e => { const b = e.target.closest("button"); if (b) { addLoop(b.dataset.t); } };
-$("#clear").onclick = () => { if (S.playing) stop(); clear(); refresh(); };
+$("#clear").onclick = () => { clear(); refresh(); queueRenderedUpdate(); };
 $("#barRender").addEventListener("change", () => { $("#renderStatus").textContent = barRenderEnabled() ? "Renders a 4-bar cycle before playback" : "Live look-ahead scheduler"; if (S.playing) stop(); });
 addEventListener("keydown", e => {
   if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -548,7 +601,8 @@ addEventListener("keydown", e => {
 });
 function setHarm(i) {   // the bar arrows: every pad, chord, lead, arp and bass moves to the same recording in the next key
   hi = (i + HARM.length) % HARM.length; S.name = "Key: " + HARM[hi]; if (!failed) setName(S.name);
-  layers.forEach(l => { if (CLIP(l.type) && !isLive(l)) pick(l, l.v); });   // the live ones follow the key by themselves
+  const jobs=[]; layers.forEach(l => { if (CLIP(l.type) && !isLive(l)) jobs.push(pick(l, l.v)); });
+  Promise.all(jobs).then(queueRenderedUpdate); // the live instruments follow the key in the prepared next-bar mix
 }
 $("#bp").onclick = () => setHarm(hi - 1); $("#bn").onclick = () => setHarm(hi + 1);
 [$("#bar"), $(".topplay"), $(".addrow")].forEach(el => el.addEventListener("click", e => { const b = e.target.closest("button"); if (b && e.detail) b.blur(); }));
