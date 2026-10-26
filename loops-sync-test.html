@@ -209,7 +209,17 @@ const ensureLive = async id => LB[id] || (LB[id] = await loadBuf("loops/live/" +
 let failed = false;
 const setName = t => { $("#barName").textContent = t; };
 async function loadFor(ls) {
-  const jobs = []; ls.forEach(l => { if (l.type === "drums") KITS[l.kit].r.forEach(n => jobs.push(ensureSound(n))); else if (isLive(l)) jobs.push(ensureLive(l.item.file)); else jobs.push(ensureClip(clipUrl(l))); });
+  const jobs = []; ls.forEach(l => {
+    if (l.type === "drums") {
+      // Only decode drum sounds this layer can actually trigger. Decoding every
+      // sound and variant in a kit creates a needless CPU/memory spike at startup.
+      const steps = patSteps(l.pat);
+      KITS[l.kit].r.forEach((n, row) => {
+        if ((!l.rows || l.rows.includes(row)) && steps[row]?.some(Boolean)) jobs.push(ensureSound(n));
+      });
+    } else if (isLive(l)) jobs.push(ensureLive(l.item.file));
+    else jobs.push(ensureClip(clipUrl(l)));
+  });
   if (!jobs.length) return; setName("Loading..."); await Promise.all(jobs);
   failed = ls.every(l => l.type === "drums" ? KITS[l.kit].r.every(n => !SND[n] || !SND[n].size) : isLive(l) ? !LB[l.item.file] : !CLIPS[clipUrl(l)]);
   setName(failed ? "The recordings only play from the website" : S.name);
@@ -219,7 +229,9 @@ async function loadFor(ls) {
 const mnode = ctx.createGain(); mnode.gain.value = .7;
 const sh = ctx.createWaveShaper(), cv = new Float32Array(4097);
 for (let i = 0; i < cv.length; i++) { const x = 2 * i / 4096 - 1, a = Math.abs(x), T = .7; cv[i] = (x < 0 ? -1 : 1) * (a <= T ? a : T + (1 - T) * Math.tanh((a - T) / (1 - T))); }   // soft limiter
-sh.curve = cv; sh.oversample = "2x"; mnode.connect(sh); sh.connect(ctx.destination);
+// Keep the soft limiter but disable 2x oversampling, which is costly on mobile
+// and unnecessary for this lightweight loop playback test.
+sh.curve = cv; sh.oversample = "none"; mnode.connect(sh); sh.connect(ctx.destination);
 const stepsOf = {};   // a pattern as numbers: 0 off, 1 hit, 2 accent, 3 ghost
 const patSteps = n => stepsOf[n] || (stepsOf[n] = PATTERNS[n].p.map(s => Array.from({ length: PATTERNS[n].len || 16 }, (_, k) => s[k] === "X" ? 2 : s[k] === "x" ? 1 : s[k] === "o" ? 3 : 0)));
 function wire(l) {   // each loop has its own output, and a drums loop its own row levels
