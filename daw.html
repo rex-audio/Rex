@@ -398,7 +398,7 @@ function addTrack(kind, patIdx, instIdx) {
   const tr={id:++uid,kind,kd,inst:instIdx===undefined?same%list.length:instIdx,pat:0,notes:[],base:[],by:new Map(),len:16,level:kd.level,mute:false,solo:false,lo:kd.lo,lastLen:1,act:new Set(),prev:null};
   tr.item=list[tr.inst];tr.out=ctx.createGain();tr.out.connect(mnode);reindex(tr);tracks.push(tr);sel=tr;ensureLive(tr.item.file);updateMix();renderTracks();drawRoll();return tr;
 }
-function removeTrack(tr) { fadeTrack(tr, ctx.currentTime, .03); tr.out.disconnect(); tracks.splice(tracks.indexOf(tr), 1); if (sel === tr) sel = tracks[0] || null; updateMix(); renderTracks(); drawRoll(); }
+function removeTrack(tr) { fadeTrack(tr, ctx.currentTime, .03); tr.out.disconnect(); tracks.splice(tracks.indexOf(tr), 1); if (sel === tr) sel = tracks[0] || null; updateMix(); renderTracks(); drawRoll(); renderPlaylist(); }
 function fadeTrack(tr, t, tc) { tr.act.forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, tc); try { h.s.stop(t + tc * 8); } catch (e) {} }); }
 function setInst(tr, i) {
   const list = LIVE[tr.kd.type]; tr.inst = (i + list.length) % list.length; tr.item = list[tr.inst]; ensureLive(tr.item.file).then(() => { if (!S.playing) audition(tr); });
@@ -490,17 +490,14 @@ function msBtns(o, tgt) {
 function renderTracks() {
   strips.innerHTML = "";
   tracks.forEach(tr => {
-    const s = el("div", "strip" + (tr === sel ? " sel" : "")); s.style.setProperty("--c", tr.kd.col);
-    s.addEventListener("click", e => { if (e.target.closest("button,input")) return; sel = tr; renderTracks(); drawRoll(); });
-    const inst = el("span", "nm", tr.item.n), pats = PAT[tr.kind], pn = el("span", "pn", pats[tr.pat].n);
-    const row1 = el("div", "r1"), row2 = el("div", "r2");
-    row1.append(el("i", "dot"), el("b", "kind", tr.kd.label), arrowBtn(-1, () => { setInst(tr, tr.inst - 1); inst.textContent = tr.item.n; sel = tr; drawRoll(); }, "Previous sound"), inst, arrowBtn(1, () => { setInst(tr, tr.inst + 1); inst.textContent = tr.item.n; sel = tr; drawRoll(); }, "Next sound"));
-    row2.append(arrowBtn(-1, () => go(tr, -1), "Previous pattern"), pn, arrowBtn(1, () => go(tr, 1), "Next pattern"));
-    const ctl = el("span", "ctl"); level(ctl, () => tr.level, v => { tr.level = v; }); msBtns(ctl, tr);
-    ctl.append(btn("↻", "ms", () => { mutateTrack(tr, .5); sel = tr; drawRoll(); }, "A variation of this pattern"), btn("×", "ms", () => removeTrack(tr), "Remove this track")); row2.append(ctl);
-    s.append(row1, row2); strips.appendChild(s);
+    const s=el("div","strip"+(tr===sel?" sel":""));s.style.setProperty("--c",tr.kd.col);
+    s.addEventListener("click",e=>{if(e.target.closest("button,input"))return;sel=tr;renderTracks();drawRoll();});
+    const inst=el("span","nm",tr.item.n),row1=el("div","r1"),row2=el("div","r2");
+    row1.append(el("i","dot"),el("b","kind","Instrument"),arrowBtn(-1,()=>{setInst(tr,tr.inst-1);inst.textContent=tr.item.n;sel=tr;drawRoll();},"Previous sound"),inst,arrowBtn(1,()=>{setInst(tr,tr.inst+1);inst.textContent=tr.item.n;sel=tr;drawRoll();},"Next sound"));
+    const ctl=el("span","ctl");level(ctl,()=>tr.level,v=>{tr.level=v;});msBtns(ctl,tr);ctl.append(btn("×","ms",()=>removeTrack(tr),"Remove this instrument"));row2.append(ctl);
+    s.append(row1,row2);strips.appendChild(s);
   });
-  $("#addTrack").disabled = tracks.length >= MAXT;
+  $("#addTrack").disabled=tracks.length>=MAXT;
 }
 function go(tr, dd) { const pats = PAT[tr.kind]; loadPat(tr, (tr.pat + dd + pats.length) % pats.length); sel = tr; renderTracks(); drawRoll(); }
 function setDrum(v){drumKitIndex=(v+KITS.length)%KITS.length;$("#drumKit").value=drumKitIndex;drawDrumGrid();loadDrums();}
