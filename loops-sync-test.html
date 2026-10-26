@@ -251,9 +251,7 @@ function drumHit(l, row, sound, t, vel, bar) {
   const b = bufOf(sound, pickVi(sound, row, l, bar)); if (!b) return;
   if (row === 3 || row === 4) l.act.forEach(h => { if (h.row === 3 || h.row === 4) { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, .004); try { h.s.stop(t + .04); } catch (e) {} } });   // hats cut each other
   const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b;
-  // Start each one-shot from silence to avoid a discontinuity if the recording
-  // does not begin at a zero crossing. The 3 ms ramp is short enough to keep hits sharp.
-  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel, t + .003);
+  g.gain.value = vel;
   s.connect(g); g.connect(l.rg[row]);
   const h = { s, g, row }; l.act.add(h); s.onended = () => l.act.delete(h); s.start(t);
 }
@@ -281,8 +279,7 @@ function clipStart(l, t, phaseSeconds = 0) {
   });
   const s = ctx.createBufferSource(), g = ctx.createGain();
   s.buffer = b;
-  // Tiny fade-in prevents a click if the clip's first sample is non-zero.
-  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + .008);
+  g.gain.value = 1;
   s.connect(g); g.connect(l.out);
   const h = { s, g, clip: true };
   l.act.add(h); s.onended = () => l.act.delete(h);
@@ -313,8 +310,7 @@ function note(l, m, t, gate, vel) {
   let n = it.notes[0]; it.notes.forEach(x => { if (Math.abs(x[0] - m) < Math.abs(n[0] - m)) n = x; });
   if (l.type === "bass" || l.type === "leads") l.act.forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, .012); try { h.s.stop(t + .1); } catch (e) {} });   // one note at a time
   const s = ctx.createBufferSource(), g = ctx.createGain(), r = Math.pow(2, (m - n[0]) / 12); s.buffer = b; s.playbackRate.value = r; s.connect(g); g.connect(l.out);
-  // Ramp in over 5 ms to avoid a hard edge at the start of a recorded note.
-  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel, t + .005);
+  g.gain.setValueAtTime(vel, t);
   g.gain.setTargetAtTime(0, t + gate, .05);
   const h = { s, g }; l.act.add(h); s.onended = () => l.act.delete(h); s.start(t, n[1], n[2]); s.stop(t + Math.min(gate + .4, n[2] / r));
 }
