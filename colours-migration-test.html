@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Unlisted public test page for the staged Rex Colours migration. Original audio and images remain on the public site during testing.">
+<title>Colours Migration Test | Rex Audio</title>
+<style>
+/* Same page frame as the other pages: a 720px "desktop" page scaled to the window. */
+:root {
+  --bg: #e4e7e9;
+  --panel: #f3f4f5;
+  --fg: #15181a;
+  --muted: #5a6166;
+  --line: #c3c9cc;
+  --focus: #c8321e;
+  --sans: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; padding-bottom: 100px; }
+#site { width: 720px; margin: 0 auto; zoom: 0.54; }
+a { color: inherit; }
+a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, p { margin: 0; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 26px 36px 0; }
+.brand { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+.top nav a:hover, .top nav a[aria-current] { border-bottom-color: var(--fg); }
+
+.intro { text-align: center; padding: 36px 36px 0; }
+.intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
+.sec { padding: 36px 36px 0; }
+#cv { display: block; width: 100%; height: auto; aspect-ratio: 964 / 614; border-radius: 12px; background: #0a1117; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; font-size: 14px; color: var(--muted); }
+footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
+
+/* the play bar: large and minimal, fills the bottom of the window and never moves */
+#bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; }
+#bar .pill { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px max(16px, calc((100% - 680px) / 2)) calc(12px + env(safe-area-inset-bottom)); background: var(--fg); color: var(--panel); box-shadow: 0 -6px 24px rgba(0, 0, 0, .18); }
+#bar button { flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .14); color: inherit; cursor: pointer; display: grid; place-items: center; }
+#bar button svg { width: 26px; height: 26px; }
+#bar button:hover { background: rgba(255, 255, 255, .26); }
+#bar button:focus-visible { outline: 2px solid var(--panel); outline-offset: 2px; }
+#bar .go { width: 62px; height: 62px; background: var(--panel); color: var(--fg); }
+#bar .go:hover { background: #fff; }
+#bar .go svg { width: 30px; height: 30px; }
+#bar .go .i-stop, #bar .go[aria-pressed="true"] .i-play { display: none; } #bar .go[aria-pressed="true"] .i-stop { display: block; }
+#bar .name { flex: 1; min-width: 0; padding: 0 8px; text-align: center; font: 600 13px/1.3 var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+</style>
+</head>
+<body>
+<div id="migration-build-marker" role="status" style="position:fixed;top:8px;right:8px;z-index:9999;background:#126b4f;color:#fff;padding:8px 10px;border-radius:6px;font:700 12px/1.35 Arial,Helvetica,sans-serif;box-shadow:0 2px 10px #0003;max-width:calc(100vw - 16px)">PUBLIC TEST PAGE · PR BUILD<br>BUILD CHECK · 2026-10-26 · REX-COLOURS-03</div>
+
+<div id="site">
+  <header class="top">
+    <a class="brand" href="https://rex-audio.github.io/Rex/index.html">Rex Audio</a>
+    <nav aria-label="Main">
+      <a href="https://rex-audio.github.io/Rex/shapes.html">Shapes</a>
+      <a href="https://rex-audio.github.io/Rex/tunings.html">Tunings</a>
+      <a href="https://rex-audio.github.io/Rex/drums.html">Drums</a>
+      <a href="https://rex-audio.github.io/Rex/colours.html" aria-current="page">Colours</a>
+      <a href="https://rex-audio.github.io/Rex/loops.html">Loops</a>
+      <a href="https://rex-audio.github.io/Rex/roll.html">Piano roll</a>
+    </nav>
+  </header>
+
+  <section class="intro">
+    <p class="label">Unlisted test page · migration stage 1</p>
+    <h1>Colours</h1>
+  </section>
+
+  <section class="sec" id="vercel-only-audio-test" aria-labelledby="vercel-test-heading">
+    <div style="border:2px solid #126b4f;border-radius:12px;padding:22px;background:#f8fbf9">
+      <p class="label" style="color:#126b4f">Private Vercel audio check · REX-VERCEL-AUDIO-001</p>
+      <h2 id="vercel-test-heading" style="font-size:28px;line-height:1.15;margin:8px 0">Vercel-only test sound</h2>
+      <p style="font-size:15px;margin:0 0 14px">This is a separate test sound served from the Vercel deployment, not one of the Colours pads.</p>
+      <button id="vercelTestPlay" type="button" style="border:0;border-radius:8px;padding:13px 17px;background:#126b4f;color:#fff;font:700 15px Arial,Helvetica,sans-serif;cursor:pointer">▶ Play Vercel-only test sound</button>
+      <p id="vercelTestStatus" role="status" aria-live="polite" style="font-size:14px;margin-top:12px">Ready · tap the button to request the test audio.</p>
+    </div>
+  </section>
+
+  <section class="sec">
+    <canvas id="cv" role="img" aria-label="The colour gradient of the chosen pad"></canvas>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 Rex Audio</span>
+    <nav><a href="https://rex-audio.github.io/Rex/colours/COPYRIGHT.txt">Pad recordings and pictures: copyright notice</a></nav>
+  </footer>
+</div>
+<div id="bar"><div class="pill" role="group" aria-label="Player">
+  <button id="bp" type="button" aria-label="Previous pad" title="Previous pad"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button class="go" id="playBtn" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button>
+  <button id="bn" type="button" aria-label="Next pad" title="Next pad"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <span class="name" id="barName" aria-live="polite"></span>
+</div></div>
+<script>
+const $ = s => document.querySelector(s);
+
+// Separate test button. The audio file is supplied by the Vercel deployment.
+const vercelTestButton = $("#vercelTestPlay");
+const vercelTestStatus = $("#vercelTestStatus");
+let vercelTestAudio = null, vercelTestLoading = false;
+vercelTestButton.addEventListener("click", async () => {
+  if (vercelTestLoading) return;
+  vercelTestLoading = true;
+  vercelTestButton.disabled = true;
+  vercelTestStatus.textContent = "Fetching Vercel test audio…";
+  try {
+    if (!vercelTestAudio) {
+      const response = await fetch("/migration-test/assets/vercel-only-test-tone.wav.b64", { cache: "no-store" });
+      if (!response.ok) throw new Error("Audio request returned HTTP " + response.status);
+      const encoded = (await response.text()).trim();
+      const binary = atob(encoded);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const objectUrl = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
+      vercelTestAudio = new Audio(objectUrl);
+      vercelTestAudio.addEventListener("ended", () => {
+        vercelTestStatus.textContent = "Playback complete · REX-VERCEL-AUDIO-001";
+      });
+    }
+    vercelTestAudio.currentTime = 0;
+    await vercelTestAudio.play();
+    vercelTestStatus.textContent = "Playback started · Vercel test asset loaded";
+  } catch (error) {
+    vercelTestStatus.textContent = "Test failed: " + (error && error.message ? error.message : "could not load or play audio");
+  } finally {
+    vercelTestLoading = false;
+    vercelTestButton.disabled = false;
+  }
+});
+const MAN = {"pads":[{"n":"Warm chorus pad","file":"warm-chorus-pad"},{"n":"Glass pad","file":"glass-pad"},{"n":"Deep sea pad","file":"deep-sea-pad"},{"n":"Sunset strings","file":"sunset-strings"},{"n":"Forest air","file":"forest-air"},{"n":"Violet haze","file":"violet-haze"},{"n":"Brown velvet pad","file":"brown-velvet-pad"},{"n":"Singing glass pad","file":"singing-glass-pad"},{"n":"Ember growl pad","file":"ember-growl-pad"},{"n":"Vowel violet pad","file":"vowel-violet-pad"},{"n":"Deep sea resonance pad","file":"deep-sea-resonance-pad"},{"n":"Mossy forest floor","file":"mossy-forest-floor"},{"n":"Autumn leaves","file":"autumn-leaves"},{"n":"Lavender field","file":"lavender-field"},{"n":"Coral reef","file":"coral-reef"},{"n":"Northern lights","file":"northern-lights"},{"n":"Desert dusk","file":"desert-dusk"},{"n":"Glacier","file":"glacier"},{"n":"Cherry blossom","file":"cherry-blossom"},{"n":"Rainforest canopy","file":"rainforest-canopy"},{"n":"Bioluminescent bay","file":"bioluminescent-bay"},{"n":"Volcanic ember","file":"volcanic-ember"},{"n":"Misty moorland","file":"misty-moorland"},{"n":"Sunflower field","file":"sunflower-field"},{"n":"Moonlit meadow","file":"moonlit-meadow"},{"n":"Jungle humidity","file":"jungle-humidity"},{"n":"Fern grotto","file":"fern-grotto"},{"n":"Emerald canopy","file":"emerald-canopy"},{"n":"Swamp mist","file":"swamp-mist"},{"n":"Bamboo grove","file":"bamboo-grove"},{"n":"Olive grove","file":"olive-grove"},{"n":"Lime spring","file":"lime-spring"},{"n":"Deep jungle night","file":"deep-jungle-night"},{"n":"Red rock canyon","file":"red-rock-canyon"},{"n":"Crimson maple","file":"crimson-maple"},{"n":"Poppy meadow","file":"poppy-meadow"},{"n":"Ruby cavern","file":"ruby-cavern"},{"n":"Terracotta dusk","file":"terracotta-dusk"},{"n":"Sand dune wind","file":"sand-dune-wind"},{"n":"Mahogany hall","file":"mahogany-hall"},{"n":"Redwood bark","file":"redwood-bark"},{"n":"Green spectrum: lime to forest","file":"green-spectrum-lime-to-forest"},{"n":"Green spectrum: emerald depths","file":"green-spectrum-emerald-depths"},{"n":"Green spectrum: sea glass","file":"green-spectrum-sea-glass"},{"n":"Green spectrum: moss to jade","file":"green-spectrum-moss-to-jade"},{"n":"Red spectrum: scarlet to wine","file":"red-spectrum-scarlet-to-wine"},{"n":"Red spectrum: crimson glow","file":"red-spectrum-crimson-glow"},{"n":"Red spectrum: blood orange","file":"red-spectrum-blood-orange"},{"n":"Red spectrum: garnet depths","file":"red-spectrum-garnet-depths"},{"n":"Blue spectrum: ice to midnight","file":"blue-spectrum-ice-to-midnight"},{"n":"Blue spectrum: sky to cobalt","file":"blue-spectrum-sky-to-cobalt"},{"n":"Blue spectrum: indigo tide","file":"blue-spectrum-indigo-tide"},{"n":"Blue spectrum: teal blue lagoon","file":"blue-spectrum-teal-blue-lagoon"},{"n":"Black glass","file":"black-glass"},{"n":"Obsidian","file":"obsidian"},{"n":"Charcoal ember","file":"charcoal-ember"},{"n":"Black forest","file":"black-forest"},{"n":"Midnight void","file":"midnight-void"},{"n":"Dark chocolate","file":"dark-chocolate"}]};
+const PADS = MAN.pads, N = PADS.length;
+const cv = $("#cv"), g = cv.getContext("2d"), W = 964, H = 614;
+cv.width = W; cv.height = H;
+const playBtn = $("#playBtn"), nameEl = $("#barName");
+const audio = new Audio(); audio.preload = "none";
+const imgs = new Map();
+const imgOf = i => {   // each picture loads once, the first time it is wanted
+  if (!imgs.has(i)) { const im = new Image(); im.onload = () => { if (i === cur) draw(); }; im.src = "https://rex-audio.github.io/Rex/colours/" + PADS[i].file + ".webp"; imgs.set(i, im); }
+  return imgs.get(i);
+};
+let cur = 0, playing = false;
+
+function draw() {
+  const im = imgOf(cur);
+  g.clearRect(0, 0, W, H);
+  if (im.complete && im.naturalWidth) g.drawImage(im, 0, 0, W, H); else { g.fillStyle = "#0a1117"; g.fillRect(0, 0, W, H); }
+}
+
+function show(i) {
+  cur = (i + N) % N; nameEl.textContent = PADS[cur].n; audio.pause(); audio.removeAttribute("src"); audio.load();
+  [cur + 1, cur - 1].forEach(j => imgOf((j + N) % N));   // the neighbours are ready for the arrows
+  draw();
+}
+function play() {
+  audio.src = "https://rex-audio.github.io/Rex/colours/" + PADS[cur].file + ".mp3"; audio.currentTime = 0;
+  audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+}
+function setPlaying(on) {
+  playing = on; playBtn.setAttribute("aria-pressed", on); playBtn.setAttribute("aria-label", on ? "Stop" : "Play");
+}
+function stop() { audio.pause(); audio.currentTime = 0; setPlaying(false); }
+audio.addEventListener("ended", () => { setPlaying(false); });
+playBtn.onclick = () => playing ? stop() : play();
+const go = d => { const was = playing; show(cur + d); if (was) play(); else setPlaying(false); };
+$("#bp").onclick = () => go(-1); $("#bn").onclick = () => go(1);
+$("#bar").addEventListener("click", e => { const b = e.target.closest("button"); if (b && e.detail) b.blur(); });
+addEventListener("keydown", e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+  if (e.code === "Space" && e.target.tagName !== "BUTTON") { e.preventDefault(); playing ? stop() : play(); }
+  else if (e.key === "ArrowLeft") go(-1); else if (e.key === "ArrowRight") go(1);
+});
+
+// the page is a 720px canvas scaled to the window, like the other pages
+const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); };
+fitSite(); addEventListener("resize", fitSite);
+show(0);
+</script>
+</body>
+</html>

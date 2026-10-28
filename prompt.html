@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Type what you want to hear and the Rex Audio server makes a loop of it.">
+<title>Prompt | Rex Audio</title>
+<style>
+/* Same page frame as the other pages: a 720px "desktop" page scaled to the window. */
+:root {
+  --bg: #e4e7e9;
+  --panel: #f3f4f5;
+  --fg: #15181a;
+  --muted: #5a6166;
+  --line: #c3c9cc;
+  --focus: #c8321e;
+  --sans: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; padding-bottom: 100px; }
+#site { width: 720px; margin: 0 auto; zoom: 0.54; }
+a { color: inherit; }
+a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, p { margin: 0; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 26px 36px 0; }
+.brand { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+.top nav a:hover, .top nav a[aria-current] { border-bottom-color: var(--fg); }
+
+.intro { text-align: center; padding: 36px 36px 0; }
+.intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
+.sec { padding: 36px 36px 0; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--muted); }
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
+
+.topplay { display: flex; justify-content: center; margin-bottom: 26px; }
+.go2 { width: 62px; height: 62px; padding: 0; border: 0; border-radius: 50%; background: var(--fg); color: var(--panel); cursor: pointer; display: grid; place-items: center; }
+.go2:hover { background: #000; }
+.go2:disabled { opacity: .25; cursor: default; }
+.go2:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.go2 svg { width: 30px; height: 30px; }
+.go2 .i-stop, .go2[aria-pressed="true"] .i-play { display: none; } .go2[aria-pressed="true"] .i-stop { display: block; }
+
+
+.intro { text-align: center; padding: 36px 36px 0; } .intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
+.sec { padding: 32px 36px 0; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--muted); }
+.stat { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 15px; color: var(--muted); margin-bottom: 22px; text-align: center; }
+.stat i { flex: none; width: 12px; height: 12px; border-radius: 50%; background: #b9bfc3; } .stat.ok i { background: #2f9e6a; } .stat.bad i { background: var(--focus); }
+.ask { display: flex; gap: 12px; }
+.ask input { flex: 1; min-width: 0; height: 56px; padding: 0 18px; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--fg); font: 20px var(--sans); }
+.ask button { flex: none; height: 56px; padding: 0 28px; border: 0; border-radius: 12px; background: var(--fg); color: var(--panel); font: 700 18px var(--sans); cursor: pointer; }
+.ask button:hover { background: #000; } .ask button:disabled { opacity: .5; cursor: default; }
+input:focus-visible, button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.eg { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; justify-content: center; }
+.eg button { padding: 8px 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--fg); font: 15px var(--sans); cursor: pointer; }
+.eg button:hover { border-color: var(--fg); }
+.result { margin-top: 34px; text-align: center; min-height: 120px; }
+[hidden] { display: none !important; }   /* a class with display: flex must not override the hidden attribute */
+.modelrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; font-size: 15px; color: var(--muted); }
+.modelrow select { max-width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--fg); font: 15px var(--sans); }
+.speak { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; font-size: 15px; color: var(--muted); }
+.speak input { width: 18px; height: 18px; accent-color: var(--fg); }
+.reply { margin: 28px 0 0; padding: 18px 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; font-size: 19px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; text-align: left; }
+.reply:empty { display: none; }
+.result .plan { margin-top: 14px; font-size: 16px; color: var(--muted); min-height: 26px; }
+</style>
+</head>
+<body>
+<div id="site">
+  <header class="top">
+    <a class="brand" href="index.html">Rex Audio</a>
+    <nav aria-label="Main">
+      <a href="shapes.html">Shapes</a>
+      <a href="tunings.html">Tunings</a>
+      <a href="drums.html">Drums</a>
+      <a href="colours.html">Colours</a>
+      <a href="loops.html">Loops</a>
+    </nav>
+  </header>
+
+  <section class="intro">
+    <p class="label">Prompt</p>
+    <h1>Say what you want</h1>
+  </section>
+
+  <section class="sec">
+    <div class="stat" id="stat"><i></i><span id="statTxt">Checking the server...</span></div>
+    <form class="ask" id="ask" autocomplete="off">
+      <input id="q" type="text" maxlength="300" placeholder="For example: sad chords in A minor" aria-label="What do you want to hear?">
+      <button id="go" type="submit">Make</button>
+    </form>
+    <label class="modelrow" id="modelRow" hidden>Model <select id="model" aria-label="Model"></select></label>
+    <label class="speak" id="speakRow" hidden><input id="speak" type="checkbox" checked> Read replies aloud</label>
+    <div class="eg" id="eg" aria-label="Examples"></div>
+    <p class="reply" id="reply" aria-live="polite"></p>
+    <div class="result">
+      <div class="topplay"><button class="go2" id="play" type="button" aria-pressed="false" aria-label="Play" title="Play / stop" disabled><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
+      <p class="plan" id="plan">Say hello, or ask for some music. The replies and the loops come from the server's nets.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 Rex Audio</span>
+  </footer>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const DEFAULT_API = "https://vercel-omega-woad-23.vercel.app";   // the address of the private server
+const API_BASE = (new URLSearchParams(location.search).get("api") || DEFAULT_API).replace(/\/$/, "");   // ?api=https://... overrides it for testing
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+const cache = new Map();   // request words -> { buf, plan }
+let src = null, busy = false, model = "auto";
+
+// Asks the server which models it runs. If that fails, the page uses the default and hides the menu.
+fetch(API_BASE + "/api/models").then(r => r.json()).then(j => {
+  if (!j.models || !j.models.length) return;
+  model = j.default || j.models[0].id;
+  j.models.forEach(m => { const o = document.createElement("option"); o.value = m.id; o.textContent = m.label; $("#model").appendChild(o); });
+  $("#model").value = model; $("#modelRow").hidden = false;
+  $("#model").onchange = () => { model = $("#model").value; cache.clear(); };
+}).catch(() => {});
+
+const EXAMPLES = ["Hello", "Sad chords in A minor", "Heavy trap drums", "House beat", "Lo-fi drums", "Dark bass with drums", "Warm pad", "Plucky arp", "Deep bass", "Happy bright melody", "Slow dreamy pad in C major", "Tense low bass at 100 bpm"];
+EXAMPLES.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.onclick = () => { $("#q").value = t; make(); }; $("#eg").appendChild(b); });
+
+// Reads replies aloud with the browser's own speech (no server, no microphone).
+const canSpeak = "speechSynthesis" in window;
+if (canSpeak) $("#speakRow").hidden = false;
+function say(t) {
+  if (!canSpeak || !$("#speak").checked || !t) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t.replace(/`|\{|\}|\[|\]/g, "")); u.rate = 1; speechSynthesis.speak(u); }
+  catch (e) { /* speech is a nicety: a failure here must never hide the reply */ }
+}
+function status(ok, txt) { $("#stat").className = "stat " + (ok ? "ok" : "bad"); $("#statTxt").textContent = txt || (ok ? "Server connected" : "Server not reachable"); }
+fetch(API_BASE + "/api/health").then(r => r.json()).then(j => status(j.ok)).catch(() => status(false));
+
+function stop() { if (src) { try { src.stop(); } catch (e) {} src = null; } $("#play").setAttribute("aria-pressed", "false"); $("#play").setAttribute("aria-label", "Play"); }
+function start(buf) {
+  stop(); src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; src.connect(ctx.destination); src.start();
+  $("#play").setAttribute("aria-pressed", "true"); $("#play").setAttribute("aria-label", "Stop");
+}
+let current = null;
+$("#play").onclick = async () => { await ctx.resume(); if ($("#play").getAttribute("aria-pressed") === "true") stop(); else if (current) start(current); };
+
+// The text reply: GET /api/reply. Returns null when it cannot be had (an older server with no reply net answers 404 without CORS headers,
+// which the browser reports as a network error), and the page falls back to music only; if the server is down that fails too, and says so.
+async function getReply(text) {
+  try {
+    const r = await fetch(API_BASE + "/api/reply?" + new URLSearchParams({ text, model }));
+    return r.ok ? await r.json() : null;
+  } catch (e) { return null; }
+}
+// The loop: GET /api/music?wav=1, always from the music net, cached by its address.
+async function getLoop(text) {
+  const u = API_BASE + "/api/music?" + new URLSearchParams({ text, wav: 1, model: "music" });
+  let hit = cache.get(u);
+  if (!hit) {
+    const t0 = performance.now(), r = await fetch(u); if (!r.ok) throw new Error(r.status);
+    const plan = r.headers.get("X-Plan") || "", a = await r.arrayBuffer(), buf = await new Promise((ok, no) => ctx.decodeAudioData(a, ok, no));
+    hit = { buf, plan, ms: Math.round(performance.now() - t0) }; cache.set(u, hit);
+  }
+  return hit;
+}
+
+async function make() {
+  const text = $("#q").value.trim(); if (!text || busy) return;
+  busy = true; $("#go").disabled = true; $("#reply").textContent = ""; $("#plan").textContent = "Thinking..."; await ctx.resume();
+  try {
+    const rep = await getReply(text);
+    if (rep === null || rep.kind === "music") {
+      if (rep) $("#reply").textContent = rep.text;
+      $("#plan").textContent = "Making the loop...";
+      const hit = await getLoop(text);
+      current = hit.buf; start(hit.buf); $("#play").disabled = false;
+      if (!rep) $("#reply").textContent = hit.plan ? "Made: " + hit.plan + "." : "Made.";
+      $("#plan").textContent = (hit.plan ? hit.plan + "." : "") + (hit.ms ? " " + (hit.ms / 1000).toFixed(1) + " s from the server." : "");
+    } else {
+      stop(); current = null; $("#play").disabled = true;
+      $("#reply").textContent = rep.text;
+      $("#plan").textContent = rep.kind === "chat" ? "From the reply net, using " + (rep.source || "a dataset") + "." : "";
+    }
+    status(true);
+    say($("#reply").textContent);
+  } catch (e) { $("#reply").textContent = "The server did not answer. Try again in a moment."; $("#plan").textContent = ""; status(false); say($("#reply").textContent); }
+  busy = false; $("#go").disabled = false;
+}
+$("#ask").addEventListener("submit", e => { e.preventDefault(); make(); });
+addEventListener("keydown", e => { if (e.code === "Space" && !/^(INPUT|BUTTON)$/.test(e.target.tagName) && !$("#play").disabled) { e.preventDefault(); $("#play").click(); } });
+const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); };
+fitSite(); addEventListener("resize", fitSite);
+</script>
+</body>
+</html>
