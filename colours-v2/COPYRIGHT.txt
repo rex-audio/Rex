@@ -1,0 +1,19 @@
+Copyright (c) 2026 Rex Audio. All rights reserved.
+
+The audio recordings (the .mp3 files) in this folder, their names, and the way
+they are paired with the colour pictures in the colours folder are the property
+of Rex Audio.
+
+They are published only so that they can be played on the colours and loops
+pages of the Rex Audio website. No permission is granted to:
+
+  - copy, download for reuse, redistribute, sell, rent, lend or sublicense them;
+  - sample them, or include them in any other work (including music releases,
+    sample packs, plugins, apps or artwork);
+  - convert, edit or modify them for any of the above;
+  - use them to train, fine-tune or evaluate machine-learning models.
+
+Anything not listed above also needs prior written permission from the
+copyright holder: rex-audio@outlook.com
+
+Each audio file also carries this notice in its metadata.
