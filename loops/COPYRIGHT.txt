@@ -1,18 +1,15 @@
 Copyright (c) 2026 Rex Audio. All rights reserved.
 
-The audio recordings (the .mp3 files) in this folder, their names, and the way
-they are arranged into loops are the property of Rex Audio.
+The audio recordings in this folder (the .mp3 files), their names, and the way they
+are arranged into loops are owned by Rex Audio. Rex Audio may use, modify, publish,
+sell, license and train machine-learning models on them however it chooses.
 
-They are published only so that they can be played on the loops page of the Rex
-Audio website. No permission is granted to:
+Anyone may listen to them on the loops page of the Rex Audio website. Nobody else may
+use them commercially: no selling, licensing, sublicensing, or use in music releases,
+sample packs, plugins, apps or artwork, and no commercial model training, unless Rex
+Audio has agreed in writing.
 
-  - copy, download for reuse, redistribute, sell, rent, lend or sublicense them;
-  - sample them, or include them in any other work (including music releases,
-    sample packs, plugins, apps or artwork);
-  - convert, edit or modify them for any of the above;
-  - use them to train, fine-tune or evaluate machine-learning models.
-
-Anything not listed above also needs prior written permission from the
-copyright holder: rex-audio@outlook.com
+Anything not covered here needs prior written permission from the copyright holder:
+rex-audio@outlook.com
 
 Each audio file also carries this notice in its metadata.
