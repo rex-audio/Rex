@@ -234,7 +234,7 @@ footer nav { display: flex; gap: 18px; }
       <a href="drums.html">Drums</a>
       <a href="colours.html">Colours</a>
       <a href="loops.html">Loops</a>
-      <a href="support.html">Support</a>
+      <a href="#support" data-view="support">Support</a>
     </nav>
   </header>
 
@@ -348,6 +348,8 @@ footer nav { display: flex; gap: 18px; }
     else { show('main',false); var id=a.getAttribute('href').slice(1); var el=document.getElementById(id);
       if(el){ e.preventDefault(); setTimeout(function(){el.scrollIntoView({behavior:'smooth'});},0);} }
   });
+  function fromHash(){ if(location.hash==='#support') show('support',true); }
+  window.addEventListener('hashchange',fromHash); fromHash();
 })();
 </script>
 <script>
