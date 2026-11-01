@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Sequence chords, key changes, tuning changes, voicings and arpeggios, played with an electric piano. Presets can be kept in your browser.">
+<title>Chord Seq | Rex Audio</title>
+<style>
+/* Same page frame as the drums page: a 720px "desktop" page scaled to the window. The sequencer keeps the synth's own dark theme. */
+:root {
+  --bg: #e4e7e9;
+  --panel: #f3f4f5;
+  --fg: #15181a;
+  --muted: #5a6166;
+  --line: #c3c9cc;
+  --focus: #c8321e;
+  --sans: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; padding-bottom: 100px; }
+#site { width: 720px; margin: 0 auto; zoom: 0.54; }
+a { color: inherit; }
+a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, p { margin: 0; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 26px 36px 0; }
+.brand { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+.top nav a:hover, .top nav a[aria-current] { border-bottom-color: var(--fg); }
+
+.intro { text-align: center; padding: 36px 36px 0; }
+.intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
+.intro .lead { font-size: 19px; line-height: 1.5; margin: 16px auto 0; max-width: 560px; }
+.sec { padding: 36px 36px 0; }
+.notes { margin-top: 18px; font-size: 14px; line-height: 1.55; color: var(--muted); }
+.notes b { color: var(--fg); }
+.notes p + p { margin-top: 8px; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; font-size: 14px; color: var(--muted); }
+footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
+
+/* the controls: plain page styling */
+.tun { display: grid; gap: 20px; }
+.row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px 24px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.seg { display: flex; gap: 6px; align-items: center; }
+.tun button, .tun select { height: 42px; font: 600 15px var(--sans); color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 0 14px; cursor: pointer; }
+.tun select { background: var(--panel); padding: 0 8px; min-width: 0; }
+.tun button:hover, .tun select:hover { border-color: var(--fg); }
+.tun button:focus-visible, .tun select:focus-visible, .tun input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.tun button[aria-pressed="true"] { background: var(--fg); color: var(--panel); border-color: var(--fg); }
+.tun .arrow { width: 42px; padding: 0; font-size: 18px; }
+.tun .play { padding: 0 26px; background: var(--fg); color: var(--panel); border-color: var(--fg); }
+.tun .play[aria-pressed="true"] { background: transparent; color: var(--fg); }
+.tun input[type=range] { width: 130px; accent-color: var(--fg); }
+.tun .val { min-width: 38px; font: 600 14px var(--sans); }
+.tun .sl { display: flex; align-items: center; gap: 8px; height: 42px; }
+#patSel { width: 130px; } #kitSel { width: 170px; } #styleSel { width: 150px; }
+
+/* the play bar: large and minimal, fills the bottom of the window and never moves */
+#bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; }
+#bar .pill { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px max(16px, calc((100% - 680px) / 2)) calc(12px + env(safe-area-inset-bottom)); background: var(--fg); color: var(--panel); box-shadow: 0 -6px 24px rgba(0, 0, 0, .18); }
+#bar button { flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .14); color: inherit; cursor: pointer; display: grid; place-items: center; }
+#bar button svg { width: 26px; height: 26px; }
+#bar button:hover { background: rgba(255, 255, 255, .26); }
+#bar button:focus-visible { outline: 2px solid var(--panel); outline-offset: 2px; }
+#bar .go { width: 62px; height: 62px; background: var(--panel); color: var(--fg); }
+#bar .go:hover { background: #fff; }
+#bar .go svg { width: 30px; height: 30px; }
+#bar .go .i-stop, #bar .go[aria-pressed="true"] .i-play { display: none; } #bar .go[aria-pressed="true"] .i-stop { display: block; }
+#bar .name { flex: 1; min-width: 0; padding: 0 8px; text-align: center; font: 600 13px/1.3 var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* the grid: the synth's dark theme */
+.demo {
+  --bg:#070b0f; --win:#0d141b; --card:#121b24; --card2:#18232e; --line:#1f2e3b; --track:#243443;
+  --text:#dbe9f5; --muted:#6f879b; --acc:#6fd3ff; --acc2:#b7f5e4; --a3:#a99bff;
+  color-scheme: dark; margin-top: 26px; color: var(--text); font-family: "Helvetica Neue", Inter, Arial, sans-serif; line-height: normal;
+}
+.pl-ruler, .pl-lane { display:grid; grid-template-columns:100px repeat(var(--bars), minmax(48px,1fr)); }
+.pl-ruler { margin-bottom:5px; color:#8795a0; font:700 11px var(--sans); text-align:center; }
+.pl-ruler span { padding:4px 0; }
+.pl-ruler span:first-child { text-align:left; }
+.pl-lane { min-height:48px; margin-bottom:5px; gap:3px; }
+.pl-name { display:flex; align-items:center; gap:7px; font:700 12px var(--sans); color:#cbd4da; }
+.pl-auto { min-height:34px; margin-bottom:4px; }
+.pl-auto-name { color:var(--track-color); font-size:11px; }
+#autoPick { position:fixed; z-index:200; min-width:190px; max-height:320px; overflow-y:auto; background:#17212b; color:#e4e9ec; border:1px solid #2a3845; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.45); font:14px var(--sans); }
+#autoPick .ph { position:sticky; top:0; padding:8px 12px; background:#17212b; color:#8795a0; font-size:12px; border-bottom:1px solid #2a3845; }
+#autoPick button { display:block; width:100%; padding:8px 12px; border:0; background:transparent; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+#autoPick button:hover { background:rgba(255,255,255,.08); }
+#autoPick button.cur { color:var(--c); font-weight:700; }
+#autoPick button.clr { color:#ee8a80; }
+.sqg .pl-ruler, .sqg .pl-lane { grid-template-columns:118px repeat(4, 84px) 22px; gap:3px; }
+.sqg .pl-ruler { margin-bottom:5px; }
+.sqg .pl-lane { min-height:40px; align-items:center; }
+.sqg .pl-auto-name { height:36px; }
+.sqg .blk { display:flex; align-items:center; min-width:0; height:36px; border:1px solid var(--track-color); border-radius:6px; background:color-mix(in srgb, var(--track-color) 22%, #111b24); color:#fff; font:600 10px var(--sans); overflow:hidden; }
+.sqg .blk .ar { flex:none; width:17px; height:100%; padding:0; border:0; border-radius:0; background:transparent; color:inherit; opacity:.65; cursor:pointer; font:700 13px Arial; }
+.sqg .blk .ar:hover { opacity:1; background:rgba(255,255,255,.12); }
+.sqg .blk .tx { flex:1; min-width:0; height:100%; padding:0 2px; border:0; background:transparent; color:inherit; font:inherit; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+.sqg .blk.now { box-shadow:0 0 0 2px #e4e9ec; }
+.sqg .blk.narrow .ar { display:none; }
+.sqg .blk.narrow .tx { font-size:9px; padding:0 1px; }
+.sqg .blk.tiny .tx { font-size:0; }
+.sqg .lblbox { display:flex; align-items:center; gap:3px; }
+.sqg .pl-auto-name.sub { padding-left:0; }
+.sqg .tabbtn { position:absolute; left:50%; bottom:-9px; transform:translateX(-50%); width:22px; height:18px; padding:0; border:0; background:transparent; color:#cbd4da; opacity:.65; font:700 13px/18px Arial; text-align:center; cursor:pointer; }
+.sqg .tabbtn:hover { opacity:1; }
+.sqg .tabbtn.add { left:67px; bottom:2px; height:10px; line-height:10px; }
+#autoPick button { display:flex; align-items:center; min-height:var(--ih, 0px); }
+#autoPick.sized button { justify-content:center; font:600 15px var(--sans); }
+.sqg .circbtn { position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); z-index:2; width:26px; height:12px; padding:0; border:1px solid var(--bc); border-radius:4px; background:#0d141b; color:#cbd4da; font-size:0; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.sqg .circbtn::before { content:""; width:8px; height:2px; border-radius:1px; background:currentColor; opacity:.75; }
+.sqg .circbtn:hover { color:#fff; }
+.sqg .circbtn:hover::before { opacity:1; }
+.sqg .sect.open { --bc:color-mix(in srgb, var(--g) 65%, #0d141b); position:relative; margin:10px -9px 14px; padding:10px 8px 6px; border:1px solid var(--bc); border-radius:10px; }
+.sqg .lblbox.prgl { justify-content:space-between; height:36px; position:relative; }
+.sqg .ar2 { flex:none; width:17px; height:36px; padding:0; border:0; border-radius:0; background:transparent; color:#cbd4da; opacity:.65; cursor:pointer; font:700 13px Arial; }
+.sqg .ar2:hover { opacity:1; background:rgba(255,255,255,.12); }
+.sqg .rm { align-self:center; justify-self:center; width:18px; height:18px; padding:0; border:0; border-radius:50%; background:#17212b; color:#8795a0; cursor:pointer; font:700 12px/1 Arial; }
+.sqg .rm:hover { color:#fff; background:#3a4651; }
+.sqg { width: max-content; margin: 0 auto; }
+.circwrap { display:flex; justify-content:center; margin:2px 0 14px; }
+.circ.flat { background:#e4e9ec; box-shadow:none; } .circ.flat:hover { background:#fff; }
+.circ { width:62px; height:62px; padding:0; border:0; border-radius:50%; background:radial-gradient(circle at 35% 30%, #fff, #cfd6dc 70%, #b9c2c9); color:#0d141b; cursor:pointer; display:grid; place-items:center; box-shadow:0 0 0 4px #10161c, 0 0 0 5px #4a5865, 0 6px 14px rgba(0,0,0,.5), inset 0 -3px 6px rgba(0,0,0,.15); }
+.circ:hover { background:#fff; } .circ:focus-visible { outline:2px solid #e4e9ec; outline-offset:3px; } .circ svg { width:30px; height:30px; }
+.circ .i-stop, .circ[aria-pressed="true"] .i-play { display:none; } .circ[aria-pressed="true"] .i-stop { display:block; }
+.sp { border: 1px solid var(--line); border-radius: 6px; background: var(--win); padding: 14px 16px 12px; }
+#preSel { width: 150px; }
+.tun input[type=range] { width: 110px; }
+.tun .field.wide { flex: 1; }
+.tun button[hidden] { display: none; }
+.buy { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }
+.btn { display: inline-block; text-decoration: none; font: inherit; font-size: 15px; font-weight: 700; border: 1px solid var(--fg); border-radius: 6px; padding: 11px 18px; cursor: pointer; background: var(--fg); color: var(--panel); }
+.btn:hover { opacity: 0.85; }
+.btn.ghost { background: transparent; color: var(--fg); }
+.hint { font-size: 14px; line-height: 1.55; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="site">
+  <header class="top">
+    <a class="brand" href="index.html">Rex Audio</a>
+    <nav aria-label="Main">
+      <a href="shapes.html">Shapes</a>
+      <a href="tunings.html">Tunings</a>
+      <a href="drums.html">Drums</a>
+      <a href="colours.html">Colours</a>
+      <a href="loops.html">Loops</a>
+      <a href="web-version.html" aria-current="page">Chord Seq</a>
+    </nav>
+  </header>
+
+  <section class="intro">
+    <p class="label">Chord sequencer</p>
+    <h1>Chord Seq</h1>
+    <p class="lead">Sequence chords, key changes, tuning changes, voicings and arpeggios.</p>
+    <div class="buy">
+      <a class="btn" href="https://rexaudio.gumroad.com/l/Chordseq" target="_blank" rel="noopener">Buy on Gumroad</a>
+      <a class="btn ghost" href="#play" id="playFree">Play for free</a>
+    </div>
+  </section>
+
+  <section class="sec" id="play">
+    <div class="demo">
+      <div class="sp">
+        <div class="circwrap"><button id="seqCircle" class="circ flat" type="button" aria-pressed="false" aria-label="Play" title="Play / stop"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
+        <div class="sqg" id="seqGrid"></div>
+      </div>
+    </div>
+    <div class="tun" style="margin-top:26px">
+      <div class="row">
+        <div class="field"><span class="label">Preset</span><div class="seg"><button class="arrow" id="prePrev" type="button" aria-label="Previous preset">&lt;</button><select id="preSel" aria-label="Preset"></select><button class="arrow" id="preNext" type="button" aria-label="Next preset">&gt;</button></div></div>
+        <div class="field"><span class="label">BPM</span><div class="sl"><input id="bpm" type="range" min="40" max="220" step="1" value="130" aria-label="BPM"><span class="val" id="bpmV">130</span></div></div>
+        <div class="field"><span class="label">Volume</span><div class="sl"><input id="master" type="range" min="0" max="1" step="0.01" value="0.7" aria-label="Volume"><span class="val" id="masterV">0.70</span></div></div>
+      </div>
+      <div class="row">
+        <div class="field"><span class="label">My presets</span><div class="seg"><button id="seqSave" type="button">Save current as a preset</button><button id="seqDel" type="button" hidden>Delete this preset</button></div></div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <p><b>How to use it.</b> Each block is one bar. Click a block for its list, or use the arrows on it. The arrows at the left of a row change every bar at once, and the + opens more rows for that part.</p>
+      <p><b>Your presets</b> are kept in this browser only. Nothing is uploaded or stored anywhere else, and clearing your site data removes them.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 Rex Audio</span>
+  </footer>
+</div>
+<div id="autoPick" hidden></div>
+<div id="bar"><div class="pill" role="group" aria-label="Player">
+  <button id="bp" type="button" aria-label="Previous preset" title="Previous preset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button class="go" id="playBtn" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button>
+  <button id="bn" type="button" aria-label="Next preset" title="Next preset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <span class="name" id="presetName" aria-live="polite"></span>
+</div></div>
+<script>
+
+// ---------- the web version: the sequencer, its presets and playback. No piano roll and no files. ----------
+const $ = s => document.querySelector(s);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
+const SCALES = { "Minor": [0, 2, 3, 5, 7, 8, 10], "Major": [0, 2, 4, 5, 7, 9, 11], "Dorian": [0, 2, 3, 5, 7, 9, 10], "Phrygian": [0, 1, 3, 5, 7, 8, 10], "Lydian": [0, 2, 4, 6, 7, 9, 11], "Mixolydian": [0, 2, 4, 5, 7, 9, 10], "Locrian": [0, 1, 3, 5, 6, 8, 10], "Harmonic minor": [0, 2, 3, 5, 7, 8, 11], "Minor pentatonic": [0, 3, 5, 7, 10] };
+const NN = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"], BLACK = [1, 3, 6, 8, 10];
+const KS = { root: 9, scale: "Minor" };   // A minor, the key of the default pads on the Loops page
+const degSemi = d => { const sc = SCALES[KS.scale], n = sc.length, o = Math.floor(d / n), i = ((d % n) + n) % n; return sc[i] + 12 * o; };
+const toMidi = (kd, d) => kd.base + KS.root + degSemi(d);
+const inScale = m => SCALES[KS.scale].includes((((m - KS.root) % 12) + 12) % 12);
+const scaleList = () => { const o = []; for (let m = 12; m < 110; m++) if (inScale(m)) o.push(m); return o; };
+const nearestIdx = (L, m) => { let b = 0; for (let i = 1; i < L.length; i++) if (Math.abs(L[i] - m) < Math.abs(L[b] - m)) b = i; return b; };
+const shiftScale = (m, st) => { const L = scaleList(); return L[clamp(nearestIdx(L, m) + st, 0, L.length - 1)]; };
+const ratioC = (n, d) => 1200 * Math.log2(n / d);
+const fifths = f => [0,7,2,-3,4,-1,6,1,8,3,-2,5].map(k => ((k * f) % 1200 + 1200) % 1200);
+const TUNINGS = [
+  ["12-TET", [0,100,200,300,400,500,600,700,800,900,1000,1100]],
+  ["5-Limit JI", [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[45,32],[3,2],[8,5],[5,3],[9,5],[15,8]]],
+  ["5-Limit JI (16/9)", [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[45,32],[3,2],[8,5],[5,3],[16,9],[15,8]]],
+  ["7-Limit JI", [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[7,5],[3,2],[8,5],[5,3],[7,4],[15,8]]],
+  ["Pythagorean", [[1,1],[256,243],[9,8],[32,27],[81,64],[4,3],[729,512],[3,2],[128,81],[27,16],[16,9],[243,128]]],
+  ["Harmonic series", [[1,1],[17,16],[9,8],[19,16],[5,4],[21,16],[11,8],[3,2],[13,8],[27,16],[7,4],[15,8]]],
+  ["1/4-comma meantone", fifths(1200 * Math.log2(5) / 4)],
+  ["1/3-comma meantone", fifths(694.786)],
+  ["Werckmeister III", [0, 90.225, 192.180, 294.135, 390.225, 498.045, 588.270, 696.090, 792.180, 888.270, 996.090, 1092.180]],
+  ["Kirnberger III", [0, 90.225, 193.157, 294.135, 386.314, 498.045, 590.224, 696.578, 792.180, 889.735, 996.090, 1088.269]],
+  ["Vallotti", [0, 94.135, 196.090, 298.045, 392.180, 501.955, 592.180, 698.045, 796.090, 894.135, 1000.000, 1090.225]]
+];
+const TUNS = TUNINGS; TUNS.forEach(t => { t.c = t[1].map(st => Array.isArray(st) ? ratioC(st[0], st[1]) : st); });
+const SCALE_NAMES = Object.keys(SCALES);
+const CHORDS = [["Single note"], ["Triad", [0, 2, 4], [0, 4, 7]], ["7th", [0, 2, 4, 6], [0, 4, 7, 10]], ["9th", [0, 2, 4, 6, 8], [0, 4, 7, 10, 14]], ["Sus2", [0, 1, 4], [0, 2, 7]], ["Sus4", [0, 3, 4], [0, 5, 7]], ["Power", [0, 4], [0, 7]]];
+const MAJ = [0, 2, 4, 5, 7, 9, 11];
+function romanAt(d, beat, av) {   // a progression step, named as a roman numeral and the root it lands on, in the scale and key of that beat
+  const T = SCALES[SCALE_NAMES[autoAt("scl", beat, av)]];
+  if (T.length !== 7) return "Step " + (d + 1);
+  const third = (T[(d + 2) % 7] - T[d] + 12) % 12, fifth = (T[(d + 4) % 7] - T[d] + 12) % 12;
+  let num = ["I", "II", "III", "IV", "V", "VI", "VII"][d]; if (third === 3) num = num.toLowerCase();
+  return (T[d] < MAJ[d] ? "♭" : T[d] > MAJ[d] ? "♯" : "") + num + (third === 3 && fifth === 6 ? "°" : third === 4 && fifth === 8 ? "+" : "") + " · " + NN[((autoAt("key", beat, av) === 12 ? KS.root : autoAt("key", beat, av)) + T[d]) % 12];
+}
+const AUTO_IDS = ["key", "tun", "scl", "prg", "chd"];
+const AUTO = {
+  key: { label: "Key",         short: "Key",    col: "#e8c45a", n: 13,                 name: v => v === 12 ? "Auto" : NN[v] },
+  tun: { label: "Tuning",      short: "Tuning", col: "#a58bf0", n: TUNS.length,        name: v => TUNS[v][0] },
+  scl: { label: "Scale",       short: "Scale",  col: "#4cc9b0", n: SCALE_NAMES.length, name: v => SCALE_NAMES[v] },
+  prg: { label: "Progression", short: "Prog",   col: "#e0628e", n: 7,                  name: (v, beat, av) => romanAt(v, beat || 0, av) },
+  chd: { label: "Chord",       short: "Chord",  col: "#6bd48f", n: CHORDS.length,      name: v => CHORDS[v][0] }
+};
+const resetLanes = () => ({ key: { 0: KS.root }, tun: { 0: 0 }, scl: { 0: SCALE_NAMES.indexOf(KS.scale) }, prg: { 0: 0 }, chd: { 0: 0 } });
+let AV = resetLanes();
+AV.prg = { 0: 0, 4: 5, 8: 2, 12: 6, 16: 0, 20: 5, 24: 2, 28: 6 };   // a four chord progression, played twice: i VI III VII
+const lanesOf = tr => (tr && tr.av) || AV;
+function autoAt(id, beat, av) { const a = (av || AV)[id]; if (!a) return id === "oct" ? 2 : id === "spr" || id === "rate" || id === "vel" || id === "det" ? 3 : 0; let best = 0; for (const k in a) { const b = +k; if (b <= beat && b >= best) best = b; } return a[best]; }
+const stateAt = (beat, av) => ({ key: autoAt("key", beat, av), tun: autoAt("tun", beat, av), scl: autoAt("scl", beat, av), prg: autoAt("prg", beat, av), chd: autoAt("chd", beat, av), deg: autoAt("prg", beat, av), voi: autoAt("voi", beat, av), spr: autoAt("spr", beat, av), arp: autoAt("arp", beat, av), rate: autoAt("rate", beat, av), bass: autoAt("bass", beat, av), vel: autoAt("vel", beat, av), strum: autoAt("strum", beat, av), acc: autoAt("acc", beat, av), det: autoAt("det", beat, av), oct: autoAt("oct", beat, av) });
+function stepScale(m, T, root, steps) {   // move a note up or down by scale steps
+  const d = (((m - root) % 12) + 12) % 12, base = m - d; let i = 0, bd = 99;
+  T.forEach((x, j) => { const dist = Math.abs(x - d); if (dist < bd) { bd = dist; i = j; } });
+  const tot = i + steps, n = T.length;
+  return base + T[((tot % n) + n) % n] + 12 * Math.floor(tot / n);
+}
+function heardAll(n, st) {   // a written note as it is played: scale, progression step, chord, key, then tuning. A chord gives several notes.
+  let m = n.m; const R = SCALES[KS.scale], T = SCALES[SCALE_NAMES[st.scl]];
+  if (T !== R && !st.baked) {
+    const d = (((m - KS.root) % 12) + 12) % 12, base = m - d, i = R.indexOf(d); let t = T[0], bd = 99;
+    if (i >= 0 && T.length === R.length) t = T[i]; else T.concat([12]).forEach(x => { const dist = Math.abs(x - d); if (dist < bd) { bd = dist; t = x; } });
+    m = base + t;
+  }
+  const steps = (st.prg || 0) + (st.mode || 0) + (MASTER.mode || 0);   // the progression step, then the mode of the bar and of the master, all moving the tonic
+  if (steps) m = stepScale(m, T, KS.root, steps);
+  const ch = CHORDS[st.chd] || CHORDS[0], rel = (((m - KS.root) % 12) + 12) % 12; let ms;
+  if (ch.length < 2) ms = [m]; else if (T.length === 7 && T.includes(rel)) ms = ch[1].map(o => stepScale(m, T, KS.root, o)); else ms = ch[2].map(i => m + i);
+  const root0 = ms[0]; ms = applyVoicing(ms, st.voi, st.oct, st.spr); ms = masterRevoice(ms); if (st.bass) ms = ms.concat(BASSES[st.bass](root0));
+  const auto = st.key === 12, kr = auto ? (KS.root + T[((steps % T.length) + T.length) % T.length]) % 12 : st.key;   // Auto: the tuning's 1/1 follows the chord root
+  let dk = auto || st.baked ? 0 : (((st.key - KS.root) % 12) + 12) % 12; if (dk > 6) dk -= 12;
+  const out = ms.map((x, i) => { const mm = x + dk, d2 = (((mm - kr) % 12) + 12) % 12; return Object.assign({}, n, { m: mm, c: TUNS[st.tun].c[d2] - 100 * d2 + (st.det === undefined ? 0 : DETC[st.det]), ct: i > 0, v: Math.min(1, (n.v === undefined ? .8 : n.v) * VELF[st.vel === undefined ? 3 : st.vel]) }); });
+  return st.arp ? arpeggiate(out, n, st) : st.strum ? strumIt(out, n, st) : out;
+}
+const heard = (n, st) => heardAll(n, st)[0];
+// ---------- timing: 16 steps to a bar; the drums use 32 ticks to a bar ----------
+const TPB = 32, MAXT = 6;
+const S = { playing: false, tick: 0, next: 0, t0: 0, timer: 0, bpm: 75, name: "", n: 0 };
+const barS = () => 240 / S.bpm, TICK = () => barS() / TPB;   // a bar is four beats
+const mnode = ctx.createGain(); mnode.gain.value = .7;
+const sh = ctx.createWaveShaper(), cv = new Float32Array(4097);
+for (let i = 0; i < cv.length; i++) { const x = 2 * i / 4096 - 1, a = Math.abs(x), T = .7; cv[i] = (x < 0 ? -1 : 1) * (a <= T ? a : T + (1 - T) * Math.tanh((a - T) / (1 - T))); }   // soft limiter
+sh.curve = cv; sh.oversample = "2x"; mnode.connect(sh); sh.connect(ctx.destination);
+const clone = ns => ns.map(n => Object.assign({}, n));
+const reindex = tr => { tr.by = new Map(); tr.notes.forEach(n => { (tr.by.get(n.s) || tr.by.set(n.s, []).get(n.s)).push(n); }); };
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; };
+const btn = (txt, cls, fn, title) => { const b = el("button", cls, txt); b.type = "button"; b.onclick = fn; if (title) { b.title = title; b.setAttribute("aria-label", title); } return b; };
+const ARROW = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + (d < 0 ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7") + '" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const arrowBtn = (d, fn, title) => { const b = btn("", "arr", fn, title); b.innerHTML = ARROW(d); return b; };
+// ---------- the plugin: a sequencer page and a piano roll page ----------
+// The sequencer holds one value for each bar. The piano roll holds the notes, and its rows can be changed too. The sequencer can send to the roll; the roll never sends back.
+const PL_ALL = ["prg", "chd", "voi", "spr", "bass", "strum", "arp", "rate", "vel", "acc", "scl", "mode", "tun", "det", "key", "oct"], SEQ_BARS = 4, PPQ = 480;
+const GROUPS = [   // the three rows that are always there, and the rows folded under each
+  { id: "prg", row: "prg", rows: ["chd", "voi", "spr", "oct", "bass", "strum"], what: "the chord rows (type, voicing, spread, octave)", col: "#e0628e" },
+  { id: "key", row: "key", rows: ["scl", "mode", "tun", "det"], what: "the scale, mode and tuning rows", col: "#e8c45a" },
+  { id: "arp", row: "arp", rows: ["rate", "vel", "acc"], what: "the rate row", col: "#d98cf0" }];
+const openG = { prg: false, key: false, arp: false };
+const INNER_DEF = { prg: ["chd", "voi", "spr", "oct"], key: ["scl", "mode", "tun"], arp: ["rate"] };   // what shows when a section is opened; the rest can be added
+const innerOn = { prg: INNER_DEF.prg.slice(), key: INNER_DEF.key.slice(), arp: INNER_DEF.arp.slice() };
+const activeRows = () => GROUPS.flatMap(g => [g.row].concat(openG[g.id] ? g.rows.filter(id => innerOn[g.id].includes(id)) : []));
+const DFLT = () => ({ chd: 1, voi: 0, spr: 3, oct: 2, key: KS.root, scl: SCALE_NAMES.indexOf(KS.scale), mode: 0, tun: 0, arp: 0, rate: 3, bass: 0, vel: 3, strum: 0, acc: 0, det: 3 });
+// more chord types, in the order they sit in the menu; the stacked ones follow the scale, so a minor key gives a flat 6th (use Dorian for the sweeter minor 6th)
+CHORDS.length = 0; CHORDS.push(["Single note"], ["Triad", [0, 2, 4], [0, 4, 7]], ["6th", [0, 2, 4, 5], [0, 4, 7, 9]], ["7th", [0, 2, 4, 6], [0, 4, 7, 10]], ["9th", [0, 2, 4, 6, 8], [0, 4, 7, 10, 14]],
+  ["Add9", [0, 2, 4, 8], [0, 4, 7, 14]], ["6/9", [0, 2, 4, 5, 8], [0, 4, 7, 9, 14]], ["11th", [0, 2, 4, 6, 8, 10], [0, 4, 7, 10, 14, 17]],
+  ["Sus2", [0, 1, 4], [0, 2, 7]], ["Sus4", [0, 3, 4], [0, 5, 7]], ["Power", [0, 4], [0, 7]], ["Shell", [0, 2, 6], [0, 4, 10]], ["Quartal", [0, 3, 6], [0, 5, 10]]);
+AUTO.chd.n = CHORDS.length;
+const SPREADS = ["Cluster 3", "Cluster 2", "Cluster 1", "Normal", "Open 1", "Open 2", "Open 3"], SPREAD_F = [.3, .5, .75, 1, 1.5, 2, 2.6];
+AUTO.spr = { label: "Spread", short: "Spread", col: "#e0a96d", n: SPREADS.length, name: v => SPREADS[v] };
+const ARPS = ["Off", "Up", "Down", "Up-Down", "Down-Up", "Alternate", "Root & up", "Random"], RATES = ["1/2", "1/4", "Dotted 1/8", "1/8", "1/16"], RSTEPS = [8, 4, 3, 2, 1];
+AUTO.arp = { label: "Arpeggio", short: "Arp", col: "#d98cf0", n: ARPS.length, name: v => ARPS[v] };
+AUTO.rate = { label: "Rate", short: "Rate", col: "#8fd0f0", n: RATES.length, name: v => RATES[v] };
+function arpeggiate(tones, n, st) {   // plays the chord one note at a time, at the rate and in the pattern asked for
+  const t = tones.slice().sort((a, b) => a.m - b.m), k = t.length, rate = RSTEPS[st.rate === undefined ? 3 : st.rate], cnt = Math.max(1, Math.floor((n.l || 16) / rate)), ev = [];
+  for (let i = 0; i < cnt; i++) {
+    const p = k > 1 ? 2 * k - 2 : 1, q = i % p; let j;
+    switch (st.arp) {
+      case 1: j = i % k; break; case 2: j = k - 1 - (i % k); break;
+      case 3: j = q < k ? q : p - q; break; case 4: j = k - 1 - (q < k ? q : p - q); break;
+      case 5: j = [0, 2, 1, 3][i % 4] % k; break;
+      case 6: j = i % 2 ? Math.min(k - 1, 1 + Math.floor(i / 2) % Math.max(1, k - 1)) : 0; break;
+      default: j = (Math.imul((n.s || 0) * 131 + i + 1, 2654435761) >>> 0) % k;
+    }
+    const pos = (i * rate) % 4, hit = st.acc === 1 ? pos === 0 : st.acc === 2 ? pos === 2 : st.acc === 3 ? i % 2 === 0 : true, am = st.acc ? (hit ? 1.25 : .8) : 1;   // accent: some notes louder, the rest softer
+    ev.push(Object.assign({}, t[j], { dt: i * rate, l: rate, ct: false, v: Math.min(1, (t[j].v === undefined ? .8 : t[j].v) * am) }));
+  }
+  return ev;
+}
+const DEF = { oct: 2, spr: 3, rate: 3, vel: 3, det: 3 };
+Object.assign(AV, { voi: { 0: 0 }, oct: { 0: 2 }, spr: { 0: 3 }, arp: { 0: 0 }, rate: { 0: 3 }, bass: { 0: 0 }, vel: { 0: 3 }, strum: { 0: 0 }, acc: { 0: 0 }, det: { 0: 3 } });   // every row has a value from the start
+const BASSES = [null, r => [r - 12], r => [r - 24], r => [r + 7 - 24]], VELF = [.45, .6, .8, 1, 1.15, 1.3];
+AUTO.mode = { label: "Mode", short: "Mode", col: "#c7a6f0", n: 7, name: (v, beat, av) => modeName(SCALE_NAMES[autoAt("scl", beat, av)], v) };   // the tonic moves up this many steps of the bar's scale; the same notes
+AUTO.bass = { label: "Bass", short: "Bass", col: "#b9c27a", n: 4, name: v => ["Off", "Root", "Low root", "Fifth"][v] };
+const DETC = [-50, -25, -10, 0, 10, 25, 50];
+AUTO.det = { label: "Detune", short: "Detune", col: "#8fb4d8", n: 7, name: v => (DETC[v] > 0 ? "+" : DETC[v] < 0 ? "\u2212" : "") + Math.abs(DETC[v]) + "\u00a2" };
+AUTO.strum = { label: "Strum", short: "Strum", col: "#d9a0a0", n: 4, name: v => ["Off", "1/16", "1/8", "Dotted 1/8"][v] };
+AUTO.acc = { label: "Accent", short: "Accent", col: "#e8b4f0", n: 4, name: v => ["Off", "Beats", "Offbeats", "Every other"][v] };
+function strumIt(out, n, st) {   // the chord's notes come in one after another, lowest first
+  const stp = [0, 1, 2, 3][st.strum] || 0; if (!stp) return out;
+  return out.slice().sort((a, b) => a.m - b.m).map((x, i) => Object.assign({}, x, { dt: i * stp, l: Math.max(1, (n.l || 16) - i * stp) }));
+}
+AUTO.vel = { label: "Velocity", short: "Vel", col: "#f08fb0", n: 6, name: v => ["pp", "p", "mp", "mf", "f", "ff"][v] };
+const VOICINGS = ["Close", "1st inversion", "2nd inversion", "Drop 2", "Open", "Bass root"];
+AUTO.voi = { label: "Voicing", short: "Voic", col: "#f0a45d", n: VOICINGS.length, name: v => VOICINGS[v] };
+AUTO.oct = { label: "Octave", short: "Oct", col: "#79b8ff", n: 5, name: v => ["\u22122", "\u22121", "0", "+1", "+2"][v] };
+function applyVoicing(ms, v, o, s) {   // how a chord's notes are laid out: inversions, then squeezed into a cluster or spread wide, then moved in octaves
+  let a = ms.slice().sort((x, y) => x - y);
+  if (v === 1 && a.length > 1) a.push(a.shift() + 12);
+  else if (v === 2 && a.length > 2) { a.push(a.shift() + 12); a.push(a.shift() + 12); }
+  else if (v === 3 && a.length > 2) a.unshift(a.splice(a.length - 2, 1)[0] - 12);
+  else if (v === 4 && a.length > 2) a = a.map((x, i) => i % 2 ? x + 12 : x);
+  else if (v === 5) a.unshift(a[0] - 12);
+  const f = SPREAD_F[s === undefined ? 3 : s];
+  if (f !== 1 && a.length > 1) { const lo = a[0]; a = Array.from(new Set(a.map(x => lo + Math.round((x - lo) * f)))); }
+  const sh = 12 * ((o === undefined ? 2 : o) - 2); return sh ? a.map(x => x + sh) : a;
+}
+const SEQ = { prg: [0, 5, 2, 6], chd: [1, 1, 1, 1], scl: [0, 0, 0, 0].map(() => SCALE_NAMES.indexOf(KS.scale)), mode: [0, 0, 0, 0], tun: [0, 0, 0, 0], key: [0, 0, 0, 0].map(() => KS.root), voi: [0, 0, 0, 0], oct: [2, 2, 2, 2], spr: [3, 3, 3, 3], arp: [0, 0, 0, 0], rate: [3, 3, 3, 3], bass: [0, 0, 0, 0], vel: [3, 3, 3, 3], strum: [0, 0, 0, 0], acc: [0, 0, 0, 0], det: [3, 3, 3, 3] };
+let plTrack = null, rollAuto = true, rollDirty = false;
+window.plPage = "seq"; window.ALIGN_IDS = activeRows();
+const ROOT = () => 48 + KS.root + degSemi(0);
+const seqAv = () => { const av = {}; PL_ALL.forEach(id => { av[id] = {}; SEQ[id].forEach((v, b) => { av[id][b * 4] = v; }); }); return av; };
+const seqState = b => { const o = {}; PL_ALL.forEach(id => { o[id] = SEQ[id][b]; }); return o; };
+const KEYSEQS = [{ n: "Stay put", k: () => [KS.root, KS.root, KS.root, KS.root] }, { n: "Follow the chord", k: () => [12, 12, 12, 12] }, { n: "Up a fourth and back", k: () => [KS.root, (KS.root + 5) % 12, KS.root, (KS.root + 5) % 12] },
+  { n: "Climbing in fourths", k: () => [KS.root, (KS.root + 5) % 12, (KS.root + 10) % 12, (KS.root + 3) % 12] }, { n: "Relative major", k: () => [KS.root, (KS.root + 3) % 12, KS.root, (KS.root + 3) % 12] }];
+const ARPSEQS = [{ n: "Off", a: [0, 0, 0, 0], r: [3, 3, 3, 3] }, { n: "Up, eighths", a: [1, 1, 1, 1], r: [3, 3, 3, 3] }, { n: "Up-down, eighths", a: [3, 3, 3, 3], r: [3, 3, 3, 3] }, { n: "Down, sixteenths", a: [2, 2, 2, 2], r: [4, 4, 4, 4] },
+  { n: "Alternate, eighths", a: [5, 5, 5, 5], r: [3, 3, 3, 3] }, { n: "Root and up, eighths", a: [6, 6, 6, 6], r: [3, 3, 3, 3] }, { n: "Random, sixteenths", a: [7, 7, 7, 7], r: [4, 4, 4, 4] }, { n: "Builds over the bars", a: [0, 1, 3, 7], r: [3, 3, 3, 4] }];
+// ---------- the rows: one builder used by the sequencer page and by the piano roll's rows, each with its own data ----------
+const DEGN = ["1", "b2", "2", "b3", "3", "4", "b5", "5", "b6", "6", "b7", "7"];
+const MODE_NAMES = ["Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Aeolian", "Locrian"];   // the seven modes, in order
+const MODE_BASE = { "Major": 0, "Dorian": 1, "Phrygian": 2, "Lydian": 3, "Mixolydian": 4, "Minor": 5, "Locrian": 6 };   // where each 7-note scale sits in that order
+const modeName = (scl, k) => MODE_BASE[scl] === undefined ? "Step " + k : MODE_NAMES[(MODE_BASE[scl] + k) % 7];
+const SCALE_SHORT = { "Minor": "min", "Major": "maj", "Dorian": "dor", "Phrygian": "phr", "Lydian": "lyd", "Mixolydian": "mix", "Locrian": "loc", "Harmonic minor": "harm min", "Minor pentatonic": "min pent" };
+AUTO.prg.name = (v, beat, av) => {   // a progression step as its scale degree, with the note it lands on
+  const T = SCALES[SCALE_NAMES[autoAt("scl", beat, av)]], off = T[((v % T.length) + T.length) % T.length], k = autoAt("key", beat, av);
+  return DEGN[off] + " · " + NN[((k === 12 ? KS.root : k) + off) % 12];
+};
+const M_S = { openG, innerOn, n: () => SEQ_BARS, start: b => b * 4, len: () => 4, get: (id, b) => SEQ[id][b], set: (id, b, v) => { SEQ[id][b] = v; }, changed: () => renderSeqPage(), host: () => $("#seqGrid"), ruler: true };
+const avOf = M => { const av = {}; PL_ALL.forEach(id => { av[id] = {}; for (let b = 0; b < M.n(); b++) av[id][M.start(b)] = M.get(id, b); }); return av; };
+const seqName = (id, v, bar, av, M) => {
+  const s = AUTO[id].name(v, M.start(bar), av); if (id === "prg") return s.replace(/ · .*$/, "");
+  return id === "key" && v !== 12 && !M.openG.key ? s + " " + SCALE_SHORT[SCALE_NAMES[autoAt("scl", M.start(bar), av)]] : s;   // with the key section folded away, the scale shows with it: A min, A maj
+};
+function stepSeq(M, id, bar, d) { const n = AUTO[id].n; M.set(id, bar, (M.get(id, bar) + d + n) % n); M.changed(); }
+function stepAll(M, id, d) { const n = AUTO[id].n, v = (M.get(id, 0) + d + n) % n; for (let b = 0; b < M.n(); b++) M.set(id, b, v); M.changed(); }   // every bar together
+function removeInner(M, gr, id) { M.innerOn[gr.id] = M.innerOn[gr.id].filter(x => x !== id); for (let b = 0; b < M.n(); b++) M.set(id, b, DFLT()[id]); M.changed(); }
+const PRESETS = [
+  { n: "1 b6 b3 b7", p: [0, 5, 2, 6], s: "Minor" }, { n: "1 4 5 1", p: [0, 3, 4, 0], s: "Minor" }, { n: "1 b7 b6 5", p: [0, 6, 5, 4], s: "Minor" }, { n: "1 b3 b7 4", p: [0, 2, 6, 3], s: "Minor" },
+  { n: "1 5 6 4", p: [0, 4, 5, 3], s: "Major" }, { n: "1 6 4 5", p: [0, 5, 3, 4], s: "Major" }, { n: "2 5 1 1", p: [1, 4, 0, 0], s: "Major" }, { n: "6 4 1 5", p: [5, 3, 0, 4], s: "Major" }];
+const ROWSETS = {
+  prg: { list: PRESETS, match: (q, M) => { for (let b = 0; b < M.n(); b++) if (M.get("prg", b) !== q.p[b % 4] || SCALE_NAMES[M.get("scl", b)] !== q.s) return false; return true; }, apply: (q, M) => { for (let b = 0; b < M.n(); b++) { M.set("prg", b, q.p[b % 4]); M.set("scl", b, SCALE_NAMES.indexOf(q.s)); } } },
+  key: { list: KEYSEQS, match: (q, M) => { const k = q.k(); for (let b = 0; b < M.n(); b++) if (M.get("key", b) !== k[b % 4]) return false; return true; }, apply: (q, M) => { const k = q.k(); for (let b = 0; b < M.n(); b++) M.set("key", b, k[b % 4]); } },
+  arp: { list: ARPSEQS, match: (q, M) => { for (let b = 0; b < M.n(); b++) if (M.get("arp", b) !== q.a[b % 4] || M.get("rate", b) !== q.r[b % 4]) return false; return true; }, apply: (q, M) => { for (let b = 0; b < M.n(); b++) { M.set("arp", b, q.a[b % 4]); M.set("rate", b, q.r[b % 4]); } } }
+};
+function stepRowPreset(M, id, d) { const S_ = ROWSETS[id], n = S_.list.length; let i = S_.list.findIndex(q => S_.match(q, M)); i = i < 0 ? (d > 0 ? 0 : n - 1) : (i + d + n) % n; S_.apply(S_.list[i], M); M.changed(); }
+function placeAddBtn(sec, ad) {   // halfway between the bottom row's name and the section's border, under the middle of the names
+  requestAnimationFrame(() => {
+    const lanes = sec.querySelectorAll(".pl-lane"), lab = lanes.length && lanes[lanes.length - 1].querySelector(".lblbox > span"); if (!lab || !sec.offsetWidth) return;
+    const sr = sec.getBoundingClientRect(), tr = lab.getBoundingClientRect(), z = sr.width / sec.offsetWidth;
+    ad.style.top = ((tr.bottom + sr.bottom) / 2 - sr.top) / z - 1 + "px"; ad.style.left = ((tr.left + tr.right) / 2 - sr.left) / z - 1 + "px"; ad.style.bottom = "auto"; ad.style.transform = "translate(-50%, -50%)";
+  });
+}
+function addInnerMenu(M, gr, anchor) {   // the rows of this section that are not showing
+  if (menuToggledOff(anchor)) return;
+  const off = gr.rows.filter(id => !M.innerOn[gr.id].includes(id));
+  apick.innerHTML = ""; apick.style.setProperty("--c", AUTO[gr.row].col);
+  if (!off.length) { const none = btn("All the rows are showing", "", () => { apick.hidden = true; }); none.style.opacity = ".55"; apick.appendChild(none); }
+  off.forEach(id => apick.appendChild(btn(AUTO[id].label, "", () => { M.innerOn[gr.id].push(id); M.innerOn[gr.id] = gr.rows.filter(x => M.innerOn[gr.id].includes(x)); apick.hidden = true; M.changed(); })));
+  const lab = anchor.closest(".sect").querySelector(".lblbox").getBoundingClientRect();
+  placeMenu(anchor, { w: lab.width, h: lab.height, left: lab.left });
+}
+function seqPick(M, blk, id, bar) {   // the list of values for this block, dropped just under it
+  if (menuToggledOff(blk)) return;
+  const L = AUTO[id], av = avOf(M), cur = M.get(id, bar);
+  apick.innerHTML = ""; apick.style.setProperty("--c", L.col); apick.appendChild(el("div", "ph", L.label + (M.sized ? " for block " : " for bar ") + (bar + 1)));
+  for (let v = 0; v < L.n; v++) apick.appendChild(btn(seqName(id, v, bar, av, M), v === cur ? "cur" : "", () => { M.set(id, bar, v); apick.hidden = true; M.changed(); }));
+  placeMenu(blk);
+}
+function renderRows(M) {
+  const g = M.host(); g.innerHTML = "";
+  if (M.ruler) { const ruler = el("div", "pl-ruler"); ruler.appendChild(el("span", "", "")); for (let b = 0; b < SEQ_BARS; b++) ruler.appendChild(el("span", "", String(b + 1))); g.appendChild(ruler); }
+  const av = avOf(M);
+  const mkLane = (id, main, gr) => {
+    const L = AUTO[id], lane = el("div", "pl-lane pl-auto"), lab = el("div", "pl-name pl-auto-name lblbox prgl" + (main ? "" : " sub")); lane.style.setProperty("--track-color", L.col); lab.appendChild(el("span", "", L.label));
+    if (main) {   // the three main rows step through ready-made sets with the arrows round the name
+      const S_ = ROWSETS[id], pi = S_.list.findIndex(q => S_.match(q, M)); lab.title = (pi < 0 ? "Your own " + L.label.toLowerCase() : "Preset " + (pi + 1) + " of " + S_.list.length + ": " + S_.list[pi].n) + ". The arrows step through presets.";
+      lab.prepend(btn("‹", "ar2", () => stepRowPreset(M, id, -1), "Previous " + L.label.toLowerCase() + " preset")); lab.append(btn("›", "ar2", () => stepRowPreset(M, id, 1), "Next " + L.label.toLowerCase() + " preset"));
+      if (!M.openG[gr.id]) { const tb = btn("+", "tabbtn", () => { M.openG[gr.id] = true; M.changed(); }, "Open " + gr.what); tb.setAttribute("aria-expanded", "false"); lab.appendChild(tb); }
+    } else {   // the other rows step every bar together
+      lab.title = "The arrows change every bar at once."; lab.prepend(btn("‹", "ar2", () => stepAll(M, id, -1), "Previous " + L.label.toLowerCase() + ", every bar")); lab.append(btn("›", "ar2", () => stepAll(M, id, 1), "Next " + L.label.toLowerCase() + ", every bar"));
+    }
+    lane.appendChild(lab);
+    if (M.sized) lane.style.gridTemplateColumns = "118px " + COLS.map((_, i) => "minmax(0," + M.len(i) + "fr)").join(" ") + " 22px";
+    for (let b = 0; b < M.n(); b++) {
+      const name = seqName(id, M.get(id, b), b, av, M), blk = el("div", "blk" + (M.sized && M.len(b) < 2 ? " narrow" : "") + (M.sized && M.len(b) < 1 ? " tiny" : "")); blk.dataset.bar = b;
+      const tx = btn(name, "tx", () => {}, L.label + ", bar " + (b + 1) + ": " + name); blk.onclick = e => { if (e.target.closest(".ar")) return; if (M.sized && e.shiftKey) { const r0 = blk.getBoundingClientRect(); splitColumn(b, M.start(b) + (e.clientX - r0.left) / r0.width * M.len(b)); return; } seqPick(M, blk, id, b); };
+      blk.append(btn("‹", "ar", () => stepSeq(M, id, b, -1), "Previous " + L.label.toLowerCase()), tx, btn("›", "ar", () => stepSeq(M, id, b, 1), "Next " + L.label.toLowerCase())); lane.appendChild(blk);
+    }
+    if (!main) lane.appendChild(btn("×", "rm", () => removeInner(M, gr, id), "Take the " + L.label.toLowerCase() + " row out"));
+    return lane;
+  };
+  GROUPS.forEach(gr => {
+    const open = M.openG[gr.id], sec = el("div", "sect" + (open ? " open" : "")); sec.style.setProperty("--g", AUTO[gr.row].col);
+    sec.appendChild(mkLane(gr.row, true, gr));
+    if (open) {
+      gr.rows.filter(id => M.innerOn[gr.id].includes(id)).forEach(id => sec.appendChild(mkLane(id, false, gr)));
+      const mn = btn("−", "circbtn", () => { M.openG[gr.id] = false; M.changed(); }, "Fold away " + gr.what); mn.setAttribute("aria-expanded", "true"); sec.appendChild(mn);
+      const ad = btn("+", "tabbtn add", () => addInnerMenu(M, gr, ad), "Add a row to " + AUTO[gr.row].label.toLowerCase()); sec.appendChild(ad); placeAddBtn(sec, ad);
+    }
+    g.appendChild(sec);
+  });
+  if (M === M_S) renderMaster(g);
+  if (M.sized) addDividers(g);
+}
+const MASTER = { voi: 0, spr: 0, oct: 2, mode: 0 };   // the master voicing, worked on the finished chords: 0 = off; octave 2 = no shift
+const MASTER_VOI = ["Off", "Invert up 1", "Invert up 2", "Invert up 3", "Invert down 1", "Invert down 2", "Drop 2", "Open"];
+function masterRevoice(ms) {   // the master voicing: takes a bar's finished chord (after its own voicing, octave and spread) and re-voices it; the bass notes are not in it
+  let a = ms.slice().sort((x, y) => x - y); if (a.length < 2) return a;
+  const v = MASTER.voi;
+  if (v >= 1 && v <= 3) for (let i = 0; i < Math.min(v, a.length - 1); i++) a.push(a.shift() + 12);
+  else if (v === 4 || v === 5) for (let i = 0; i < Math.min(v - 3, a.length - 1); i++) a.unshift(a.pop() - 12);
+  else if (v === 6 && a.length > 2) a.unshift(a.splice(a.length - 2, 1)[0] - 12);
+  else if (v === 7 && a.length > 2) a = a.map((x, i) => i % 2 ? x + 12 : x);
+  if (MASTER.spr) { const f = SPREAD_F[MASTER.spr - 1], lo = Math.min.apply(null, a); a = Array.from(new Set(a.map(x => lo + Math.round((x - lo) * f)))); }
+  return a;
+}
+const MASTER_ROWS = [
+  { id: "voi", label: "Voicing", col: "#f0a45d", n: () => MASTER_VOI.length, name: v => MASTER_VOI[v] },
+  { id: "oct", label: "Octave", col: "#79b8ff", n: () => 5, name: v => ["−2", "−1", "0", "+1", "+2"][v] },
+  { id: "spr", label: "Spread", col: "#e0a96d", n: () => SPREADS.length + 1, name: v => v === 0 ? "Off" : SPREADS[v - 1] },
+  { id: "mode", label: "Mode", col: "#c7a6f0", n: () => 7, name: v => v === 0 ? "Off" : "Up " + v + (v === 1 ? " mode step" : " mode steps") }];
+let MASTER_OPEN = true;
+function renderMaster(g) {   // the master voicing: re-voices every bar at once, on top of each bar's own settings. It folds away with the − tab, like the other sections.
+  const sec = el("div", "sect" + (MASTER_OPEN ? " open" : "")); sec.style.setProperty("--g", "#f0a45d");
+  const main = el("div", "pl-lane pl-auto"), lab = el("div", "pl-name pl-auto-name lblbox prgl"); main.style.setProperty("--track-color", "#f0a45d");
+  lab.appendChild(el("span", "", "Master"));
+  if (!MASTER_OPEN) { const tb = btn("+", "tabbtn", () => { MASTER_OPEN = true; renderSeqPage(); }, "Open the master voicing"); tb.setAttribute("aria-expanded", "false"); lab.appendChild(tb); }
+  main.appendChild(lab);
+  if (!MASTER_OPEN) { const sum = btn(MASTER_ROWS.map(R => R.name(MASTER[R.id])).join(" · "), "tx", () => { MASTER_OPEN = true; renderSeqPage(); }, "Master voicing: open it"); sum.style.cssText = "height:36px;color:#dbe9f5;font:600 12px Arial;"; main.appendChild(sum); }
+  sec.appendChild(main);
+  if (MASTER_OPEN) {
+    MASTER_ROWS.forEach(R => {
+      const lane = el("div", "pl-lane pl-auto"), rl = el("div", "pl-name pl-auto-name lblbox prgl sub"); lane.style.setProperty("--track-color", R.col); rl.appendChild(el("span", "", R.label)); lane.appendChild(rl);
+      const set = v => { MASTER[R.id] = v; renderSeqPage(); }, step = d => set((MASTER[R.id] + d + R.n()) % R.n());
+      const blk = el("div", "blk"); blk.style.gridColumn = "2 / -1"; const name = R.name(MASTER[R.id]);
+      blk.onclick = e => { if (e.target.closest(".ar") || menuToggledOff(blk)) return; apick.innerHTML = ""; apick.style.setProperty("--c", R.col); apick.appendChild(el("div", "ph", "Master " + R.label.toLowerCase())); for (let v = 0; v < R.n(); v++) apick.appendChild(btn(R.name(v), v === MASTER[R.id] ? "cur" : "", () => { apick.hidden = true; set(v); })); placeMenu(blk); };
+      blk.append(btn("‹", "ar", () => step(-1), "Previous master " + R.label.toLowerCase()), btn(name, "tx", () => {}, "Master " + R.label.toLowerCase() + ": " + name), btn("›", "ar", () => step(1), "Next master " + R.label.toLowerCase()));
+      lane.appendChild(blk); sec.appendChild(lane);
+    });
+    const mn = btn("−", "circbtn", () => { MASTER_OPEN = false; renderSeqPage(); }, "Fold away the master voicing"); mn.setAttribute("aria-expanded", "true"); sec.appendChild(mn);
+  }
+  g.appendChild(sec);
+}
+function renderSeqPage() { showPresetName(); renderRows(M_S); }
+const menuToggledOff = a => { const c = apick._closed; apick._closed = null; return !!c && c.a === a && a.contains(c.t) && Date.now() - c.at < 700; };   // the press that closed the menu was on its own button
+function placeMenu(a, fit) {   // a menu just under an element, or above it when there is no room; fit: the width, row height and left edge to match
+  apick._anchor = a; const r = a.getBoundingClientRect();
+  apick.hidden = false; apick.style.left = "0px"; apick.style.top = "0px";
+  apick.classList.toggle("sized", !!fit);
+  if (fit) { apick.style.width = fit.w + "px"; apick.style.minWidth = fit.w + "px"; apick.style.setProperty("--ih", fit.h + "px"); }
+  else { apick.style.width = ""; apick.style.minWidth = Math.max(190, r.width) + "px"; apick.style.removeProperty("--ih"); }
+  const w = apick.offsetWidth, h = apick.offsetHeight, below = r.bottom + 4 + h <= innerHeight - 4;
+  apick.style.left = Math.max(4, Math.min(fit ? fit.left : r.left + r.width / 2 - w / 2, innerWidth - w - 4)) + "px"; apick.style.top = Math.max(4, below ? r.bottom + 4 : r.top - 4 - h) + "px";
+  const c = apick.querySelector(".cur"); if (c) apick.scrollTop = c.offsetTop - 70;
+}
+let seqOn = false;
+const bpmLabels = () => { $("#bpmV").textContent = S.bpm; $("#bpm").value = S.bpm; };
+function epiano(tr, n, t) {   // a basic electric piano: a struck tone with a little FM bark that mellows, and a short bell
+  const f = 440 * Math.pow(2, (n.m - 69) / 12 + (n.c || 0) / 1200), vel = n.v || .8, gate = Math.max(.08, n.l * TICK() * 2 * .95);
+  const car = ctx.createOscillator(), mod = ctx.createOscillator(), bell = ctx.createOscillator(), mg = ctx.createGain(), bg = ctx.createGain(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+  car.frequency.value = f; mod.frequency.value = f; bell.frequency.value = f * 14;
+  mg.gain.setValueAtTime(f * (1.1 + vel * 1.5), t); mg.gain.setTargetAtTime(f * .1, t, .3);
+  bg.gain.setValueAtTime(.05 * vel, t); bg.gain.setTargetAtTime(0, t, .025);
+  mod.connect(mg); mg.connect(car.frequency); car.connect(g); bell.connect(bg); bg.connect(g);
+  lp.type = "lowpass"; lp.frequency.value = 5200; g.connect(lp); lp.connect(tr.out);
+  const peak = .24 * vel; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + .004); g.gain.setTargetAtTime(peak * .3, t + .005, .5); g.gain.setTargetAtTime(0, t + gate, .09);
+  const all = [car, mod, bell]; all.forEach(o => { o.start(t); o.stop(t + gate + .9); });
+  const h = { s: { stop: tt => all.forEach(o => { try { o.stop(tt); } catch (e) {} }) }, g }; tr.act.add(h); car.onended = () => tr.act.delete(h);
+}
+function syncCircle() {
+  const on = plPage === "seq" ? seqOn : S.playing; if (!on) document.querySelectorAll(".rollrows .blk.now").forEach(x => x.classList.remove("now"));
+  document.querySelectorAll("#playBtn, .circ").forEach(c => { c.setAttribute("aria-pressed", String(on)); c.setAttribute("aria-label", on ? "Stop" : "Play"); });
+}
+let seqTok = 0, seqBarNo = 0, seqNext = 0, seqIv = 0;
+function seqStop() {
+  seqTok++; clearInterval(seqIv); seqOn = false; fadeTrack(plTrack, ctx.currentTime, .03); syncCircle();
+  document.querySelectorAll(".sqg .blk").forEach(c => c.classList.remove("now"));
+}
+function seqSchedule(tok) {   // keeps the next fraction of a second of bars queued, round and round
+  while (seqNext < ctx.currentTime + .3) {
+    const b = seqBarNo % SEQ_BARS, at = seqNext; seqNext += 240 / S.bpm; seqBarNo++;
+    heardAll({ m: ROOT(), l: 16, v: .8 }, seqState(b)).forEach(x => playNote(plTrack, x, at + (x.dt || 0) * (240 / S.bpm) / 16));
+    setTimeout(() => { if (tok === seqTok) document.querySelectorAll(".sqg .blk").forEach(c => c.classList.toggle("now", +c.dataset.bar === b)); }, Math.max(0, (at - ctx.currentTime) * 1000));
+  }
+}
+async function seqAudition() {   // plays the four bars round and round until stopped
+  if (seqOn) return seqStop();
+  if (S.playing) stop(); await ctx.resume();
+  const tok = ++seqTok; seqOn = true; seqBarNo = 0; seqNext = ctx.currentTime + .08; syncCircle();
+  seqSchedule(tok); seqIv = setInterval(() => seqSchedule(tok), 50);
+}
+// ---------- presets: whole sequences, browsed from the bar along the top ----------
+const SCL = n => SCALE_NAMES.indexOf(n), TUNI = n => TUNINGS.findIndex(x => x[0] === n);
+const SEQ_PRESETS = [   // mostly just tunings; no two use the same progression and scale
+  { n: "Init" },
+  { n: "Just Pop",           prg: [0, 4, 5, 3], scl: "Major", chd: 1, tun: "5-Limit JI", key: "auto" },
+  { n: "Just Hymn",          prg: [0, 5, 3, 4], scl: "Major", chd: 1, tun: "5-Limit JI" },
+  { n: "Just Sevens",        prg: [1, 4, 0, 5], scl: "Major", chd: 3, tun: ["5-Limit JI", "7-Limit JI", "7-Limit JI", "5-Limit JI"], key: "auto" },
+  { n: "Minor Just",         prg: [0, 3, 4, 0], chd: 1, tun: "5-Limit JI" },
+  { n: "Dorian Just",        prg: [0, 3, 0, 6], scl: "Dorian", chd: 1, tun: "5-Limit JI", key: "auto" },
+  { n: "Key Lift",           prg: [0, 3, 0, 3], scl: "Major", chd: 1, tun: "5-Limit JI", key: [9, 9, 2, 2] },
+  { n: "Equal To Just",      prg: [0, 2, 3, 4], scl: "Major", chd: 1, tun: ["12-TET", "5-Limit JI", "5-Limit JI", "5-Limit JI"] },
+  { n: "Minor To Major",     prg: [0, 3, 0, 4], scl: ["Minor", "Minor", "Major", "Major"], chd: 1, tun: "5-Limit JI", key: [9, 9, 0, 0] },
+  { n: "Pythagorean Pad",    prg: [0, 6, 5, 6], chd: 1, tun: "Pythagorean" },
+  { n: "Smooth Inversions",  prg: [0, 4, 1, 3], scl: "Major", chd: 1, voi: [0, 2, 1, 0], tun: "5-Limit JI" },
+  { n: "Voice Leading",      prg: [0, 3, 6, 2], chd: 1, voi: [0, 1, 2, 1], tun: "5-Limit JI" },
+  { n: "Open Sevens",        prg: [0, 5, 1, 4], scl: "Major", chd: 3, voi: 4, tun: "7-Limit JI", key: "auto" },
+  { n: "Drop Two",           prg: [1, 4, 0, 3], scl: "Major", chd: 3, voi: 3, tun: "5-Limit JI" },
+  { n: "Gentle Arp",         prg: [0, 2, 5, 4], scl: "Major", chd: 1, arp: 1, rate: 3, tun: "5-Limit JI" },
+  { n: "Sus Float",          prg: [0, 3, 5, 4], scl: "Major", chd: 8, tun: "5-Limit JI" }
+];
+const UP_KEY = "rex.chordseq.presets.v1";
+let userPresets = []; try { userPresets = JSON.parse(localStorage.getItem(UP_KEY) || "[]").filter(p => p && p.n && p.data && p.open && p.inner); } catch (e) {}
+const saveUP = () => { try { localStorage.setItem(UP_KEY, JSON.stringify(userPresets)); } catch (e) {} };
+const allPresets = () => SEQ_PRESETS.concat(userPresets.map(u => ({ n: u.n, user: true, data: u.data, open: u.open, inner: u.inner })));
+function presetData(q) {   // a preset as four values for each row, with anything left out set to the defaults
+  if (q.data) { const d0 = {}, df = DFLT(); PL_ALL.forEach(id => { d0[id] = Array.isArray(q.data[id]) && q.data[id].length === 4 ? q.data[id].slice() : Array(4).fill(id === "prg" ? 0 : df[id] === undefined ? 0 : df[id]); }); return d0; }
+  const fill = (v, d) => Array.isArray(v) ? v.slice() : Array(4).fill(v === undefined ? d : v), mapv = (v, f, d) => Array.isArray(v) ? v.map(f) : Array(4).fill(v === undefined ? d : f(v));
+  return { mode: fill(q.mode, 0), prg: fill(q.prg, null).map((v, b) => v === null ? [0, 5, 2, 6][b] : v), bass: fill(q.bass, 0), vel: fill(q.vel, 3), strum: fill(q.strum, 0), acc: fill(q.acc, 0), det: fill(q.det, 3), chd: fill(q.chd, 1), voi: fill(q.voi, 0), spr: fill(q.spr, 3), arp: fill(q.arp, 0), rate: fill(q.rate, 3),
+    scl: mapv(q.scl, SCL, SCL(KS.scale)), tun: mapv(q.tun, x => Math.max(0, TUNI(x)), 0), key: mapv(q.key, k => k === "auto" ? 12 : k, KS.root), oct: fill(q.oct === undefined ? 2 : q.oct) };
+}
+let curPre = 0;
+function loadPreset(i) {
+  const list = allPresets(); curPre = (i + list.length) % list.length; const q = list[curPre], d = presetData(q);
+  PL_ALL.forEach(id => { SEQ[id] = d[id]; });
+  const df = DFLT(); GROUPS.forEach(gr => { innerOn[gr.id] = gr.rows.filter(id => INNER_DEF[gr.id].includes(id) || SEQ[id].some(v => v !== df[id])); openG[gr.id] = gr.rows.some(id => id !== "rate" && SEQ[id].some(v => v !== df[id])) || (gr.id === "arp" && SEQ.arp.some(v => v !== 0) && SEQ.rate.some(v => v !== df.rate)); });
+  if (q.user) GROUPS.forEach(gr => { openG[gr.id] = !!q.open[gr.id]; innerOn[gr.id] = gr.rows.filter(id => (q.inner[gr.id] || []).includes(id)); });
+  if (!q.user) GROUPS.forEach(gr => { openG[gr.id] = true; });
+  window.ALIGN_IDS = activeRows(); renderSeqPage();
+}
+function showPresetName() {
+  const q = allPresets()[curPre] || SEQ_PRESETS[0], d = presetData(q), changed = PL_ALL.some(id => d[id].join() !== SEQ[id].join()), sel = $("#preSel");
+  sel.innerHTML = "";
+  const fill = (list, base, parent) => list.forEach((p, i) => { const o = document.createElement("option"); o.value = String(base + i); o.textContent = p.n; parent.appendChild(o); });
+  fill(SEQ_PRESETS, 0, sel);
+  if (userPresets.length) { const g = document.createElement("optgroup"); g.label = "My presets"; fill(userPresets, SEQ_PRESETS.length, g); sel.appendChild(g); }
+  sel.value = String(curPre); $("#presetName").textContent = q.n + (changed ? " (edited)" : "");
+  $("#seqDel").hidden = curPre < SEQ_PRESETS.length;
+}
+function presetMenu(anchor) {
+  if (menuToggledOff(anchor)) return;
+  apick.innerHTML = ""; apick.style.setProperty("--c", "#7fe0b0"); apick.appendChild(el("div", "ph", "Presets"));
+  allPresets().forEach((q, i) => { if (i === SEQ_PRESETS.length) apick.appendChild(el("div", "ph", "My presets")); apick.appendChild(btn(q.n, i === curPre ? "cur" : "", () => { apick.hidden = true; loadPreset(i); })); });
+  placeMenu(anchor);
+}
+function saveAsPreset() {
+  const name = (prompt("Name this preset", "My preset " + (userPresets.length + 1)) || "").trim(); if (!name) return;
+  const data = {}; PL_ALL.forEach(id => { data[id] = SEQ[id].slice(); });
+  const rec = { n: name, data, open: Object.assign({}, openG), inner: { prg: innerOn.prg.slice(), key: innerOn.key.slice(), arp: innerOn.arp.slice() } }, i = userPresets.findIndex(u => u.n === name);
+  if (i >= 0) { if (!confirm("Replace \u201c" + name + "\u201d?")) return; userPresets[i] = rec; } else userPresets.push(rec);
+  saveUP(); curPre = SEQ_PRESETS.length + (i >= 0 ? i : userPresets.length - 1); showPresetName();
+}
+function deleteUserPreset() {
+  const i = curPre - SEQ_PRESETS.length; if (i < 0 || !userPresets[i] || !confirm("Delete the preset \u201c" + userPresets[i].n + "\u201d?")) return;
+  userPresets.splice(i, 1); saveUP(); loadPreset(0);
+}
+// ---------- the web version: the page around it ----------
+const apick = $("#autoPick");
+plTrack = { out: mnode, act: new Set(), synth: true };   // the sound: the e-piano, straight to the output
+const stop = () => {};
+const fadeTrack = (tr, t, tc) => tr.act.forEach(h => { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, tc); try { h.s.stop(t + tc * 4); } catch (e) {} });
+const playNote = (tr, n, t) => epiano(tr, n, t);
+const fit = () => { const g = $("#seqGrid"); g.style.zoom = 1; g.style.zoom = Math.min(1.6, ($(".demo .sp").clientWidth - 32) / (g.offsetWidth + 20)); };
+const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); fit(); };
+document.addEventListener("pointerdown", e => { if (!apick.hidden && !apick.contains(e.target) && !(apick._anchor && apick._anchor.contains(e.target))) { apick._closed = { a: apick._anchor, t: e.target, at: Date.now() }; apick.hidden = true; } });
+document.addEventListener("keydown", e => { if (e.code === "Space" && !/INPUT|TEXTAREA|SELECT|BUTTON/.test(e.target.tagName)) { e.preventDefault(); seqAudition(); } });
+$("#bp").onclick = $("#prePrev").onclick = () => loadPreset(curPre - 1);
+$("#bn").onclick = $("#preNext").onclick = () => loadPreset(curPre + 1);
+$("#preSel").onchange = e => loadPreset(+e.target.value);
+$("#playBtn").onclick = $("#seqCircle").onclick = seqAudition;
+$("#playFree").onclick = e => { e.preventDefault(); $("#play").scrollIntoView({ behavior: "smooth", block: "start" }); if (!seqOn) seqAudition(); };
+$("#seqSave").onclick = saveAsPreset;
+$("#seqDel").onclick = deleteUserPreset;
+$("#bpm").oninput = e => { S.bpm = +e.target.value; bpmLabels(); };
+$("#master").oninput = e => { mnode.gain.setTargetAtTime(+e.target.value, ctx.currentTime, .02); $("#masterV").textContent = (+e.target.value).toFixed(2); };
+S.bpm = 130; bpmLabels(); loadPreset(0); fitSite(); addEventListener("resize", fitSite);
+</script>
+</body>
+</html>
