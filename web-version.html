@@ -136,6 +136,16 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
 .buy { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }
 .btn { display: inline-block; text-decoration: none; font: inherit; font-size: 15px; font-weight: 700; border: 1px solid var(--fg); border-radius: 6px; padding: 11px 18px; cursor: pointer; background: var(--fg); color: var(--panel); }
 .btn:hover { opacity: 0.85; }
+.info { padding: 60px 36px 0; }
+.info > .label { margin-bottom: 10px; display: block; }
+.info h2 { font-size: 26px; line-height: 1.2; letter-spacing: -0.01em; text-wrap: balance; }
+.info .note { margin-top: 14px; font-size: 14px; color: var(--muted); }
+.specs { margin: 24px 0 0; border-top: 2px solid var(--fg); }
+.specs div { display: grid; grid-template-columns: 170px 1fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.specs dt { color: var(--muted); }
+.specs dd { margin: 0; }
+.support-p { margin: 16px 0 0; font-size: 18px; line-height: 1.5; }
+.mail { color: var(--fg); font-weight: 700; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .btn.ghost { background: transparent; color: var(--fg); }
 .hint { font-size: 14px; line-height: 1.55; color: var(--muted); }
 </style>
@@ -185,6 +195,41 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
       <p><b>How to use it.</b> Each block is one bar. Click a block for its list, or use the arrows on it. The arrows at the left of a row change every bar at once, and the + opens more rows for that part.</p>
       <p><b>Your presets</b> are kept in this browser only. Nothing is uploaded or stored anywhere else, and clearing your site data removes them.</p>
     </div>
+  </section>
+
+  <section class="info">
+    <span class="label">Details</span>
+    <h2>Specifications</h2>
+    <dl class="specs">
+      <div><dt>Sequencer</dt><dd>Four bars on a loop, with one value for each bar in every row</dd></div>
+      <div><dt>Main rows</dt><dd>Progression, Key and Arpeggio, each with more rows folded underneath</dd></div>
+      <div><dt>Chords</dt><dd>Single note, Triad, 6th, 7th, 9th, Add9, 6/9, 11th, Sus2, Sus4, Power, Shell, Quartal</dd></div>
+      <div><dt>Voicing</dt><dd>Close, 1st and 2nd inversion, Drop 2, Open and Bass root, with spread, octave, bass and strum rows</dd></div>
+      <div><dt>Master</dt><dd>Voicing, octave, spread and mode, applied over all four bars at once</dd></div>
+      <div><dt>Scales and modes</dt><dd>Nine scales, including all seven modes, with a mode shift for each bar and for the master</dd></div>
+      <div><dt>Tuning</dt><dd>Eleven tunings: 12-TET, 5-limit and 7-limit just intonation, Pythagorean, harmonic series, meantone, Werckmeister III, Kirnberger III and Vallotti</dd></div>
+      <div><dt>Key</dt><dd>Any of the twelve keys, or Auto, which tunes to each chord as it plays</dd></div>
+      <div><dt>Arpeggios</dt><dd>Seven patterns at five rates, from half notes to sixteenths, with velocity and accent rows</dd></div>
+      <div><dt>Tempo</dt><dd>40 to 220 BPM</dd></div>
+      <div><dt>Presets</dt><dd>Sixteen built in. On this page, the presets you save are kept in your browser</dd></div>
+      <div><dt>Sound</dt><dd>A built-in electric piano</dd></div>
+    </dl>
+  </section>
+
+  <section class="info">
+    <span class="label">Before you play</span>
+    <h2>Requirements</h2>
+    <dl class="specs">
+      <div><dt>Browser</dt><dd>A current browser that supports Web Audio</dd></div>
+      <div><dt>Sound</dt><dd>Speakers or headphones</dd></div>
+      <div><dt>Saved presets</dt><dd>Kept in your browser only, so they are removed if you clear your site data</dd></div>
+    </dl>
+  </section>
+
+  <section class="info">
+    <span class="label">Support</span>
+    <h2>Need help?</h2>
+    <p class="support-p">Email us for support at <a class="mail" href="mailto:rex-audio@outlook.com?subject=ChordSeq%20support">rex-audio@outlook.com</a></p>
   </section>
 
   <footer>
