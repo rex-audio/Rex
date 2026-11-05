@@ -162,6 +162,24 @@
   #kbd .dk { position:relative; flex:1; background:#e9eef2; border-right:1px solid #8896a2; display:flex; align-items:flex-end; justify-content:center; padding-bottom:3px; font:9px Arial; color:#6c7a86; cursor:pointer; }
   #kbd .bk { position:absolute; top:0; height:60%; z-index:2; background:#0d141b; border:1px solid #000; border-radius:0 0 3px 3px; cursor:pointer; }
   #kbd .dk.down, #kbd .bk.down { background:var(--acc); color:#070b0f; }
+  #sq { max-width:640px; margin:18px auto 0; padding:0 12px; font-family:Arial,sans-serif; color:#dbe6ee; }
+  #sqHead { width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border:1px solid #2c3d4a; border-radius:12px; background:linear-gradient(#0f1820,#0a1118); color:#dbe6ee; cursor:pointer; font:700 14px Arial; letter-spacing:.06em; text-transform:uppercase; text-align:left; }
+  #sqHead #sqSub { flex:1; font:400 12px Arial; letter-spacing:0; text-transform:none; color:#8fa3b1; } #sqHead svg { width:22px; height:22px; flex:none; transition:transform .15s; } #sqHead[aria-expanded="true"] svg { transform:rotate(180deg); }
+  #sqBody { margin-top:8px; padding:16px; border:1px solid #2c3d4a; border-radius:14px; background:linear-gradient(#0f1820,#0a1118); }
+  .sqTop { display:flex; justify-content:center; }
+  .sqCirc { width:56px; height:56px; border-radius:50%; border:2px solid #5fc4ee; background:#10202b; color:#fff; cursor:pointer; display:grid; place-items:center; padding:0; } .sqCirc svg { width:26px; height:26px; } .sqCirc .st { display:none; } .sqCirc[aria-pressed="true"] { background:#2a86b0; } .sqCirc[aria-pressed="true"] .st { display:block; } .sqCirc[aria-pressed="true"] .pl { display:none; }
+  .sqLane { display:grid; grid-template-columns:repeat(var(--n,4),1fr); gap:8px; margin-top:14px; }
+  .sqBar { position:relative; min-height:78px; border:1px dashed #3a4f5e; border-radius:10px; background:transparent; color:#8fa3b1; font:13px/1.3 Arial,sans-serif; padding:18px 6px 8px; cursor:pointer; }
+  .sqBar.has { border-style:solid; border-color:#5a7487; background:#14232e; color:#fff; } .sqBar.cur { border-color:#5fc4ee; box-shadow:0 0 0 2px #5fc4ee55; }
+  .sqBar b { display:block; font-size:16px; } .sqBar i { display:block; font-style:normal; font-size:11px; color:#9db3c2; }
+  .sqBar .n { position:absolute; left:7px; top:4px; font-size:11px; color:#7b909e; } .sqBar .x { position:absolute; right:3px; top:0; font-size:16px; color:#9db3c2; padding:2px 6px; }
+  .sqR { display:grid; grid-template-columns:repeat(var(--n,4),1fr); gap:8px; margin-top:8px; position:relative; }
+  .sqR .rl { grid-column:1/-1; font:700 10px Arial; letter-spacing:.1em; text-transform:uppercase; color:var(--c); margin-bottom:-2px; }
+  .sqR button { border:1px solid var(--c); background:transparent; color:var(--c); border-radius:8px; padding:6px 2px; font:700 12px Arial; cursor:pointer; } .sqR button:disabled { opacity:.3; cursor:default; } .sqR button.off { color:#7b909e; border-color:#2c3d4a; }
+  .sqRow { display:flex; flex-wrap:wrap; gap:14px 22px; align-items:center; justify-content:center; margin-top:14px; font-size:13px; }
+  .sqRow label { display:flex; align-items:center; gap:8px; letter-spacing:.08em; text-transform:uppercase; color:#9db3c2; font-weight:700; }
+  .sqRow button { background:#14232e; color:#fff; border:1px solid #3a4f5e; border-radius:8px; padding:7px 12px; font:700 13px Arial,sans-serif; cursor:pointer; }
+  .sqHint { margin:12px 0 0; text-align:center; font-size:13px; color:#8fa3b1; }
 </style>
 </head>
 <body>
@@ -205,6 +223,20 @@
     </div>
   </div>
 </div></div>
+<section id="sq" aria-label="Sequencer">
+  <button id="sqHead" type="button" aria-expanded="false" aria-controls="sqBody"><span id="sqTitle">Sequencer</span><span id="sqSub">Store chords from the pads, then play them round</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <div id="sqBody" hidden>
+    <div class="sqTop"><button id="sqPlay" class="sqCirc" type="button" aria-pressed="false" aria-label="Play" title="Play / stop"><svg class="pl" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="st" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
+    <div class="sqLane" id="sqLane"></div>
+    <div id="sqRows"></div>
+    <div class="sqRow">
+      <label>BPM <input id="sqBpm" type="range" min="40" max="220" value="75" aria-label="BPM"><span id="sqBpmV">75</span></label>
+      <label>Bars <button id="sqDn" type="button" aria-label="Fewer bars">&minus;</button><span id="sqBars">4</span><button id="sqUp" type="button" aria-label="More bars">+</button></label>
+      <button id="sqClear" type="button">Clear sequence</button>
+    </div>
+    <p class="sqHint">Set up a chord on the pads, then click an empty bar to store it, with its mode and tuning. Click a stored bar to bring it back onto the pads, then press play.</p>
+  </div>
+</section>
 <p class="hint">Laid out like the Microtonal tuner: black keys above, white keys below, each with a column of chord pads for harmonics above and undertones below. Use the < and > in the title to step through overtones, undertones, all harmonics, microtones (pick one ratio per key) and manual pitch (drag each key's handle). Press the bottom of a key, or a key on the keyboard module underneath, to play it. The top-left panel cycles the panel colour (or use a MIDI keyboard, or the keys A W S E D F T G Y H U J).</p>
 <p class="sitefoot">&copy; 2026 Rex Audio. <a href="licence.html">Licence and copyright</a></p>
 <script>
@@ -218,7 +250,7 @@ const RV = [Array.from({ length: 14 }, (_, i) => 14 - i), [1].concat(Array.from(
 const WI = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 };
 const keyX = c => BLACK.has(c) ? PAD + (WI[c - 1] + 1) * PITCH : PAD + (WI[c] + .5) * PITCH, keyY = c => BLACK.has(c) ? 12 : 380;
 const blank = () => Array.from({ length: 12 }, () => []);
-const S = { sel: blank(), oct: 0, pure: true, fund: true, hold: false, pre: 0, fifths: false, view: 2, panel: 0, micro: Array(12).fill(null), man: Array(12).fill(0) };
+const S = { sel: blank(), oct: 0, pure: true, fund: true, hold: false, pre: 0, fifths: false, view: 2, panel: 2, micro: Array(12).fill(null), man: Array(12).fill(0) };
 const pcOf = c => S.fifths ? (7 * c) % 12 : c, slotOf = p => S.fifths ? (7 * p) % 12 : p;   // the keys can be semitones or fifths: a column's pitch class
 const VIEWS = ["Overtones", "Undertones", "All harmonics", "Microtones", "Manual pitch"], vis = k => S.view < 3 && RV[S.view].includes(k);
 // Microtones (set 1): the simplest just ratios between a key's two neighbours' just tunings, up to ten per key, highest pitch first
@@ -246,8 +278,9 @@ const PANELS = [
   ["Keyboard mid", "#1c2a38", "#17232f", "#26384a", "#1e2e3d", "#2f4558", "#223344", "#9fb4c6"],
   ["Slate", "#2b333c", "#20272f", "#38434e", "#2b343e", "#232e39", "#242d37", "#b0bdc9"]
 ];
-try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-pads-v1")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => Number.isInteger(k) && k >= -14 && k <= 14 && k !== 0 && k !== -1)); S.pure = o.pure !== false; if (o.view >= 0 && o.view < 5) S.view = o.view; S.fifths = o.fifths === true; if (Array.isArray(o.micro) && o.micro.length === 12) S.micro = o.micro; if (Array.isArray(o.man) && o.man.length === 12) S.man = o.man.map(x => Math.max(-50, Math.min(50, +x || 0))); if (o.panel >= 0 && o.panel < PANELS.length) S.panel = o.panel; } } catch (e) {}
-const save = () => { try { localStorage.setItem("rex-harmonic-tuner-pads-v1", JSON.stringify({ sel: S.sel, oct: S.oct, pure: S.pure, fund: S.fund, view: S.view, fifths: S.fifths, micro: S.micro, man: S.man, panel: S.panel })); } catch (e) {} };
+try { const raw = localStorage.getItem("rex-harmonic-pads-panel-v2"), pn = +raw; if (raw !== null && pn >= 0 && pn < PANELS.length) S.panel = pn; } catch (e) {}
+try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-pads-v1")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => Number.isInteger(k) && k >= -14 && k <= 14 && k !== 0 && k !== -1)); S.pure = o.pure !== false; if (o.view >= 0 && o.view < 5) S.view = o.view; S.fifths = o.fifths === true; if (Array.isArray(o.micro) && o.micro.length === 12) S.micro = o.micro; if (Array.isArray(o.man) && o.man.length === 12) S.man = o.man.map(x => Math.max(-50, Math.min(50, +x || 0))); } } catch (e) {}
+const save = () => { try { localStorage.setItem("rex-harmonic-tuner-pads-v1", JSON.stringify({ sel: S.sel, oct: S.oct, pure: S.pure, fund: S.fund, view: S.view, fifths: S.fifths, micro: S.micro, man: S.man, panel: S.panel })); localStorage.setItem("rex-harmonic-pads-panel-v2", S.panel); } catch (e) {} };
 let hist = [], fut = [];
 const snap = () => JSON.stringify(S.sel);
 const commit = before => { if (snap() !== before) { hist.push(before); if (hist.length > 100) hist.shift(); fut = []; } };
@@ -291,7 +324,7 @@ function paint() {
     RV[2].forEach((_, ri) => {
       const b = kn[c + ":" + ri], t = tks[c + ":" + ri];
       if (S.view >= 3) {
-        const cd = S.view === 3 ? cands(c)[ri] : null, on = !!cd && cd === chosen(c);
+        const cd = S.view === 3 ? cands(c)[ri] : null, on = !!cd && S.micro[c] === cd.lab;
         b.style.visibility = S.view === 3 ? "" : "hidden"; b.classList.remove("root", "xen"); b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); b.textContent = cd ? cd.lab : ""; delete b.dataset.k;
         b.title = cd ? "Ratio " + cd.lab + " (" + Math.round(1200 * Math.log2(cd.v)) + "¢)" : ""; t.style.display = "none"; return;
       }
@@ -301,13 +334,13 @@ function paint() {
       const big = k === 1, tick = big || Math.abs(k) === 2 || Math.abs(k) === 4 || Math.abs(k) === 8; t.style.display = tick ? "" : "none"; t.style.width = (big ? 20 : 12) + "px"; t.style.marginLeft = -(big ? 10 : 6) + "px";
     });
     mhs[c].style.top = mhY(S.man[c]) + "px"; mhs[c].textContent = S.man[c] ? (S.man[c] > 0 ? "+" : "−") + Math.abs(S.man[c]) + "¢" : "0";
-    const n = S.view === 3 ? +(chosen(c) && !chosen(c).center) : S.view === 4 ? +(S.man[c] !== 0) : S.sel[c].filter(vis).length; railEls[c].classList.toggle("on", n > 0); keyEls[c].classList.toggle("has", n > 0);
+    const n = S.view === 3 ? +(S.micro[c] != null) : S.view === 4 ? +(S.man[c] !== 0) : S.sel[c].filter(vis).length; railEls[c].classList.toggle("on", n > 0); keyEls[c].classList.toggle("has", n > 0);
   }
   syncBtns();
   $("#bUndo").disabled = !hist.length; $("#bRedo").disabled = !fut.length; $("#bHold").setAttribute("aria-pressed", String(S.hold));
 }
 function padClick(c, ri) {
-  if (S.view === 3) { const cd = cands(c)[ri]; if (!cd) return; S.micro[c] = cd.lab; paint(); save(); audio(); voice(48 + 12 * Math.log2(cd.v) + 12 * S.oct, .7, 1, 700); readout(c); return; }
+  if (S.view === 3) { const cd = cands(c)[ri]; if (!cd) return; const off = S.micro[c] === cd.lab; S.micro[c] = off ? null : cd.lab; paint(); save(); audio(); if (!off) voice(48 + 12 * Math.log2(cd.v) + 12 * S.oct, .7, 1, 700); readout(c); return; }
   if (S.view === 4) return;
   toggle(c, RV[S.view][ri]);
 }
@@ -316,7 +349,7 @@ function toggle(c, k) {
   const b0 = snap(), a = S.sel[c], i = a.indexOf(k); if (i >= 0) a.splice(i, 1); else { a.push(k); a.sort((x, y) => y - x); }
   commit(b0); paint(); save(); readout(c); if (i < 0) blip(c, k);
 }
-function readout(c) { if (S.view === 3) { const x = chosen(c); $("#read").textContent = NAMES[pcOf(c)] + ":  ratio " + x.lab; return; } if (S.view === 4) { $("#read").textContent = NAMES[pcOf(c)] + ":  " + (S.man[c] > 0 ? "+" : S.man[c] < 0 ? "−" : "") + Math.abs(S.man[c]) + "¢"; return; } const ks = S.sel[c]; $("#read").textContent = ks.length ? NAMES[c] + ":  " + ks.map(k => nameOf(pitchOf(c, k)) + (k > 1 ? " ×" + k : k === 1 ? "" : " ÷" + (-k))).join("   ") : ""; }
+function readout(c) { if (S.view === 3) { const x = chosen(c); $("#read").textContent = NAMES[pcOf(c)] + (S.micro[c] == null ? ":  not in the chord (press the key to hear " + x.lab + ")" : ":  ratio " + x.lab); return; } if (S.view === 4) { $("#read").textContent = NAMES[pcOf(c)] + ":  " + (S.man[c] > 0 ? "+" : S.man[c] < 0 ? "−" : "") + Math.abs(S.man[c]) + "¢"; return; } const ks = S.sel[c]; $("#read").textContent = ks.length ? NAMES[c] + ":  " + ks.map(k => nameOf(pitchOf(c, k)) + (k > 1 ? " ×" + k : k === 1 ? "" : " ÷" + (-k))).join("   ") : ""; }
 
 // ---- the wooden screens and buttons ----
 const syncFns = []; const syncBtns = () => syncFns.forEach(f => f());
@@ -380,13 +413,13 @@ const QW = { a: 0, w: 1, s: 2, e: 3, d: 4, f: 5, t: 6, g: 7, y: 8, h: 9, u: 10, 
 addEventListener("keydown", e => { if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return; const c = QW[e.key.toLowerCase()]; if (c != null) down("k" + c, c, .8); });
 addEventListener("keyup", e => { const c = QW[e.key.toLowerCase()]; if (c != null) up("k" + c); });
 function silence() { [...live].forEach(v => v.stop()); held.clear(); latched.clear(); keyEls.forEach((k, c) => setDown(c, 0)); }
-function hear() {
-  audio(); let all = [].concat(...S.sel.map((ks, c) => ks.filter(vis).length ? notesOf(c, ks) : []));
-  if (S.view === 3) all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(c => S.micro[c] && !chosen(c).center).map(microMidi); else if (S.view === 4) all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(c => S.man[c]).map(manMidi);
-  if (S.view >= 3 && !all.length) all = [0, 4, 7].map(c => S.view === 3 ? microMidi(c) : manMidi(c));
-  const seen = []; all.forEach(p => { if (!seen.some(q => Math.abs(q - p) < .25)) seen.push(p); }); seen.sort((a, b) => a - b);
-  seen.forEach(p => voice(p, .8, seen.length, 2400));
+function chordMidis(fallback) {
+  let all = [].concat(...S.sel.map((ks, c) => ks.filter(vis).length ? notesOf(c, ks) : []));
+  if (S.view === 3) all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(c => S.micro[c] != null).map(microMidi); else if (S.view === 4) all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(c => S.man[c]).map(manMidi);
+  if (S.view >= 3 && !all.length && fallback) all = [0, 4, 7].map(c => S.view === 3 ? microMidi(c) : manMidi(c));
+  const seen = []; all.forEach(p => { if (!seen.some(q => Math.abs(q - p) < .25)) seen.push(p); }); return seen.sort((a, b) => a - b);
 }
+function hear() { audio(); const seen = chordMidis(true); seen.forEach(p => voice(p, .8, seen.length, 2400)); }
 bot("Hold", () => { S.hold = !S.hold; if (!S.hold) silence(); paint(); }, "bHold");
 bot("Undo", () => { if (!hist.length) return; fut.push(snap()); S.sel = JSON.parse(hist.pop()); paint(); save(); }, "bUndo");
 bot("Redo", () => { if (!fut.length) return; hist.push(snap()); S.sel = JSON.parse(fut.pop()); paint(); save(); }, "bRedo");
@@ -424,6 +457,61 @@ $("#midiBtn").onclick = () => {
     acc.onstatechange = bind; bind();
   }).catch(() => { m.textContent = "MIDI access was blocked. Allow it in the browser to use a keyboard."; });
 };
+
+
+// ---- the sequencer: store the pads as a bar, play the bars round (minimised until opened) ----
+const SQ = { n: 4, bpm: 75, bars: Array(8).fill(null), key: Array(8).fill(0), oct: Array(8).fill(2), voi: Array(8).fill(0), cur: -1, playing: false, tok: 0 };
+const VOI = ["Close", "1st inv", "2nd inv", "Drop 2", "Open", "Bass root"];
+const SQROWS = [{ id: "key", label: "Key", c: "#e8c45a", n: 12, t: v => NAMES[v] }, { id: "oct", label: "Octave", c: "#79b8ff", n: 5, t: v => { v -= 2; return (v > 0 ? "+" : v < 0 ? "\u2212" : "") + Math.abs(v); } }, { id: "voi", label: "Voicing", c: "#f0a45d", n: 6, t: v => VOI[v] }];
+try { const o = JSON.parse(localStorage.getItem("rex-harmonic-pads-seq-v1")); if (o) { SQ.n = Math.max(2, Math.min(8, o.n | 0 || 4)); SQ.bpm = Math.max(40, Math.min(220, +o.bpm || 75)); if (Array.isArray(o.bars)) SQ.bars = o.bars.slice(0, 8).concat(Array(8).fill(null)).slice(0, 8); ["key", "oct", "voi"].forEach(r => { if (Array.isArray(o[r])) SQ[r] = o[r].slice(0, 8).concat(Array(8).fill(r === "oct" ? 2 : 0)).slice(0, 8).map(x => x | 0); }); } } catch (e) {}
+const sqSave = () => { try { localStorage.setItem("rex-harmonic-pads-seq-v1", JSON.stringify({ n: SQ.n, bpm: SQ.bpm, bars: SQ.bars, key: SQ.key, oct: SQ.oct, voi: SQ.voi })); } catch (e) {} };
+const snapNow = () => JSON.parse(JSON.stringify({ view: S.view, fifths: S.fifths, oct: S.oct, sel: S.sel, micro: S.micro, man: S.man }));
+function withSnap(sn, fn) { const keep = { view: S.view, fifths: S.fifths, oct: S.oct, sel: S.sel, micro: S.micro, man: S.man }; Object.assign(S, JSON.parse(JSON.stringify(sn))); try { return fn(); } finally { Object.assign(S, keep); } }
+function sqVoice(ms, i) {
+  let a = ms.slice().sort((x, y) => x - y); const v = SQ.voi[i], k = SQ.key[i], o = (SQ.oct[i] - 2) * 12;
+  if (a.length > 1) { if (v === 1) a.push(a.shift() + 12); else if (v === 2) { a.push(a.shift() + 12); a.push(a.shift() + 12); } else if (v === 3 && a.length > 2) a[a.length - 2] -= 12; else if (v === 4) a = a.map((x, j) => j % 2 ? x + 12 : x); }
+  if (v === 5) a.unshift(a[0] - 12);
+  return a.map(x => x + k + o);
+}
+const sqChord = i => { const sn = SQ.bars[i]; return sn ? sqVoice(withSnap(sn, () => chordMidis(false)), i) : []; };
+const sqName = ms => { const n = []; ms.forEach(p => { const x = nameOf(p); if (!n.includes(x)) n.push(x); }); return n.slice(0, 4).join(" ") + (n.length > 4 ? " …" : ""); };
+function sqRender() {
+  const lane = $("#sqLane"); lane.textContent = ""; lane.style.setProperty("--n", SQ.n);
+  for (let i = 0; i < SQ.n; i++) {
+    const sn = SQ.bars[i], b = document.createElement("button"); b.type = "button"; b.className = "sqBar" + (sn ? " has" : "") + (i === SQ.cur ? " cur" : "");
+    b.innerHTML = '<span class="n">' + (i + 1) + "</span>" + (sn ? "<b>" + sqName(withSnap(sn, () => chordMidis(false))) + "</b><i>" + VIEWS[sn.view] + (sn.fifths ? " · fifths" : "") + '</i><span class="x" role="button" aria-label="Clear bar">×</span>' : "<i>empty</i>");
+    b.onclick = e => {
+      if (e.target.classList.contains("x")) { SQ.bars[i] = null; SQ.key[i] = 0; SQ.oct[i] = 2; SQ.voi[i] = 0; sqSave(); sqRender(); return; }
+      if (sn) { Object.assign(S, JSON.parse(JSON.stringify(sn))); paint(); save(); audio(); const ms = chordMidis(true); ms.forEach(p => voice(p, .8, ms.length, 900)); return; }
+      const now = withSnap(snapNow(), () => chordMidis(false)); if (!now.length) { $("#read").textContent = "Pick some pads first, then click a bar"; return; }
+      SQ.bars[i] = snapNow(); sqSave(); sqRender();
+    };
+    lane.appendChild(b);
+  }
+  const rows = $("#sqRows"); rows.textContent = ""; rows.style.setProperty("--n", SQ.n);
+  SQROWS.forEach(R => { const w = document.createElement("div"); w.className = "sqR"; w.style.setProperty("--c", R.c); w.style.setProperty("--n", SQ.n); w.innerHTML = '<span class="rl">' + R.label + "</span>";
+    for (let i = 0; i < SQ.n; i++) { const b = document.createElement("button"); b.type = "button"; const on = !!SQ.bars[i], v = SQ[R.id][i]; b.disabled = !on; b.className = (R.id === "key" ? v === 0 : R.id === "oct" ? v === 2 : v === 0) ? "off" : ""; b.textContent = R.t(v); b.title = R.label + " (shift-click goes back)";
+      b.onclick = e => { SQ[R.id][i] = (v + (e.shiftKey ? R.n - 1 : 1)) % R.n; sqSave(); sqRender(); audio(); const ms = sqChord(i); ms.forEach(p => voice(p, .8, ms.length, 700)); }; w.appendChild(b); }
+    rows.appendChild(w); });
+  $("#sqBars").textContent = SQ.n; $("#sqBpmV").textContent = SQ.bpm; $("#sqBpm").value = SQ.bpm;
+}
+async function sqPlay() {
+  if (SQ.playing) { SQ.playing = false; $("#sqPlay").setAttribute("aria-pressed", "false"); SQ.cur = -1; sqRender(); return; }
+  audio(); SQ.playing = true; $("#sqPlay").setAttribute("aria-pressed", "true"); const tk = ++SQ.tok; let i = 0;
+  while (SQ.playing && tk === SQ.tok) {
+    SQ.cur = i; sqRender(); const sn = SQ.bars[i], dur = 240000 / SQ.bpm;
+    if (sn) { const ms = sqChord(i); ms.forEach(p => voice(p, .8, ms.length, dur * .95)); }
+    await new Promise(r => setTimeout(r, dur)); i = (i + 1) % SQ.n;
+  }
+  SQ.cur = -1; sqRender();
+}
+$("#sqHead").onclick = () => { const o = $("#sqBody").hidden; $("#sqBody").hidden = !o; $("#sqHead").setAttribute("aria-expanded", String(o)); };
+$("#sqPlay").onclick = sqPlay;
+$("#sqBpm").oninput = e => { SQ.bpm = +e.target.value; $("#sqBpmV").textContent = SQ.bpm; sqSave(); };
+$("#sqDn").onclick = () => { SQ.n = Math.max(2, SQ.n - 1); sqSave(); sqRender(); };
+$("#sqUp").onclick = () => { SQ.n = Math.min(8, SQ.n + 1); sqSave(); sqRender(); };
+$("#sqClear").onclick = () => { SQ.bars = Array(8).fill(null); SQ.key.fill(0); SQ.oct.fill(2); SQ.voi.fill(0); sqSave(); sqRender(); };
+sqRender();
 
 // ---- scale the window to the screen, like the microtonal tuner ----
 function fit() { const w = Math.min(document.documentElement.clientWidth, 960), s = w / 756, H = 931 + $("#below").offsetHeight + 16; $("#scene").style.transform = "scale(" + s + ")"; $("#scene").style.height = H + "px"; const wr = $("#wrap"); wr.style.width = w + "px"; wr.style.height = (H * s) + "px"; }
