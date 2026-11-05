@@ -118,6 +118,22 @@
   .cb.cur { box-shadow:0 0 0 2px var(--acc); }
   .cb.clr { background:#5a2a2a; color:#ffb4b4; }
   .cb.flash { box-shadow:0 0 0 2px #ffb86f; }
+
+  /* the sequencer panel under the instrument (same idea as the Harmonic Grid's) */
+  #tseq { max-width:640px; margin:22px auto 0; padding:18px 16px 16px; border:1px solid #2c3d4a; border-radius:14px; background:linear-gradient(#0f1820,#0a1118); color:#dbe6ee; font-family:Arial,Helvetica,sans-serif; }
+  #tseq .tsTop { display:flex; align-items:center; justify-content:center; gap:14px; }
+  #tseq .tsCirc { width:64px; height:64px; border-radius:50%; border:2px solid #5fc4ee; background:#10202b; color:#fff; cursor:pointer; display:grid; place-items:center; padding:0; }
+  #tseq .tsCirc svg { width:28px; height:28px; } #tseq .tsCirc .st { display:none; } #tseq .tsCirc[aria-pressed="true"] { background:#2a86b0; } #tseq .tsCirc[aria-pressed="true"] .st { display:block; } #tseq .tsCirc[aria-pressed="true"] .pl { display:none; }
+  #tseq .tsLane { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px; }
+  #tseq .tsBar { position:relative; min-height:78px; border:1px dashed #3a4f5e; border-radius:10px; background:transparent; color:#8fa3b1; font:13px/1.3 Arial,sans-serif; padding:8px 6px; cursor:pointer; text-align:center; }
+  #tseq .tsBar.has { border-style:solid; border-color:#5a7487; background:#14232e; color:#fff; }
+  #tseq .tsBar.cur { border-color:#5fc4ee; box-shadow:0 0 0 2px #5fc4ee55; }
+  #tseq .tsBar b { display:block; font-size:20px; } #tseq .tsBar i { display:block; font-style:normal; font-size:12px; color:#9db3c2; }
+  #tseq .tsBar .n { position:absolute; left:7px; top:4px; font-size:11px; color:#7b909e; } #tseq .tsBar .x { position:absolute; right:3px; top:0; font-size:16px; color:#9db3c2; padding:2px 6px; }
+  #tseq .tsRow { display:flex; flex-wrap:wrap; gap:14px 22px; align-items:center; justify-content:center; margin-top:14px; font-size:13px; }
+  #tseq .tsRow label { display:flex; align-items:center; gap:8px; letter-spacing:.08em; text-transform:uppercase; color:#9db3c2; font-weight:700; }
+  #tseq .tsRow button { background:#14232e; color:#fff; border:1px solid #3a4f5e; border-radius:8px; padding:7px 12px; font:700 13px Arial,sans-serif; cursor:pointer; }
+  #tseq .tsHint { margin:12px 0 0; text-align:center; font-size:13px; color:#8fa3b1; }
   #play { flex:none; width:100%; height:30px; font-size:11px; letter-spacing:.08em; }
   #play.on { background:linear-gradient(#5fc4ee, #2a86b0); color:#04141c; }
 
@@ -538,6 +554,16 @@ p.hint.rot { display:none !important; }
     </div>
   </div>
 </div>
+<section id="tseq" aria-label="Sequencer">
+  <div class="tsTop"><button id="tsPlay" class="tsCirc" type="button" aria-pressed="false" aria-label="Play" title="Play / stop"><svg class="pl" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="st" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
+  <div class="tsLane" id="tsLane"></div>
+  <div class="tsRow">
+    <label>BPM <input id="tsBpm" type="range" min="40" max="220" value="75" aria-label="BPM"><span id="tsBpmV">75</span></label>
+    <label>Bars <button id="tsDn" type="button" aria-label="Fewer bars">&minus;</button><span id="tsBars">4</span><button id="tsUp" type="button" aria-label="More bars">+</button></label>
+    <button id="tsClear" type="button">Clear sequence</button>
+  </div>
+  <p class="tsHint">Play a key to pick a chord, then click a bar to store it, tuning and all. Click a stored bar to hear it, then press play.</p>
+</section>
 <section id="sliderTools" hidden aria-label="Slider track length control">
   <div class="slider-tool-row"><label for="trackLength">Slider track length</label><input id="trackLength" type="range" min="100" max="220" step="1" value="204"><output id="trackLengthVal">204 px</output><button id="copyTrackLength" type="button">Copy</button></div>
   <div class="kt-row"><label for="keyWidth">Key width (all)</label><input id="keyWidth" type="range" min="20" max="43" step="1" value="32"><output class="kt-val" id="keyWidthVal">32 px</output><button class="kt-copy" type="button" data-copy="keyWidth">Copy</button></div>
@@ -2075,6 +2101,58 @@ S.tun = TM_I; S.lastTun = TM_I; TUNINGS[TM_I][1] = tmCents(S.tm || 0); MSC.clear
 B.mac.b.closest(".ks").remove(); $("#rscr").appendChild(modeButtons[1]);
 applyGeometry();
 render();
+
+// ---------- the sequencer: bars that each hold a chord exactly as it sounds now (key, chord type, tuning, sliders) ----------
+(function () {
+  const KEY = "rexaudio.tuner.seq", MAXB = 8;
+  let T = { bars: [null, null, null, null], n: 4, bpm: 75 };
+  try { const o = JSON.parse(localStorage.getItem(KEY)); if (o && Array.isArray(o.bars)) { T.bars = o.bars.slice(0, MAXB); T.n = Math.max(1, Math.min(MAXB, o.n | 0 || 4)); T.bpm = Math.max(40, Math.min(220, o.bpm | 0 || 75)); } } catch (e) {}
+  while (T.bars.length < MAXB) T.bars.push(null);
+  const sv = () => { try { localStorage.setItem(KEY, JSON.stringify(T)); } catch (e) {} };
+  const lane = document.getElementById("tsLane"), playB = document.getElementById("tsPlay");
+  let on = false, cur = -1, timer = 0, offT = 0;
+  const barMs = () => 240000 / T.bpm;
+  function capture() {
+    const lat = [...latched.values()].flat(), seen = new Set();
+    let notes, root, cn;
+    if (lat.length) { notes = lat.filter(n => !seen.has(n.m + ":" + n.f) && seen.add(n.m + ":" + n.f)); root = Math.min(...notes.map(n => n.m)); cn = "Held"; }
+    else { root = lastM != null ? lastM : BASE() + S.key; const ch = S.chord || 1; notes = chordNotes(root, cfgNow()); cn = CHORDS[ch][0]; }
+    return { root, cn, tn: tuneName(), notes: notes.map(n => ({ f: n.f, m: n.m })) };
+  }
+  function draw() {
+    lane.innerHTML = ""; lane.style.gridTemplateColumns = "repeat(" + Math.min(T.n, 4) + ",1fr)";
+    for (let i = 0; i < T.n; i++) {
+      const c = T.bars[i], b = document.createElement("button"); b.type = "button"; b.className = "tsBar" + (c ? " has" : "") + (i === cur ? " cur" : "");
+      b.innerHTML = '<span class="n">' + (i + 1) + "</span>" + (c ? '<span class="x" data-x="1" title="Clear bar">&times;</span><b>' + SHARP[((c.root % 12) + 12) % 12] + "</b><i>" + c.cn + "</i><i>" + c.tn + "</i>" : "click to store the chord<br>bar " + (i + 1));
+      b.onclick = e => {
+        if (e.target.dataset && e.target.dataset.x) { T.bars[i] = null; sv(); draw(); return; }
+        if (!c) { T.bars[i] = capture(); sv(); draw(); return; }
+        ensureAudio(); noteOn("tsp", c.notes); clearTimeout(offT); offT = setTimeout(() => noteOff("tsp"), 900);
+      };
+      lane.appendChild(b);
+    }
+    document.getElementById("tsBars").textContent = T.n; document.getElementById("tsBpmV").textContent = T.bpm; document.getElementById("tsBpm").value = T.bpm;
+  }
+  function step() {
+    if (!on) return;
+    const idx = []; for (let i = 0; i < T.n; i++) if (T.bars[i]) idx.push(i);
+    if (!idx.length) { stop(); return; }
+    const nx = idx.find(i => i > cur); cur = nx != null ? nx : idx[0];
+    ensureAudio(); noteOn("tsq", T.bars[cur].notes); draw();
+    clearTimeout(offT); offT = setTimeout(() => noteOff("tsq"), barMs() * .92); timer = setTimeout(step, barMs());
+  }
+  function stop() { on = false; clearTimeout(timer); clearTimeout(offT); noteOff("tsq"); cur = -1; playB.setAttribute("aria-pressed", "false"); playB.setAttribute("aria-label", "Play"); draw(); }
+  playB.onclick = () => {
+    if (on) { stop(); return; }
+    if (!T.bars.slice(0, T.n).some(Boolean)) { lane.classList.add("flash"); return; }
+    on = true; cur = -1; playB.setAttribute("aria-pressed", "true"); playB.setAttribute("aria-label", "Stop"); step();
+  };
+  document.getElementById("tsBpm").oninput = e => { T.bpm = +e.target.value; document.getElementById("tsBpmV").textContent = T.bpm; sv(); };
+  document.getElementById("tsDn").onclick = () => { T.n = Math.max(1, T.n - 1); sv(); draw(); };
+  document.getElementById("tsUp").onclick = () => { T.n = Math.min(MAXB, T.n + 1); sv(); draw(); };
+  document.getElementById("tsClear").onclick = () => { stop(); T.bars = Array(MAXB).fill(null); sv(); draw(); };
+  draw();
+})();
 </script>
 <script src="nav.js"></script>
 </body>

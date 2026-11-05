@@ -36,7 +36,10 @@ h1, h2, p { margin: 0; }
 .intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; }
 .intro .lead { font-size: 19px; line-height: 1.5; margin: 16px auto 0; max-width: 520px; }
 
-.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 44px 36px 0; }
+.group { padding: 44px 36px 0; }
+.ghead h2 { font-size: 34px; line-height: 1.1; letter-spacing: -0.03em; }
+.ghead p { margin-top: 4px; font-size: 16px; color: var(--muted); }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 20px 0 0; }
 .card { display: block; text-decoration: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .card { display: flex; flex-direction: column; }
 .card img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: top; background: #0d141b; border-bottom: 1px solid var(--line); }
@@ -69,7 +72,9 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
     <p class="lead">Harmony, tuning and chord progressions you can hear: two ways to play the harmonic series on the circle of fifths, a chord sequencer, tuning presets with the harmonic series of any key, and a microtonal tuner for custom tunings.</p>
   </section>
 
-  <section class="cards" aria-label="Tools">
+  <section class="group" aria-labelledby="g-chords">
+    <div class="ghead"><h2 id="g-chords">Chords</h2><p>Play and sequence chords on the circle of fifths.</p></div>
+    <div class="cards">
     <a class="card" href="harmonic-grid.html">
       <img src="harmonic-grid-preview.png" width="972" height="946" alt="The Harmonic Grid: a column for each fifth, with harmonics above and undertones below" loading="lazy">
       <span class="txt">
@@ -97,6 +102,11 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
         <span class="go">Open ChordSeq &rarr;</span>
       </span>
     </a>
+    </div>
+  </section>
+  <section class="group" aria-labelledby="g-tunings">
+    <div class="ghead"><h2 id="g-tunings">Tunings</h2><p>Change how the keys are tuned, or make your own tuning.</p></div>
+    <div class="cards">
     <a class="card" href="tunings.html">
       <img src="tunings-preview.webp" width="1296" height="826" alt="The tunings page: key, tuning system and anchor controls above a virtual MIDI keyboard" loading="lazy">
       <span class="txt">
@@ -115,6 +125,7 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
         <span class="go">Open the Microtonal tuner &rarr;</span>
       </span>
     </a>
+    </div>
   </section>
 
   <footer>

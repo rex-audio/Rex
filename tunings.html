@@ -249,15 +249,6 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
                 <div class="asp" id="mdPanel" hidden>
                   <div class="mh"><span>Modes</span></div>
                   <div class="mgrid" id="mdTiles"></div>
-                  <div class="mgrid" id="mdLinks">
-                    <a class="mtile" href="microtonal-tuner.html"><b>Custom tunings</b><b>opens the microtonal tuner</b></a>
-                    <button class="mtile" id="mdChords" type="button" aria-expanded="false"><b>Chords</b><b>ChordSeq, harmonic grid or circle of fifths</b></button>
-                  </div>
-                  <div class="mgrid" id="mdChordLinks" hidden>
-                    <a class="mtile" href="chordseq.html"><b>ChordSeq</b><b>chord sequencer</b></a>
-                    <a class="mtile" href="harmonic-grid.html"><b>Harmonic grid</b><b>a column for each fifth</b></a>
-                    <a class="mtile" href="harmonic-circle.html"><b>Harmonic circle of fifths</b><b>overtones and undertones</b></a>
-                  </div>
                   <button class="hbtn" id="mdMore" type="button" aria-expanded="false">All tuning systems and scales</button>
                   <div id="mdGroups" hidden></div>
                   <div class="asact"><button class="hbtn" id="mdDone" type="button" style="color:var(--acc);border-color:var(--acc)">Done</button></div>
@@ -686,7 +677,6 @@ const tileEls = new Map();
 (() => {
   const box = $("#mdTiles");
   TILES.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.className = "mtile"; b.innerHTML = "<b></b><b></b>"; b.firstChild.textContent = t.lines[0]; b.lastChild.textContent = t.lines[1]; b.onclick = () => applyTile(t); box.appendChild(b); tileEls.set(t, b); });
-  $("#mdChords").onclick = () => { const g = $("#mdChordLinks"); g.hidden = !g.hidden; $("#mdChords").setAttribute("aria-expanded", !g.hidden); };
   $("#mdMore").onclick = () => { const g = $("#mdGroups"); g.hidden = !g.hidden; $("#mdMore").setAttribute("aria-expanded", !g.hidden); };
 })();
 (() => {
