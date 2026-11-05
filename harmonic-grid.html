@@ -192,7 +192,6 @@ body.tutoring #howBtn { display: none; }
     <a class="brand" href="index.html">Rex Audio</a>
     <nav aria-label="Main">
       <a href="shapes.html">Shapes</a>
-      <a href="chordseq.html">ChordSeq</a>
       <a href="music-theory-tools.html" aria-current="page">Theory</a>
       <a href="drums.html">Drums</a>
       <a href="colours.html">Colours</a>
@@ -884,5 +883,6 @@ const had = restore(); buildKB(); controls(); kbInit(); laneInit();
 if (had) { $("#preSel").value = curPre; $("#presetName").textContent = PRESETS[curPre].n; renderLane(); } else loadPreset(0);
 render();
 </script>
+<script src="nav.js"></script>
 </body>
 </html>

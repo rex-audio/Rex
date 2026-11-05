@@ -112,7 +112,6 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
     <a class="brand" href="index.html">Rex Audio</a>
     <nav aria-label="Main">
       <a href="shapes.html">Shapes</a>
-      <a href="chordseq.html">ChordSeq</a>
       <a href="drums.html" aria-current="page">Drums</a>
       <a href="colours.html">Colours</a>
       <a href="loops.html">Loops</a>
@@ -468,5 +467,6 @@ const fitSite = () => { const w = document.documentElement.clientWidth || window
 loadPattern("Amen Break"); applyLen(); paintSel(); syncStrip(); fitSite(); addEventListener("resize", fitSite);
 kitSel.value = 0; setKit(0, true);
 </script>
+<script src="nav.js"></script>
 </body>
 </html>
