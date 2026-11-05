@@ -100,16 +100,16 @@
   .tbtn[aria-pressed="true"] { color:#fff3d9; border-color:#e9b878; box-shadow:0 0 8px rgba(240,209,155,.45),0 2px 0 #211309; }
   .tbtn:disabled { opacity:.45; cursor:default; }
 
-  /* blue hardware, in the colours of the Tunings plugin: deep blue panel, plain white and black keys, grey pads that glow round the edge when picked */
-  #mod { background:#0f2236; border-color:#2f5b86; background-image:none; }
+  /* grey hardware with the Tunings plugin's blue light: mid grey panel, plain white and black keys, grey pads that glow round the edge when picked */
+  #mod { background:linear-gradient(180deg,#6d7378,#5a6065); border-color:#3d4246; background-image:none; }
   #mod::before { display:none; }
-  .tpanel.brand, #mtitle, .tbtn { background:#16324d; background-image:none; border-color:#2f5b86; color:#dbe9f5; text-shadow:none; box-shadow:0 2px 0 #07121d, inset 0 1px 0 rgba(160,210,255,.14); }
+  .tpanel.brand, #mtitle, .tbtn { background:#3b4045; background-image:none; border-color:#2a2e32; color:#e6eaed; text-shadow:none; box-shadow:0 2px 0 #1b1e21, inset 0 1px 0 rgba(255,255,255,.14); }
   .tpanel.brand b { background:none; -webkit-background-clip:border-box; background-clip:border-box; color:#6fd3ff; }
-  #mtitle { color:#dbe9f5; }
-  .tbtn:hover { color:#fff; border-color:#6fd3ff; } .tbtn[aria-pressed="true"] { color:#fff; border-color:#6fd3ff; box-shadow:0 0 8px rgba(111,211,255,.5),0 2px 0 #07121d; }
-  #dock { background:#0d1b2b; border-color:#2f5b86; box-shadow:inset 0 2px 8px rgba(0,0,0,.55); }
+  #mtitle { color:#e6eaed; }
+  .tbtn:hover { color:#fff; border-color:#6fd3ff; } .tbtn[aria-pressed="true"] { color:#fff; border-color:#6fd3ff; box-shadow:0 0 8px rgba(111,211,255,.5),0 2px 0 #1b1e21; }
+  #dock { background:linear-gradient(180deg,#7a8086,#686e73); border-color:#3d4246; box-shadow:inset 0 2px 8px rgba(0,0,0,.35); }
   #dock::before { display:none; }
-  .rl, .rl.r { color:#6f879b; }
+  .rl, .rl.r { color:#2b2f33; }
   .key.w { background:linear-gradient(100deg,#f4f8fb,#d3dde6 50%,#eef3f7); border:1px solid #7f93a6; box-shadow:0 2px 3px rgba(0,0,0,.55); }
   .key.b { background:linear-gradient(100deg,#1a232c,#05080b 50%,#1c2630); border:1px solid #000; box-shadow:0 3px 6px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.1); }
   .key.w .lb { color:#1b2a38; } .key.b .lb { color:#dbe9f5; }
