@@ -130,6 +130,7 @@
   .key .kn.on.xen { color:#b2330a; } .key.b .kn.on.xen { color:#ffb29a; }
   #mtitle { justify-content:space-between; padding:0 6px; } #mtitle span { flex:1; text-align:center; }
   .ta { width:46px; height:30px; border:0; border-radius:5px; background:none; color:inherit; font:700 22px/1 Arial; cursor:pointer; } .ta:hover { background:rgba(255,255,255,.12); }
+  .kn.off { opacity:.55; pointer-events:none; }
   .mh { display:none; touch-action:none; cursor:ns-resize; user-select:none; z-index:3; } .v4 .mh { display:flex; }
   .v3 .key.w .kn:not(.on) { color:#37414b; } .v3 .key.b .kn:not(.on) { color:#e1e7ec; } .v3 .key .kn { font-size:8.5px; }
 </style>
@@ -237,11 +238,11 @@ function paint() {
       const b = kn[c + ":" + k];
       if (S.view >= 3) {
         const cd = S.view === 3 ? cands(c)[ri] : null, on = !!cd && cd === chosen(c);
-        b.style.visibility = cd ? "" : "hidden"; b.classList.toggle("on", on); b.classList.remove("xen"); b.setAttribute("aria-pressed", String(on)); b.textContent = cd ? cd.lab : "";
+        b.style.visibility = S.view === 3 ? "" : "hidden"; b.classList.toggle("off", !cd); b.classList.toggle("on", on); b.classList.remove("xen"); b.setAttribute("aria-pressed", String(on)); b.textContent = cd ? cd.lab : "";
         b.title = cd ? "Ratio " + cd.lab + " (" + Math.round(1200 * Math.log2(cd.v)) + "¢)" : ""; return;
       }
       const p = pitchOf(c, k), dev = (p - Math.round(p)) * 100, on = S.sel[c].includes(k);
-      b.style.visibility = vis(k) ? "" : "hidden"; b.classList.toggle("on", on && vis(k)); b.classList.toggle("xen", Math.abs(dev) > 25); b.setAttribute("aria-pressed", String(on)); b.textContent = on ? nameOf(p) : "";
+      b.style.visibility = ""; b.classList.toggle("off", !vis(k)); b.classList.toggle("on", on && vis(k)); b.classList.toggle("xen", Math.abs(dev) > 25); b.setAttribute("aria-pressed", String(on)); b.textContent = on ? nameOf(p) : "";
       b.title = (k > 1 ? "Harmonic " + k : k === 1 ? "The key" : "Undertone " + (-k)) + " of " + NAMES[c] + " → " + nameOf(p) + (Math.abs(dev) >= 1 ? " " + (dev > 0 ? "+" : "−") + Math.abs(Math.round(dev)) + "¢" : "");
     });
     mhs[c].style.top = mhY(S.man[c]) + "px"; mhs[c].textContent = S.man[c] ? (S.man[c] > 0 ? "+" : "−") + Math.abs(S.man[c]) + "¢" : "0";
