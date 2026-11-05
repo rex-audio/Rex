@@ -28,3 +28,21 @@
     nav.appendChild(a);
   });
 })();
+
+/* On a phone or tablet, fit the page to the width that is actually shown. In a browser's "desktop site" mode that can be wider than the width the page first measures, which left the page small in the middle of the screen. */
+(function () {
+  var site = document.getElementById("site");
+  if (!site || !window.matchMedia || !matchMedia("(pointer: coarse)").matches) return;
+  function fit() {
+    var vv = window.visualViewport;
+    site.style.zoom = 0.3; void site.offsetWidth;   // measure while the page is too small to overflow, so it cannot widen the viewport itself
+    var w = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0, vv ? vv.width : 0);
+    site.classList.remove("wide");
+    site.style.zoom = Math.max(w / 720, 0.3);
+  }
+  window.addEventListener("resize", fit);
+  window.addEventListener("orientationchange", fit);
+  window.addEventListener("load", fit);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", fit);
+  fit(); setTimeout(fit, 150); setTimeout(fit, 600); setTimeout(fit, 1500);
+})();

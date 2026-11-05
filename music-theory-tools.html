@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<meta name="description" content="Music theory tools you can play in your browser: the Harmonic Grid, the Harmonic Circle of Fifths, ChordSeq and Tunings.">
-<title>Music theory tools | Rex Audio</title>
+<meta name="description" content="Theory tools you can play in your browser: the Harmonic Grid, the Harmonic Circle of Fifths, ChordSeq and Tunings.">
+<title>Theory tools | Rex Audio</title>
 <style>
 /* Same page frame as the other pages: a 720px "desktop" page scaled to the window. */
 :root {
@@ -36,14 +36,14 @@ h1, h2, p { margin: 0; }
 .intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; }
 .intro .lead { font-size: 19px; line-height: 1.5; margin: 16px auto 0; max-width: 520px; }
 
-.cards { display: grid; gap: 16px; padding: 44px 36px 0; }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 44px 36px 0; }
 .card { display: block; text-decoration: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.card img { display: block; width: 100%; height: auto; background: #0d141b; border-bottom: 1px solid var(--line); }
-.card img.crop { aspect-ratio: 16 / 9; object-fit: cover; object-position: top; }
-.card .txt { display: block; padding: 22px 28px 26px; }
+.card { display: flex; flex-direction: column; }
+.card img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: top; background: #0d141b; border-bottom: 1px solid var(--line); }
+.card .txt { display: block; padding: 16px 18px 20px; flex: 1; }
 .card:hover { border-color: var(--fg); }
-.card h2 { font-size: 26px; line-height: 1.2; letter-spacing: -0.01em; margin-top: 4px; }
-.card p { margin-top: 6px; font-size: 16px; line-height: 1.5; color: var(--muted); }
+.card h2 { font-size: 22px; line-height: 1.2; letter-spacing: -0.01em; margin-top: 4px; }
+.card p { margin-top: 6px; font-size: 15px; line-height: 1.5; color: var(--muted); }
 .card .go { display: inline-block; margin-top: 12px; font-size: 15px; font-weight: 700; }
 
 footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; font-size: 14px; color: var(--muted); }
@@ -65,8 +65,8 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
 
   <section class="intro">
     <p class="label">Play them in your browser</p>
-    <h1>Music theory tools</h1>
-    <p class="lead">Harmony, tuning and chord progressions you can hear: two ways to play the harmonic series on the circle of fifths, a chord sequencer and tuning presets.</p>
+    <h1>Theory tools</h1>
+    <p class="lead">Harmony, tuning and chord progressions you can hear: two ways to play the harmonic series on the circle of fifths, a chord sequencer, tuning presets and a keyboard that plays the harmonic series of any key.</p>
   </section>
 
   <section class="cards" aria-label="Tools">
@@ -104,6 +104,15 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
         <h2>Tunings</h2>
         <p>Browse tuning presets and play them with a virtual MIDI keyboard.</p>
         <span class="go">Open Tunings &rarr;</span>
+      </span>
+    </a>
+    <a class="card" href="harmonics.html">
+      <img src="harmonics-preview.png" width="900" height="592" alt="The Harmonics page: a key chosen on the desktop, and a keyboard below with a harmonic number on every key" loading="lazy">
+      <span class="txt">
+        <span class="label">Harmonic keyboard</span>
+        <h2>Harmonics</h2>
+        <p>Choose a key and play its harmonic series with your MIDI keyboard, or with the mouse.</p>
+        <span class="go">Open Harmonics &rarr;</span>
       </span>
     </a>
   </section>
