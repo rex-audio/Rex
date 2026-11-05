@@ -128,6 +128,10 @@
   .key .kn.on { transform:none; color:#06273a; border-color:#d6f3ff; text-shadow:none; box-shadow:0 2px 0 rgba(0,0,0,.6), 0 0 0 2px #6fd3ff, 0 0 12px 3px rgba(111,211,255,.85); }
   .key.b .kn.on { color:#eaf8ff; }
   .key .kn.on.xen { color:#b2330a; } .key.b .kn.on.xen { color:#ffb29a; }
+  #mtitle { justify-content:space-between; padding:0 6px; } #mtitle span { flex:1; text-align:center; }
+  .ta { width:46px; height:30px; border:0; border-radius:5px; background:none; color:inherit; font:700 22px/1 Arial; cursor:pointer; } .ta:hover { background:rgba(255,255,255,.12); }
+  .mh { display:none; touch-action:none; cursor:ns-resize; user-select:none; z-index:3; } .v4 .mh { display:flex; }
+  .v3 .key.w .kn:not(.on) { color:#37414b; } .v3 .key.b .kn:not(.on) { color:#e1e7ec; } .v3 .key .kn { font-size:8.5px; }
 </style>
 </head>
 <body>
@@ -147,7 +151,7 @@
     <div class="dbar"><span class="ddot"></span><span class="dtitle">Microtonal Tools</span><span class="dsub">Harmonic tuner, chord pads</span><span class="dst" id="read"></span><span class="dlogo">rex<b>audio</b></span></div>
     <div id="mod">
       <div class="tpanel brand" id="tpL" role="button" tabindex="0" title="Change the panel colour"><span id="panelName">Panel</span></div>
-      <div id="mtitle">Harmonic tuner</div>
+      <div id="mtitle"><button type="button" class="ta" id="vPrev" aria-label="Previous mode">&lt;</button><span id="vName">All harmonics</span><button type="button" class="ta" id="vNext" aria-label="Next mode">&gt;</button></div>
       <div class="tpanel brand" id="tpR">rex<b>audio</b></div>
       <div id="dock"></div>
       <div id="bot1" class="bot"></div>
@@ -155,7 +159,7 @@
     </div>
   </div>
 </div>
-<p class="hint">Laid out like the Microtonal tuner: black keys above, white keys below, each with a column of chord pads for harmonics above and undertones below. Tap a pad to light it, then press the bottom of the key. The top-left panel cycles the panel colour; the bottom button switches between overtones, undertones or both (or use a MIDI keyboard, or the keys A W S E D F T G Y H U J).</p>
+<p class="hint">Laid out like the Microtonal tuner: black keys above, white keys below, each with a column of chord pads for harmonics above and undertones below. Use the < and > in the title to step through overtones, undertones, all harmonics, microtones (pick one ratio per key) and manual pitch (drag each key's handle). Press the bottom of a key to play it. The top-left panel cycles the panel colour (or use a MIDI keyboard, or the keys A W S E D F T G Y H U J).</p>
 <p class="sitefoot">&copy; 2026 Rex Audio. <a href="licence.html">Licence and copyright</a></p>
 <script>
 const $ = s => document.querySelector(s);
@@ -166,8 +170,20 @@ const PAD = 22, PITCH = (696 - 2 * PAD) / 7, ROWY = k => 24 + ROWK.indexOf(k) * 
 const WI = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 };
 const keyX = c => BLACK.has(c) ? PAD + (WI[c - 1] + 1) * PITCH : PAD + (WI[c] + .5) * PITCH, keyY = c => BLACK.has(c) ? 12 : 380;
 const blank = () => Array.from({ length: 12 }, () => []);
-const S = { sel: blank(), oct: 0, pure: true, fund: true, hold: false, pre: 0, mode: 0, panel: 0 };
-const MODES = ["Over + under", "Overtones", "Undertones"], vis = k => S.mode === 0 || (S.mode === 1 && k >= 1) || (S.mode === 2 && k <= 1);
+const S = { sel: blank(), oct: 0, pure: true, fund: true, hold: false, pre: 0, view: 2, panel: 0, micro: Array(12).fill(null), man: Array(12).fill(0) };
+const VIEWS = ["Overtones", "Undertones", "All harmonics", "Microtones", "Manual pitch"], vis = k => S.view === 2 || (S.view === 0 && k >= 1) || (S.view === 1 && k <= 1);
+// Microtones (set 1): the simplest just ratios between a key's two neighbours' just tunings, up to ten per key, highest pitch first
+const JUSTR = [1, 16 / 15, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 45 / 32, 3 / 2, 8 / 5, 5 / 3, 9 / 5, 15 / 8], gcdN = (a, b) => b ? gcdN(b, a % b) : a, oddN = q => { while (q % 2 === 0) q /= 2; return q; };
+const MC = [], cands = c => {
+  if (MC[c]) return MC[c];
+  const ctr = JUSTR[c], lo = c ? JUSTR[c - 1] : JUSTR[11] / 2, hi = c < 11 ? JUSTR[c + 1] : 2, L = [];
+  for (let d = 1; d <= 64; d++) for (let n = Math.floor(lo * d) + 1; n < hi * d - 1e-9; n++) if (gcdN(n, d) === 1 && (Math.max(oddN(n), oddN(d)) <= 31 || Math.abs(n / d - ctr) < 1e-9)) L.push({ lab: n + "/" + d, v: n / d, cx: n * d, center: Math.abs(n / d - ctr) < 1e-9 });
+  L.sort((a, b) => a.cx - b.cx); let top = L.slice(0, 10); if (!top.some(x => x.center)) top[top.length - 1] = L.find(x => x.center);
+  return MC[c] = top.sort((a, b) => b.v - a.v);
+};
+const chosen = c => { const cs = cands(c); return cs.find(x => x.lab === S.micro[c]) || cs.find(x => x.center) || cs[0]; };
+const microMidi = c => 48 + 12 * Math.log2(chosen(c).v) + 12 * S.oct, manMidi = c => 48 + c + S.man[c] / 100 + 12 * S.oct;
+const keyNotes = (c, ks) => S.view === 3 ? [microMidi(c)] : S.view === 4 ? [manMidi(c)] : notesOf(c, ks);
 const PANELS = [
   ["Mid grey", "#6d7378", "#5a6065", "#7a8086", "#686e73", "#3d4246", "#3b4045", "#2b2f33"],
   ["Graphite", "#3a3d41", "#2a2c2f", "#4a4e53", "#383b3f", "#17181a", "#26282b", "#c2c7cc"],
@@ -177,8 +193,8 @@ const PANELS = [
   ["Brick", "#7a4640", "#63362f", "#8a5a52", "#744640", "#3a1c18", "#4d2a25", "#2d1612"],
   ["Sand", "#cdc2a8", "#b8ad92", "#dad0b8", "#c6bba1", "#7e7458", "#5b523c", "#463d29"]
 ];
-try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-pads-v1")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => ROWK.includes(k))); S.pure = o.pure !== false; if (o.mode >= 0 && o.mode < 3) S.mode = o.mode; if (o.panel >= 0 && o.panel < 7) S.panel = o.panel; } } catch (e) {}
-const save = () => { try { localStorage.setItem("rex-harmonic-tuner-pads-v1", JSON.stringify({ sel: S.sel, oct: S.oct, pure: S.pure, fund: S.fund, mode: S.mode, panel: S.panel })); } catch (e) {} };
+try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-pads-v1")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => ROWK.includes(k))); S.pure = o.pure !== false; if (o.view >= 0 && o.view < 5) S.view = o.view; if (Array.isArray(o.micro) && o.micro.length === 12) S.micro = o.micro; if (Array.isArray(o.man) && o.man.length === 12) S.man = o.man.map(x => Math.max(-50, Math.min(50, +x || 0))); if (o.panel >= 0 && o.panel < 7) S.panel = o.panel; } } catch (e) {}
+const save = () => { try { localStorage.setItem("rex-harmonic-tuner-pads-v1", JSON.stringify({ sel: S.sel, oct: S.oct, pure: S.pure, fund: S.fund, view: S.view, micro: S.micro, man: S.man, panel: S.panel })); } catch (e) {} };
 let hist = [], fut = [];
 const snap = () => JSON.stringify(S.sel);
 const commit = before => { if (snap() !== before) { hist.push(before); if (hist.length > 100) hist.shift(); fut = []; } };
@@ -189,7 +205,15 @@ const pitchOf = (c, k) => 60 + c + (k >= 1 ? 12 * Math.log2(k) - 12 * Math.log2(
 const nameOf = p => NAMES[((Math.round(p) % 12) + 12) % 12];
 
 // ---- the wooden keys and their columns ----
-const dock = $("#dock"), kn = {}, keyEls = [], railEls = [];
+const dock = $("#dock"), kn = {}, keyEls = [], railEls = [], mhs = [];
+const MH0 = 167, MHR = 143, mhY = v => MH0 - v / 50 * MHR;
+function dragHandle(mh, c, key) {
+  const at = e => { const r = key.getBoundingClientRect(), sc = r.height / key.offsetHeight, v = Math.round((MH0 - (e.clientY - r.top) / sc) / MHR * 50); S.man[c] = Math.abs(v) <= 2 ? 0 : Math.max(-50, Math.min(50, v)); paint(); readout(c); };
+  mh.addEventListener("pointerdown", e => { e.preventDefault(); mh.setPointerCapture(e.pointerId); mh._d = true; at(e); });
+  mh.addEventListener("pointermove", e => { if (mh._d) at(e); });
+  mh.addEventListener("pointerup", e => { mh._d = false; save(); });
+  mh.addEventListener("dblclick", () => { S.man[c] = 0; paint(); save(); });
+}
 const gutter = (y0, r) => ROWK.forEach(k => { const l = document.createElement("div"); l.className = "rl" + (r ? " r" : ""); l.style.top = (y0 + ROWY(k)) + "px"; l.textContent = k > 1 ? "×" + k : k === 1 ? "key" : "÷" + (-k); dock.appendChild(l); });
 gutter(380); gutter(12);
 for (let c = 0; c < 12; c++) {
@@ -200,29 +224,43 @@ for (let c = 0; c < 12; c++) {
   });
   ROWK.forEach(k => {
     const b = document.createElement("button"); b.type = "button"; b.className = "kn" + (k === 1 ? " root" : ""); b.style.top = ROWY(k) + "px"; b.dataset.c = c; b.dataset.k = k;
-    b.onclick = () => toggle(c, k); key.appendChild(b); kn[c + ":" + k] = b;
+    b.onclick = () => padClick(c, k); key.appendChild(b); kn[c + ":" + k] = b;
   });
+  const mh = document.createElement("button"); mh.type = "button"; mh.className = "kn on mh"; mh.dataset.c = c; key.appendChild(mh); mhs.push(mh); dragHandle(mh, c, key);
   const lb = document.createElement("span"); lb.className = "lb"; lb.textContent = NAMES[c]; key.appendChild(lb);
   dock.appendChild(key); keyEls.push(key);
 }
 function paint() {
+  document.body.classList.toggle("v3", S.view === 3); document.body.classList.toggle("v4", S.view === 4);
   for (let c = 0; c < 12; c++) {
-    ROWK.forEach(k => {
-      const b = kn[c + ":" + k], p = pitchOf(c, k), dev = (p - Math.round(p)) * 100, on = S.sel[c].includes(k);
+    ROWK.forEach((k, ri) => {
+      const b = kn[c + ":" + k];
+      if (S.view >= 3) {
+        const cd = S.view === 3 ? cands(c)[ri] : null, on = !!cd && cd === chosen(c);
+        b.style.visibility = cd ? "" : "hidden"; b.classList.toggle("on", on); b.classList.remove("xen"); b.setAttribute("aria-pressed", String(on)); b.textContent = cd ? cd.lab : "";
+        b.title = cd ? "Ratio " + cd.lab + " (" + Math.round(1200 * Math.log2(cd.v)) + "¢)" : ""; return;
+      }
+      const p = pitchOf(c, k), dev = (p - Math.round(p)) * 100, on = S.sel[c].includes(k);
       b.style.visibility = vis(k) ? "" : "hidden"; b.classList.toggle("on", on && vis(k)); b.classList.toggle("xen", Math.abs(dev) > 25); b.setAttribute("aria-pressed", String(on)); b.textContent = on ? nameOf(p) : "";
       b.title = (k > 1 ? "Harmonic " + k : k === 1 ? "The key" : "Undertone " + (-k)) + " of " + NAMES[c] + " → " + nameOf(p) + (Math.abs(dev) >= 1 ? " " + (dev > 0 ? "+" : "−") + Math.abs(Math.round(dev)) + "¢" : "");
     });
-    const n = S.sel[c].filter(vis).length; railEls[c].classList.toggle("on", n > 0); keyEls[c].classList.toggle("has", n > 0);
+    mhs[c].style.top = mhY(S.man[c]) + "px"; mhs[c].textContent = S.man[c] ? (S.man[c] > 0 ? "+" : "−") + Math.abs(S.man[c]) + "¢" : "0";
+    const n = S.view === 3 ? +(chosen(c) && !chosen(c).center) : S.view === 4 ? +(S.man[c] !== 0) : S.sel[c].filter(vis).length; railEls[c].classList.toggle("on", n > 0); keyEls[c].classList.toggle("has", n > 0);
   }
   syncBtns();
   $("#bUndo").disabled = !hist.length; $("#bRedo").disabled = !fut.length; $("#bHold").setAttribute("aria-pressed", String(S.hold));
+}
+function padClick(c, k) {
+  if (S.view === 3) { const cd = cands(c)[ROWK.indexOf(k)]; if (!cd) return; S.micro[c] = cd.lab; paint(); save(); audio(); voice(48 + 12 * Math.log2(cd.v) + 12 * S.oct, .7, 1, 700); readout(c); return; }
+  if (S.view === 4) return;
+  toggle(c, k);
 }
 function toggle(c, k) {
   if (!vis(k)) return;
   const b0 = snap(), a = S.sel[c], i = a.indexOf(k); if (i >= 0) a.splice(i, 1); else { a.push(k); a.sort((x, y) => y - x); }
   commit(b0); paint(); save(); readout(c); if (i < 0) blip(c, k);
 }
-function readout(c) { const ks = S.sel[c]; $("#read").textContent = ks.length ? NAMES[c] + ":  " + ks.map(k => nameOf(pitchOf(c, k)) + (k > 1 ? " ×" + k : k === 1 ? "" : " ÷" + (-k))).join("   ") : ""; }
+function readout(c) { if (S.view === 3) { const x = chosen(c); $("#read").textContent = NAMES[c] + ":  ratio " + x.lab; return; } if (S.view === 4) { $("#read").textContent = NAMES[c] + ":  " + (S.man[c] > 0 ? "+" : S.man[c] < 0 ? "−" : "") + Math.abs(S.man[c]) + "¢"; return; } const ks = S.sel[c]; $("#read").textContent = ks.length ? NAMES[c] + ":  " + ks.map(k => nameOf(pitchOf(c, k)) + (k > 1 ? " ×" + k : k === 1 ? "" : " ÷" + (-k))).join("   ") : ""; }
 
 // ---- the wooden screens and buttons ----
 const syncFns = []; const syncBtns = () => syncFns.forEach(f => f());
@@ -275,7 +313,7 @@ const held = new Map(), latched = new Set();
 function down(id, c, vel) {
   audio();
   if (S.hold && latched.has(c)) { latched.delete(c); stopCol(c); return; }
-  up(id, true); const ps = notesOf(c, S.sel[c]); held.set(id, { c, vs: ps.map(p => voice(p, vel, ps.length)) });
+  up(id, true); const ps = keyNotes(c, S.sel[c]); held.set(id, { c, vs: ps.map(p => voice(p, vel, ps.length)) });
   keyEls[c].classList.add("down"); readout(c); if (S.hold) latched.add(c);
 }
 function stopCol(c) { [...held.entries()].forEach(([id, h]) => { if (h.c === c) { held.delete(id); h.vs.forEach(v => v.stop()); } }); keyEls[c].classList.remove("down"); }
@@ -287,18 +325,21 @@ addEventListener("keydown", e => { if (e.repeat || e.ctrlKey || e.metaKey || e.a
 addEventListener("keyup", e => { const c = QW[e.key.toLowerCase()]; if (c != null) up("k" + c); });
 function silence() { [...live].forEach(v => v.stop()); held.clear(); latched.clear(); keyEls.forEach(k => k.classList.remove("down")); }
 function hear() {
-  audio(); const all = [].concat(...S.sel.map((ks, c) => ks.filter(vis).length ? notesOf(c, ks) : []));
+  audio(); let all = [].concat(...S.sel.map((ks, c) => ks.filter(vis).length ? notesOf(c, ks) : []));
+  if (S.view === 3) all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(c => S.micro[c] && !chosen(c).center).map(microMidi); else if (S.view === 4) all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(c => S.man[c]).map(manMidi);
+  if (S.view >= 3 && !all.length) all = [0, 4, 7].map(c => S.view === 3 ? microMidi(c) : manMidi(c));
   const seen = []; all.forEach(p => { if (!seen.some(q => Math.abs(q - p) < .25)) seen.push(p); }); seen.sort((a, b) => a - b);
   seen.forEach(p => voice(p, .8, seen.length, 2400));
 }
 bot("Hold", () => { S.hold = !S.hold; if (!S.hold) silence(); paint(); }, "bHold");
 bot("Undo", () => { if (!hist.length) return; fut.push(snap()); S.sel = JSON.parse(hist.pop()); paint(); save(); }, "bUndo");
 bot("Redo", () => { if (!fut.length) return; hist.push(snap()); S.sel = JSON.parse(fut.pop()); paint(); save(); }, "bRedo");
-bot("Clear", () => { const b0 = snap(); S.sel = blank(); commit(b0); $("#read").textContent = ""; paint(); save(); }, "bClear");
+bot("Clear", () => { const b0 = snap(); S.sel = blank(); S.micro = Array(12).fill(null); S.man = Array(12).fill(0); commit(b0); $("#read").textContent = ""; paint(); save(); }, "bClear");
 bot("Pure tuning", () => { S.pure = !S.pure; paint(); save(); }, "bTune");
-bot("Over + under", () => { S.mode = (S.mode + 1) % 3; paint(); save(); $("#read").textContent = MODES[S.mode]; }, "bMode");
 bot("▶ Hear chord", hear, "bHear");
-syncFns.push(() => { $("#bMode").textContent = MODES[S.mode]; applyPanel();});
+syncFns.push(() => { applyPanel(); $("#vName").textContent = VIEWS[S.view]; });
+$("#vPrev").onclick = () => { S.view = (S.view + 4) % 5; paint(); save(); $("#read").textContent = ""; };
+$("#vNext").onclick = () => { S.view = (S.view + 1) % 5; paint(); save(); $("#read").textContent = ""; };
 syncFns.push(() => { $("#bTune").textContent = S.pure ? "Pure tuning" : "12-TET"; $("#bTune").setAttribute("aria-pressed", String(S.pure)); });
 
 // ---- MIDI keyboard: each key plays its own column ----
