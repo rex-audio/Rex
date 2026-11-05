@@ -21,7 +21,7 @@
 
   /* the window, as on the Microtonal tuner page */
   #wrap { position:relative; margin:0 auto; }
-  #winf { position:absolute; left:0; top:0; width:756px; height:932px; transform-origin:0 0; border:1px solid #2c3d4a; border-radius:12px; overflow:hidden; background:#0d141b; box-shadow:0 14px 40px rgba(0,0,0,.5); }
+  #winf { position:absolute; left:0; top:0; width:756px; height:1040px; transform-origin:0 0; border:1px solid #2c3d4a; border-radius:12px; overflow:hidden; background:#0d141b; box-shadow:0 14px 40px rgba(0,0,0,.5); }
   #winf .dbar { height:34px; display:flex; align-items:center; gap:10px; padding:0 14px; background:linear-gradient(#1b2731,#111a22); border-bottom:1px solid #1f2e3b; }
   #winf .ddot { width:10px; height:10px; border-radius:50%; background:#6fd3ff; box-shadow:0 0 8px #6fd3ff99; }
   #winf .dtitle { font:700 13px Arial; color:#dbe9f5; letter-spacing:.04em; } #winf .dsub { font:500 12px Arial; color:#6f879b; }
@@ -29,7 +29,7 @@
   #winf .dlogo { margin-left:6px; font:300 17px "Helvetica Neue",Inter,Arial,sans-serif; letter-spacing:.06em; color:#dbe9f5; } #winf .dlogo b { font-weight:800; color:#6fd3ff; }
 
   /* the wooden module */
-  #mod { position:absolute; left:16px; top:50px; width:724px; height:866px; overflow:hidden; border:1px solid #9a7048; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.45); user-select:none; -webkit-user-select:none; touch-action:manipulation;
+  #mod { position:absolute; left:16px; top:50px; width:724px; height:974px; overflow:hidden; border:1px solid #9a7048; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.45); user-select:none; -webkit-user-select:none; touch-action:manipulation;
     background-color:#573821;
     background-image:radial-gradient(ellipse 190px 23px at 14% 9%, rgba(205,151,91,.32), transparent 78%), radial-gradient(ellipse 280px 15px at 81% 24%, rgba(15,6,2,.43), transparent 82%), radial-gradient(ellipse 230px 25px at 45% 42%, rgba(163,105,57,.23), transparent 76%), radial-gradient(ellipse 310px 18px at 67% 69%, rgba(15,6,2,.34), transparent 83%), radial-gradient(ellipse 210px 21px at 22% 88%, rgba(229,176,116,.18), transparent 80%), linear-gradient(135deg,#76502f,#573821 52%,#302016);
     background-blend-mode:screen,multiply,soft-light,multiply,screen,normal; }
@@ -64,7 +64,7 @@
   .mode-toggle[aria-pressed="true"] { background:linear-gradient(135deg,#d9b17b,#c5965e 55%,#b7844f); box-shadow:inset 0 2px 4px rgba(82,48,20,.24), 0 1px 0 rgba(255,241,204,.45); }
 
   /* the key bed: light honey wood, the black keys above and the white keys below, each with its own column of knobs */
-  #dock { left:14px; top:62px; width:696px; height:744px; border:1px solid #a87948; border-radius:8px; overflow:hidden; touch-action:none; background:linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e); box-shadow:inset 0 2px 8px rgba(76,43,17,.22); }
+  #dock { left:14px; top:62px; width:696px; height:852px; border:1px solid #a87948; border-radius:8px; overflow:hidden; touch-action:none; background:linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e); box-shadow:inset 0 2px 8px rgba(76,43,17,.22); }
   #dock::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.13; mix-blend-mode:multiply; filter:url(#organicWoodNoise); background:rgba(91,53,22,.34); }
   #dock > * { position:absolute; z-index:1; }
   .rl.r { left:auto; right:4px; text-align:right; color:#5a3a22; } .rl { left:4px; width:24px; font:700 8.5px/1 Arial; color:#7a5230; text-align:left; margin-top:-4px; }
@@ -92,7 +92,7 @@
     box-shadow:0 3px 5px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,241,204,.7), inset 0 -2px 2px rgba(70,38,13,.32), 0 0 0 2px rgba(255,240,205,.55), 0 0 8px 1px rgba(255,226,160,.6); }
   .key .kn.on.xen { color:#7a2a10; }
   .kn:focus-visible { outline:2px solid #fff; outline-offset:2px; }
-  .bot { left:14px; width:696px; display:flex; gap:10px; height:34px; } #bot1 { top:818px; }
+  .bot { left:14px; width:696px; display:flex; gap:10px; height:34px; } #bot1 { top:926px; }
   .tbtn { flex:1 1 0; min-width:0; height:34px; padding:0 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:8px; border:1px solid #28180e; cursor:pointer; color:#f0d6ad; font:700 12px Arial; letter-spacing:.02em; text-shadow:0 1px 2px rgba(0,0,0,.55); touch-action:manipulation;
     background-color:#573821; background-image:repeating-linear-gradient(3deg,rgba(35,17,7,.22) 0 1px,transparent 1px 4px,rgba(236,190,130,.12) 4px 5px,transparent 5px 11px),linear-gradient(135deg,#8a603a,#5a3822 58%,#3b2518);
     box-shadow:0 2px 0 #211309,inset 0 1px 0 rgba(255,226,183,.25),inset 0 -1px 0 rgba(25,12,5,.45); }
@@ -132,6 +132,10 @@
   .ta { width:46px; height:30px; border:0; border-radius:5px; background:none; color:inherit; font:700 22px/1 Arial; cursor:pointer; } .ta:hover { background:rgba(255,255,255,.12); }
   .mh { display:none; touch-action:none; cursor:ns-resize; user-select:none; z-index:3; } .v4 .mh { display:flex; }
   .v3 .key.w .kn:not(.on) { color:#37414b; } .v3 .key.b .kn:not(.on) { color:#e1e7ec; } .v3 .key .kn { font-size:8.5px; }
+  #pkb { position:absolute; top:744px; height:96px; display:flex; background:#000; border:1px solid #1f2e3b; border-radius:4px; overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #pkb .dk { position:relative; flex:1; background:#e9eef2; border-right:1px solid #8896a2; display:flex; align-items:flex-end; justify-content:center; padding-bottom:3px; font:9px Arial; color:#6c7a86; cursor:pointer; }
+  #pkb .bk { position:absolute; top:0; height:60%; z-index:2; background:#0d141b; border:1px solid #000; border-radius:0 0 3px 3px; cursor:pointer; display:flex; align-items:flex-end; justify-content:center; padding-bottom:3px; font:9px Arial; color:#8ea4b6; }
+  #pkb .dk.down, #pkb .bk.down { background:#6fd3ff; color:#070b0f; }
 </style>
 </head>
 <body>
@@ -159,7 +163,7 @@
     </div>
   </div>
 </div>
-<p class="hint">Laid out like the Microtonal tuner: black keys above, white keys below, each with a column of chord pads for harmonics above and undertones below. Use the < and > in the title to step through overtones, undertones, all harmonics, microtones (pick one ratio per key) and manual pitch (drag each key's handle). Press the bottom of a key to play it. The top-left panel cycles the panel colour (or use a MIDI keyboard, or the keys A W S E D F T G Y H U J).</p>
+<p class="hint">Laid out like the Microtonal tuner: black keys above, white keys below, each with a column of chord pads for harmonics above and undertones below. Use the < and > in the title to step through overtones, undertones, all harmonics, microtones (pick one ratio per key) and manual pitch (drag each key's handle). Press the bottom of a key, or a key on the keyboard underneath, to play it. The top-left panel cycles the panel colour (or use a MIDI keyboard, or the keys A W S E D F T G Y H U J).</p>
 <p class="sitefoot">&copy; 2026 Rex Audio. <a href="licence.html">Licence and copyright</a></p>
 <script>
 const $ = s => document.querySelector(s);
@@ -207,6 +211,7 @@ const pitchOf = (c, k) => 60 + c + (k >= 1 ? 12 * Math.log2(k) - 12 * Math.log2(
 const nameOf = p => NAMES[((Math.round(p) % 12) + 12) % 12];
 
 // ---- the wooden keys and their columns ----
+const kbEls = [], setDown = (c, on) => { keyEls[c].classList.toggle("down", !!on); if (kbEls[c]) kbEls[c].classList.toggle("down", !!on); };
 const dock = $("#dock"), kn = {}, keyEls = [], railEls = [], mhs = [], tks = {};
 const MH0 = 167, MHR = 143, mhY = v => MH0 - v / 50 * MHR;
 function dragHandle(mh, c, key) {
@@ -230,6 +235,12 @@ for (let c = 0; c < 12; c++) {
   const lb = document.createElement("span"); lb.className = "lb"; lb.textContent = NAMES[c]; key.appendChild(lb);
   dock.appendChild(key); keyEls.push(key);
 }
+// ---- the Tunings plugin's keyboard, under the pads: each key plays its own column ----
+const kbd = document.createElement("div"); kbd.id = "pkb"; kbd.style.left = PAD + "px"; kbd.style.width = (7 * PITCH) + "px"; dock.appendChild(kbd);
+[0, 2, 4, 5, 7, 9, 11].forEach(c => { const k = document.createElement("div"); k.className = "dk"; k.dataset.c = c; k.textContent = NAMES[c]; kbd.appendChild(k); kbEls[c] = k; });
+[1, 3, 6, 8, 10].forEach(c => { const k = document.createElement("div"); k.className = "bk"; k.dataset.c = c; k.style.left = ((WI[c - 1] + 1) * PITCH - PITCH * .3) + "px"; k.style.width = (PITCH * .6) + "px"; k.textContent = NAMES[c]; kbd.appendChild(k); kbEls[c] = k; });
+kbd.addEventListener("pointerdown", e => { const k = e.target.closest(".dk, .bk"); if (!k) return; e.preventDefault(); try { k.setPointerCapture(e.pointerId); } catch (x) {} down("b" + e.pointerId, +k.dataset.c, .8); });
+["pointerup", "pointercancel"].forEach(ev => kbd.addEventListener(ev, e => up("b" + e.pointerId)));
 function paint() {
   document.body.classList.toggle("v3", S.view === 3); document.body.classList.toggle("v4", S.view === 4);
   rls.forEach(([l, ri]) => { const k = S.view < 3 ? RV[S.view][ri] : 0; l.textContent = !k ? "" : k > 1 ? "×" + k : k === 1 ? "key" : "÷" + (-k); });
@@ -316,16 +327,16 @@ function down(id, c, vel) {
   audio();
   if (S.hold && latched.has(c)) { latched.delete(c); stopCol(c); return; }
   up(id, true); const ps = keyNotes(c, S.sel[c]); held.set(id, { c, vs: ps.map(p => voice(p, vel, ps.length)) });
-  keyEls[c].classList.add("down"); readout(c); if (S.hold) latched.add(c);
+  setDown(c, 1); readout(c); if (S.hold) latched.add(c);
 }
-function stopCol(c) { [...held.entries()].forEach(([id, h]) => { if (h.c === c) { held.delete(id); h.vs.forEach(v => v.stop()); } }); keyEls[c].classList.remove("down"); }
-function up(id, force) { const h = held.get(id); if (!h) return; if (S.hold && !force && latched.has(h.c)) return; held.delete(id); h.vs.forEach(v => v.stop()); if (![...held.values()].some(x => x.c === h.c)) keyEls[h.c].classList.remove("down"); }
+function stopCol(c) { [...held.entries()].forEach(([id, h]) => { if (h.c === c) { held.delete(id); h.vs.forEach(v => v.stop()); } }); setDown(c, 0); }
+function up(id, force) { const h = held.get(id); if (!h) return; if (S.hold && !force && latched.has(h.c)) return; held.delete(id); h.vs.forEach(v => v.stop()); if (![...held.values()].some(x => x.c === h.c)) setDown(h.c, 0); }
 dock.addEventListener("pointerdown", e => { if (e.target.closest(".kn")) return; const k = e.target.closest(".key"); if (!k) return; e.preventDefault(); try { k.setPointerCapture(e.pointerId); } catch (x) {} down("p" + e.pointerId, +k.dataset.c, .8); });
 ["pointerup", "pointercancel"].forEach(ev => dock.addEventListener(ev, e => up("p" + e.pointerId)));
 const QW = { a: 0, w: 1, s: 2, e: 3, d: 4, f: 5, t: 6, g: 7, y: 8, h: 9, u: 10, j: 11 };
 addEventListener("keydown", e => { if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return; const c = QW[e.key.toLowerCase()]; if (c != null) down("k" + c, c, .8); });
 addEventListener("keyup", e => { const c = QW[e.key.toLowerCase()]; if (c != null) up("k" + c); });
-function silence() { [...live].forEach(v => v.stop()); held.clear(); latched.clear(); keyEls.forEach(k => k.classList.remove("down")); }
+function silence() { [...live].forEach(v => v.stop()); held.clear(); latched.clear(); keyEls.forEach((k, c) => setDown(c, 0)); }
 function hear() {
   audio(); let all = [].concat(...S.sel.map((ks, c) => ks.filter(vis).length ? notesOf(c, ks) : []));
   if (S.view === 3) all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(c => S.micro[c] && !chosen(c).center).map(microMidi); else if (S.view === 4) all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(c => S.man[c]).map(manMidi);
@@ -351,7 +362,7 @@ if (navigator.requestMIDIAccess) document.addEventListener("pointerdown", () => 
 }, { once: true });
 
 // ---- scale the window to the screen, like the microtonal tuner ----
-function fit() { const w = Math.min(document.documentElement.clientWidth, 960), s = w / 756; $("#winf").style.transform = "scale(" + s + ")"; const wr = $("#wrap"); wr.style.width = w + "px"; wr.style.height = (932 * s) + "px"; }
+function fit() { const w = Math.min(document.documentElement.clientWidth, 960), s = w / 756; $("#winf").style.transform = "scale(" + s + ")"; const wr = $("#wrap"); wr.style.width = w + "px"; wr.style.height = (1040 * s) + "px"; }
 addEventListener("resize", fit); fit(); paint();
 </script>
 <script src="nav.js"></script>
