@@ -36,14 +36,16 @@ h1, h2, p { margin: 0; }
 .intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; }
 .intro .lead { font-size: 19px; line-height: 1.5; margin: 16px auto 0; max-width: 520px; }
 
-.cards { display: grid; gap: 16px; padding: 44px 36px 0; }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 44px 36px 0; }
+#site.wide { width: 1120px; zoom: 1; }
+#site.wide .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .card { display: block; text-decoration: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.card img { display: block; width: 100%; height: auto; background: #0d141b; border-bottom: 1px solid var(--line); }
-.card img.crop { aspect-ratio: 16 / 9; object-fit: cover; object-position: top; }
-.card .txt { display: block; padding: 22px 28px 26px; }
+.card { display: flex; flex-direction: column; }
+.card img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: top; background: #0d141b; border-bottom: 1px solid var(--line); }
+.card .txt { display: block; padding: 16px 18px 20px; flex: 1; }
 .card:hover { border-color: var(--fg); }
-.card h2 { font-size: 26px; line-height: 1.2; letter-spacing: -0.01em; margin-top: 4px; }
-.card p { margin-top: 6px; font-size: 16px; line-height: 1.5; color: var(--muted); }
+.card h2 { font-size: 22px; line-height: 1.2; letter-spacing: -0.01em; margin-top: 4px; }
+.card p { margin-top: 6px; font-size: 15px; line-height: 1.5; color: var(--muted); }
 .card .go { display: inline-block; margin-top: 12px; font-size: 15px; font-weight: 700; }
 
 footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; font-size: 14px; color: var(--muted); }
@@ -118,7 +120,9 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
   var site = document.getElementById('site');
   function fit() {
     var w = document.documentElement.clientWidth || window.innerWidth;
-    site.style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5);
+    var wide = w >= 1000;
+    site.classList.toggle('wide', wide);
+    site.style.zoom = wide ? 1 : Math.min(Math.max(w / 720, 0.3), 1.5);
   }
   window.addEventListener('resize', fit);
   fit();
