@@ -324,7 +324,7 @@ function paint() {
     RV[2].forEach((_, ri) => {
       const b = kn[c + ":" + ri], t = tks[c + ":" + ri];
       if (S.view >= 3) {
-        const cd = S.view === 3 ? cands(c)[ri] : null, on = !!cd && cd === chosen(c);
+        const cd = S.view === 3 ? cands(c)[ri] : null, on = !!cd && S.micro[c] === cd.lab;
         b.style.visibility = S.view === 3 ? "" : "hidden"; b.classList.remove("root", "xen"); b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); b.textContent = cd ? cd.lab : ""; delete b.dataset.k;
         b.title = cd ? "Ratio " + cd.lab + " (" + Math.round(1200 * Math.log2(cd.v)) + "¢)" : ""; t.style.display = "none"; return;
       }
@@ -334,13 +334,13 @@ function paint() {
       const big = k === 1, tick = big || Math.abs(k) === 2 || Math.abs(k) === 4 || Math.abs(k) === 8; t.style.display = tick ? "" : "none"; t.style.width = (big ? 20 : 12) + "px"; t.style.marginLeft = -(big ? 10 : 6) + "px";
     });
     mhs[c].style.top = mhY(S.man[c]) + "px"; mhs[c].textContent = S.man[c] ? (S.man[c] > 0 ? "+" : "−") + Math.abs(S.man[c]) + "¢" : "0";
-    const n = S.view === 3 ? +(chosen(c) && !chosen(c).center) : S.view === 4 ? +(S.man[c] !== 0) : S.sel[c].filter(vis).length; railEls[c].classList.toggle("on", n > 0); keyEls[c].classList.toggle("has", n > 0);
+    const n = S.view === 3 ? +(S.micro[c] != null) : S.view === 4 ? +(S.man[c] !== 0) : S.sel[c].filter(vis).length; railEls[c].classList.toggle("on", n > 0); keyEls[c].classList.toggle("has", n > 0);
   }
   syncBtns();
   $("#bUndo").disabled = !hist.length; $("#bRedo").disabled = !fut.length; $("#bHold").setAttribute("aria-pressed", String(S.hold));
 }
 function padClick(c, ri) {
-  if (S.view === 3) { const cd = cands(c)[ri]; if (!cd) return; S.micro[c] = cd.lab; paint(); save(); audio(); voice(48 + 12 * Math.log2(cd.v) + 12 * S.oct, .7, 1, 700); readout(c); return; }
+  if (S.view === 3) { const cd = cands(c)[ri]; if (!cd) return; const off = S.micro[c] === cd.lab; S.micro[c] = off ? null : cd.lab; paint(); save(); audio(); if (!off) voice(48 + 12 * Math.log2(cd.v) + 12 * S.oct, .7, 1, 700); readout(c); return; }
   if (S.view === 4) return;
   toggle(c, RV[S.view][ri]);
 }
@@ -349,7 +349,7 @@ function toggle(c, k) {
   const b0 = snap(), a = S.sel[c], i = a.indexOf(k); if (i >= 0) a.splice(i, 1); else { a.push(k); a.sort((x, y) => y - x); }
   commit(b0); paint(); save(); readout(c); if (i < 0) blip(c, k);
 }
-function readout(c) { if (S.view === 3) { const x = chosen(c); $("#read").textContent = NAMES[pcOf(c)] + ":  ratio " + x.lab; return; } if (S.view === 4) { $("#read").textContent = NAMES[pcOf(c)] + ":  " + (S.man[c] > 0 ? "+" : S.man[c] < 0 ? "−" : "") + Math.abs(S.man[c]) + "¢"; return; } const ks = S.sel[c]; $("#read").textContent = ks.length ? NAMES[c] + ":  " + ks.map(k => nameOf(pitchOf(c, k)) + (k > 1 ? " ×" + k : k === 1 ? "" : " ÷" + (-k))).join("   ") : ""; }
+function readout(c) { if (S.view === 3) { const x = chosen(c); $("#read").textContent = NAMES[pcOf(c)] + (S.micro[c] == null ? ":  not in the chord (press the key to hear " + x.lab + ")" : ":  ratio " + x.lab); return; } if (S.view === 4) { $("#read").textContent = NAMES[pcOf(c)] + ":  " + (S.man[c] > 0 ? "+" : S.man[c] < 0 ? "−" : "") + Math.abs(S.man[c]) + "¢"; return; } const ks = S.sel[c]; $("#read").textContent = ks.length ? NAMES[c] + ":  " + ks.map(k => nameOf(pitchOf(c, k)) + (k > 1 ? " ×" + k : k === 1 ? "" : " ÷" + (-k))).join("   ") : ""; }
 
 // ---- the wooden screens and buttons ----
 const syncFns = []; const syncBtns = () => syncFns.forEach(f => f());
@@ -415,7 +415,7 @@ addEventListener("keyup", e => { const c = QW[e.key.toLowerCase()]; if (c != nul
 function silence() { [...live].forEach(v => v.stop()); held.clear(); latched.clear(); keyEls.forEach((k, c) => setDown(c, 0)); }
 function chordMidis(fallback) {
   let all = [].concat(...S.sel.map((ks, c) => ks.filter(vis).length ? notesOf(c, ks) : []));
-  if (S.view === 3) all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(c => S.micro[c] && !chosen(c).center).map(microMidi); else if (S.view === 4) all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(c => S.man[c]).map(manMidi);
+  if (S.view === 3) all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(c => S.micro[c] != null).map(microMidi); else if (S.view === 4) all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(c => S.man[c]).map(manMidi);
   if (S.view >= 3 && !all.length && fallback) all = [0, 4, 7].map(c => S.view === 3 ? microMidi(c) : manMidi(c));
   const seen = []; all.forEach(p => { if (!seen.some(q => Math.abs(q - p) < .25)) seen.push(p); }); return seen.sort((a, b) => a - b);
 }
