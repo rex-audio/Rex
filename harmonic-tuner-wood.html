@@ -21,7 +21,7 @@
 
   /* the window, as on the Microtonal tuner page */
   #wrap { position:relative; margin:0 auto; }
-  #winf { position:absolute; left:0; top:0; width:756px; height:780px; transform-origin:0 0; border:1px solid #2c3d4a; border-radius:12px; overflow:hidden; background:#0d141b; box-shadow:0 14px 40px rgba(0,0,0,.5); }
+  #winf { position:absolute; left:0; top:0; width:756px; height:736px; transform-origin:0 0; border:1px solid #2c3d4a; border-radius:12px; overflow:hidden; background:#0d141b; box-shadow:0 14px 40px rgba(0,0,0,.5); }
   #winf .dbar { height:34px; display:flex; align-items:center; gap:10px; padding:0 14px; background:linear-gradient(#1b2731,#111a22); border-bottom:1px solid #1f2e3b; }
   #winf .ddot { width:10px; height:10px; border-radius:50%; background:#6fd3ff; box-shadow:0 0 8px #6fd3ff99; }
   #winf .dtitle { font:700 13px Arial; color:#dbe9f5; letter-spacing:.04em; } #winf .dsub { font:500 12px Arial; color:#6f879b; }
@@ -29,7 +29,7 @@
   #winf .dlogo { margin-left:6px; font:300 17px "Helvetica Neue",Inter,Arial,sans-serif; letter-spacing:.06em; color:#dbe9f5; } #winf .dlogo b { font-weight:800; color:#6fd3ff; }
 
   /* the wooden module */
-  #mod { position:absolute; left:16px; top:50px; width:724px; height:712px; overflow:hidden; border:1px solid #9a7048; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.45); user-select:none; -webkit-user-select:none; touch-action:manipulation;
+  #mod { position:absolute; left:16px; top:50px; width:724px; height:668px; overflow:hidden; border:1px solid #9a7048; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.45); user-select:none; -webkit-user-select:none; touch-action:manipulation;
     background-color:#573821;
     background-image:radial-gradient(ellipse 190px 23px at 14% 9%, rgba(205,151,91,.32), transparent 78%), radial-gradient(ellipse 280px 15px at 81% 24%, rgba(15,6,2,.43), transparent 82%), radial-gradient(ellipse 230px 25px at 45% 42%, rgba(163,105,57,.23), transparent 76%), radial-gradient(ellipse 310px 18px at 67% 69%, rgba(15,6,2,.34), transparent 83%), radial-gradient(ellipse 210px 21px at 22% 88%, rgba(229,176,116,.18), transparent 80%), linear-gradient(135deg,#76502f,#573821 52%,#302016);
     background-blend-mode:screen,multiply,soft-light,multiply,screen,normal; }
@@ -92,7 +92,7 @@
     box-shadow:0 3px 5px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,241,204,.7), inset 0 -2px 2px rgba(70,38,13,.32), 0 0 0 2px rgba(255,240,205,.55), 0 0 8px 1px rgba(255,226,160,.6); }
   .key .kn.on.xen { color:#7a2a10; }
   .kn:focus-visible { outline:2px solid #fff; outline-offset:2px; }
-  .bot { left:14px; width:696px; display:flex; gap:10px; height:34px; } #bot1 { top:618px; } #bot2 { top:662px; }
+  .bot { left:14px; width:696px; display:flex; gap:10px; height:34px; } #bot1 { top:618px; }
   .tbtn { flex:1 1 0; min-width:0; height:34px; padding:0 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:8px; border:1px solid #28180e; cursor:pointer; color:#f0d6ad; font:700 12px Arial; letter-spacing:.02em; text-shadow:0 1px 2px rgba(0,0,0,.55); touch-action:manipulation;
     background-color:#573821; background-image:repeating-linear-gradient(3deg,rgba(35,17,7,.22) 0 1px,transparent 1px 4px,rgba(236,190,130,.12) 4px 5px,transparent 5px 11px),linear-gradient(135deg,#8a603a,#5a3822 58%,#3b2518);
     box-shadow:0 2px 0 #211309,inset 0 1px 0 rgba(255,226,183,.25),inset 0 -1px 0 rgba(25,12,5,.45); }
@@ -122,7 +122,7 @@
       <div class="tpanel brand" id="tpR">rex<b>audio</b></div>
       <div id="dock"></div>
       <div id="bot1" class="bot"></div>
-      <div id="bot2" class="bot"></div>
+      
     </div>
   </div>
 </div>
@@ -136,7 +136,7 @@ const GUT = 28, PITCH = (696 - 2 * GUT - 8) / 12, KEYH = 352, ROWY = k => 24 + R
 const keyX = c => GUT + (c + .5) * PITCH, keyY = c => BLACK.has(c) ? 8 : 184;   // the black keys sit half way up, like a keyboard
 const blank = () => Array.from({ length: 12 }, () => []);
 const S = { sel: blank(), oct: 0, pure: true, fund: true, hold: false, pre: 0 };
-try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-v2")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => ROWK.includes(k))); S.oct = o.oct | 0; S.pure = o.pure !== false; S.fund = o.fund !== false; } } catch (e) {}
+try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-v2")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => ROWK.includes(k))); S.pure = o.pure !== false; } } catch (e) {}
 const save = () => { try { localStorage.setItem("rex-harmonic-tuner-v2", JSON.stringify({ sel: S.sel, oct: S.oct, pure: S.pure, fund: S.fund })); } catch (e) {} };
 let hist = [], fut = [];
 const snap = () => JSON.stringify(S.sel);
@@ -250,19 +250,9 @@ bot("Hold", () => { S.hold = !S.hold; if (!S.hold) silence(); paint(); }, "bHold
 bot("Undo", () => { if (!hist.length) return; fut.push(snap()); S.sel = JSON.parse(hist.pop()); paint(); save(); }, "bUndo");
 bot("Redo", () => { if (!fut.length) return; hist.push(snap()); S.sel = JSON.parse(fut.pop()); paint(); save(); }, "bRedo");
 bot("Clear", () => { const b0 = snap(); S.sel = blank(); commit(b0); $("#read").textContent = ""; paint(); save(); }, "bClear");
-bot("Reset", () => { silence(); const b0 = snap(); S.sel = blank(); S.oct = 0; S.pure = true; S.fund = true; S.hold = false; commit(b0); $("#read").textContent = ""; paint(); save(); }, "bReset");
-bot("Silence", silence, "bSilence");
-bot("Oct ▼", () => { S.oct = Math.max(-3, S.oct - 1); paint(); save(); }, "bOctDn", "#bot2");
-bot("Oct ▲", () => { S.oct = Math.min(3, S.oct + 1); paint(); save(); }, "bOctUp", "#bot2");
-bot("Pure tuning", () => { S.pure = !S.pure; paint(); save(); }, "bTune", "#bot2");
-bot("Undertones on", () => { S.fund = !S.fund; paint(); save(); }, "bFund", "#bot2");
-bot("Preset ▸", () => loadPre(S.pre + 1), "bPre", "#bot2");
-bot("▶ Hear chord", hear, "bHear", "#bot2");
-syncFns.push(() => {
-  $("#bTune").textContent = S.pure ? "Pure tuning" : "12-TET"; $("#bTune").setAttribute("aria-pressed", String(S.pure));
-  $("#bFund").textContent = S.fund ? "Undertones on" : "Undertones off"; $("#bFund").setAttribute("aria-pressed", String(S.fund));
-  $("#bOctDn").title = $("#bOctUp").title = "Octave " + (S.oct > 0 ? "+" : "") + S.oct;
-});
+bot("Pure tuning", () => { S.pure = !S.pure; paint(); save(); }, "bTune");
+bot("▶ Hear chord", hear, "bHear");
+syncFns.push(() => { $("#bTune").textContent = S.pure ? "Pure tuning" : "12-TET"; $("#bTune").setAttribute("aria-pressed", String(S.pure)); });
 
 // ---- MIDI keyboard: each key plays its own column ----
 if (navigator.requestMIDIAccess) document.addEventListener("pointerdown", () => {
@@ -271,7 +261,7 @@ if (navigator.requestMIDIAccess) document.addEventListener("pointerdown", () => 
 }, { once: true });
 
 // ---- scale the window to the screen, like the microtonal tuner ----
-function fit() { const w = Math.min(document.documentElement.clientWidth, 960), s = w / 756; $("#winf").style.transform = "scale(" + s + ")"; const wr = $("#wrap"); wr.style.width = w + "px"; wr.style.height = (780 * s) + "px"; }
+function fit() { const w = Math.min(document.documentElement.clientWidth, 960), s = w / 756; $("#winf").style.transform = "scale(" + s + ")"; const wr = $("#wrap"); wr.style.width = w + "px"; wr.style.height = (736 * s) + "px"; }
 addEventListener("resize", fit); fit(); paint();
 </script>
 <script src="nav.js"></script>
