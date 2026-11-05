@@ -6,6 +6,7 @@
     ["drums.html", "Drums"],
     ["colours.html", "Colours"],
     ["loops.html", "Loops"],
+    ["https://vercel-omega-woad-23.vercel.app/daw/", "DAW"],
     ["shapes.html#support", "Support"]
   ];
   // pages that belong under another menu item
