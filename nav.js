@@ -10,6 +10,7 @@
   ];
   // pages that belong under another menu item
   var PARENT = {
+    "harmonic-keyboard-tuner.html": "music-theory-tools.html",
     "harmonic-grid.html": "music-theory-tools.html",
     "harmonic-circle.html": "music-theory-tools.html",
     "harmonics.html": "music-theory-tools.html",
