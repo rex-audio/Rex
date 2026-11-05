@@ -10,6 +10,7 @@
   ];
   // pages that belong under another menu item
   var PARENT = {
+    "harmonic-keyboard-tuner.html": "music-theory-tools.html",
     "harmonic-grid.html": "music-theory-tools.html",
     "harmonic-circle.html": "music-theory-tools.html",
     "harmonics.html": "music-theory-tools.html",
@@ -71,9 +72,13 @@
     var a = document.createElement("a"); a.href = "mailto:rex-audio@outlook.com?subject=" + encodeURIComponent("Hardware: " + document.title.replace(/ \| Rex Audio$/, "")); a.textContent = "Get in touch"; hw.appendChild(a);
     foot.parentNode.insertBefore(hw, foot);
   }
-  var f = document.querySelector("footer");
-  if (f && f.textContent.indexOf("retains all rights") < 0) {
-    var sp = document.createElement("span"); sp.textContent = RIGHTS; f.appendChild(sp);
-    f.querySelectorAll("span")[0].textContent = "© 2026 Rex Audio. All rights reserved.";
+  var f = document.querySelector("footer"), here2 = here;
+  var MAIN = "© 2026 Rex Audio. All rights reserved. Plugins, free or paid, can be used in any music you make. Trial and demo versions cannot. The website is for personal use. Distributing or modifying any Rex Audio software needs permission. ";
+  if (f && f.querySelector(".rx-lic") === null) {
+    Array.prototype.slice.call(f.querySelectorAll("span, br")).forEach(function (e) { if (e.tagName === "BR" || /rights|©/.test(e.textContent)) e.parentNode.removeChild(e); });
+    var sp = document.createElement("span"); sp.className = "rx-lic"; sp.appendChild(document.createTextNode(MAIN));
+    if (here2 !== "licence.html") { var l = document.createElement("a"); l.href = "licence.html"; l.textContent = "Licence"; sp.appendChild(l); }
+    if (f.classList.contains("sitefoot")) f.innerHTML = "";
+    f.appendChild(sp);
   }
 })();
