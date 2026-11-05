@@ -13,6 +13,7 @@
     "harmonic-grid.html": "music-theory-tools.html",
     "harmonic-circle.html": "music-theory-tools.html",
     "harmonics.html": "music-theory-tools.html",
+    "microtonal-tuner.html": "music-theory-tools.html",
     "chordseq.html": "music-theory-tools.html",
     "tunings.html": "music-theory-tools.html"
   };
@@ -45,4 +46,34 @@
   window.addEventListener("load", fit);
   if (window.visualViewport) window.visualViewport.addEventListener("resize", fit);
   fit(); setTimeout(fit, 150); setTimeout(fit, 600); setTimeout(fit, 1500);
+})();
+
+/* Copyright notice on every page, and the hardware enquiry on the instrument pages. */
+(function () {
+  var RIGHTS = "Rex Audio retains all rights to its designs: web apps, digital plugins and hardware.";
+  var HW_PAGES = ["music-theory-tools.html", "tunings.html", "chordseq.html", "microtonal-tuner.html"];
+  var here = (location.pathname.split("/").pop() || "index.html");
+  var foot = document.querySelector("#site footer") || document.querySelector("footer") || document.querySelector(".sitefoot");
+  if (HW_PAGES.indexOf(here) >= 0 && !document.querySelector(".hw, .rx-hw") && foot) {
+    var bg = getComputedStyle(document.body).backgroundColor.match(/\d+/g) || [255, 255, 255];
+    var dark = (0.3 * bg[0] + 0.59 * bg[1] + 0.11 * bg[2]) < 110;
+    var st = document.createElement("style");
+    st.textContent = ".rx-hw { margin: 56px 36px 0; text-align: center; font: 700 34px/1.2 Arial, Helvetica, sans-serif; letter-spacing: -0.02em; color: " + (dark ? "#dbe9f5" : "#15181a") + "; }" +
+      ".rx-hw a { display: inline-block; margin-top: 18px; padding: 15px 34px; border-radius: 8px; background: " + (dark ? "#dbe9f5" : "#15181a") + "; color: " + (dark ? "#0d141b" : "#f3f4f5") + "; font-size: 22px; letter-spacing: 0; text-decoration: none; }" +
+      ".rx-hw a:hover { opacity: .85; } .rx-hw a:focus-visible { outline: 2px solid #c8321e; outline-offset: 2px; }" +
+      ".rx-rights { display: block; }";
+    document.head.appendChild(st);
+    var hw = document.createElement("p"); hw.className = "rx-hw";
+    hw.appendChild(document.createTextNode("Interested in the hardware?"));
+    hw.appendChild(document.createElement("br"));
+    hw.appendChild(document.createTextNode("Get in touch and we’ll build it."));
+    hw.appendChild(document.createElement("br"));
+    var a = document.createElement("a"); a.href = "mailto:rex-audio@outlook.com?subject=" + encodeURIComponent("Hardware: " + document.title.replace(/ \| Rex Audio$/, "")); a.textContent = "Get in touch"; hw.appendChild(a);
+    foot.parentNode.insertBefore(hw, foot);
+  }
+  var f = document.querySelector("footer");
+  if (f && f.textContent.indexOf("retains all rights") < 0) {
+    var sp = document.createElement("span"); sp.textContent = RIGHTS; f.appendChild(sp);
+    f.querySelectorAll("span")[0].textContent = "© 2026 Rex Audio. All rights reserved.";
+  }
 })();

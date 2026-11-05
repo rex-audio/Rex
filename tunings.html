@@ -164,7 +164,8 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
   .asact { margin-top:14px; }
   .arow { grid-column:1 / -1; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px 28px; }
   .agrp { display:flex; align-items:center; gap:10px; }
-  #scaleSel, #patSel { width:150px; } .agrp .tsys select { height:42px; }
+  #patSel { width:150px; }
+  .bk { display:flex; align-items:flex-end; justify-content:center; padding-bottom:3px; font:9px Arial; color:#8ea4b6; } .bk.down { color:var(--bg); } .agrp .tsys select { height:42px; }
   #dock .dk.anc.down { background:var(--acc); color:var(--bg); box-shadow:inset 0 0 0 3px #0d4565; } #dock .bk.anc.down { background:var(--acc); box-shadow:inset 0 0 0 3px #0d4565; }
   #win, .mod { border:0; background:transparent; border-radius:0; }
   .body { padding:4px 4px 6px; }
@@ -179,6 +180,36 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
   .sq i { width:10px; height:10px; border:1.5px solid var(--muted); border-radius:2px; }
   .sq[aria-pressed="true"] i { background:var(--acc); border-color:var(--acc); }
 
+
+  .mdb { flex:1; min-width:0; height:42px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; line-height:1.15; color:var(--text); padding:0 10px; }
+  .mdb b { font:600 14px Arial; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mdb small { font:9px Arial; color:var(--muted); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mdb[aria-expanded="true"] { border-color:var(--acc); }
+  .mgrid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; padding:16px 20px 4px; }
+  .mtile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-height:92px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--text); font-family:Arial, sans-serif; cursor:pointer; text-align:center; }
+  .mtile b { font:700 16px/1.25 Arial; color:var(--text); }
+  a.mtile { text-decoration:none; } .mtile:hover { border-color:var(--muted); } .mtile[aria-pressed="true"] { border-color:var(--acc); background:color-mix(in srgb, var(--acc) 14%, transparent); }
+  .mtile:focus-visible, #mdMore:focus-visible { outline:2px solid var(--text); outline-offset:2px; }
+  #mdMore { display:block; margin:14px auto 4px; }
+  .mgh { font:700 10px Arial; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:14px 20px 6px; text-align:left; }
+  .mchips { display:flex; flex-wrap:wrap; gap:6px; padding:0 20px; }
+  .mchip { height:30px; font:600 12px Arial; padding:0 11px; }
+  #howBtn { display:block; width:100%; height:62px; margin:0 0 12px; border:0; border-radius:10px; background:var(--text); color:var(--bg); font:700 22px Arial; letter-spacing:-.01em; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.4); }
+  #howBtn:hover { background:#fff; } #howBtn:focus-visible { outline:2px solid var(--text); outline-offset:3px; }
+  body.tutoring #howBtn { display:none; }
+  #tutBar { position:fixed; z-index:90; top:10px; left:50%; transform:translateX(-50%); width:min(560px, calc(100vw - 20px)); padding:14px 18px 12px; border:1px solid #4a5865; border-radius:12px; background:#0d141b; color:#e4e9ec; box-shadow:0 10px 30px rgba(0,0,0,.5); font-family:Arial, sans-serif; text-align:center; line-height:normal; }
+  #tutBar[hidden] { display:none; }
+  #tutBar .tt { font:700 21px/1.25 Arial; } #tutBar .ts { margin-top:3px; font-size:13px; color:#8795a0; } #tutBar .ts:empty { display:none; }
+  #tutBar .tb { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; }
+  #tutBar button { height:38px; padding:0 16px; border:1px solid #2f3d49; border-radius:8px; background:#17212b; color:#e4e9ec; font:600 14px Arial; cursor:pointer; }
+  #tutBar button:hover { border-color:#8795a0; } #tutBar button.pri { background:#e4e9ec; color:#0d141b; border-color:#e4e9ec; } #tutBar button[disabled] { opacity:.35; cursor:default; }
+  #tutDots { display:inline-flex; gap:6px; } #tutDots i { width:8px; height:8px; border-radius:50%; background:#2f3d49; } #tutDots i.on { background:#e4e9ec; }
+  .tut-ring { outline:3px solid #fff; outline-offset:4px; border-radius:8px; animation:tutring 1.1s ease-in-out infinite; }
+  @keyframes tutring { 50% { outline-color:rgba(255,255,255,.35); } }
+  #tutCur { position:fixed; left:0; top:0; z-index:95; width:0; height:0; pointer-events:none; opacity:0; transition:transform .75s cubic-bezier(.4,0,.2,1), opacity .2s; }
+  #tutCur.on { opacity:1; } #tutCur svg { position:absolute; left:-3px; top:-2px; filter:drop-shadow(0 2px 3px rgba(0,0,0,.5)); transition:transform .12s; transform-origin:3px 2px; }
+  #tutCur.down svg { transform:scale(.8); } #tutCur::after { content:""; position:absolute; left:-14px; top:-14px; width:28px; height:28px; border-radius:50%; border:2px solid #fff; opacity:0; transform:scale(.4); transition:transform .3s, opacity .3s; }
+  #tutCur.down::after { opacity:.9; transform:scale(1); }
 </style>
 </head>
 <body>
@@ -201,6 +232,7 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
 
   <section class="sec">
     <div class="demo">
+      <button id="howBtn" type="button">How to use</button>
       <div id="app">
         <div id="mon" aria-label="Desktop monitor showing the plugin window"><div class="monbez"><div id="monSlot">
           <div id="win">
@@ -210,9 +242,16 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
                   <div class="fld"><span class="fl">Key</span>
                     <div class="tsrow"><button class="hbtn" id="kp" type="button" aria-label="Previous key">&lt;</button><div class="ddw"><div class="dd" id="dd"><button class="ddb" id="ddb" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="ddv">C</span></button><div class="ddl" id="ddl" role="listbox"></div></div></div><button class="hbtn" id="kn" type="button" aria-label="Next key">&gt;</button></div>
                   </div>
-                  <div class="fld tsf"><span class="fl">Tuning system</span><div class="tsrow"><button class="hbtn" id="pp" type="button" aria-label="Previous tuning">&lt;</button><div class="tsys"><select id="tsPreset" aria-label="Tuning system"></select></div><button class="hbtn" id="pnx" type="button" aria-label="Next tuning">&gt;</button></div></div>
+                  <div class="fld tsf"><span class="fl">Mode</span><div class="tsrow"><button class="hbtn" id="mdPrev" type="button" aria-label="Previous mode">&lt;</button><button class="hbtn mdb" id="mdBtn" type="button" aria-haspopup="dialog" aria-expanded="false" title="Tuning systems, scales and keyboard layouts"><b id="mdName"></b><small id="mdSum"></small></button><button class="hbtn" id="mdNext" type="button" aria-label="Next mode">&gt;</button></div></div>
                   <div class="fld asf"><span class="fl">&nbsp;</span><button class="hbtn" id="asBtn" type="button" title="Choose what each wheel and knob controls on your MIDI keyboard">Assign</button></div>
-                  <div class="arow"><div class="agrp"><span class="fl">Anchor</span><div class="anc" role="group" aria-label="Anchor"><button class="hbtn" type="button" aria-pressed="false" data-anc="0" title="Anchor C: play as if in C, transposed to the chosen key. Press again to turn the anchor off">C</button><button class="hbtn" type="button" aria-pressed="false" data-anc="9" title="Anchor A: play as if in A (the white keys are A minor). Press again to turn the anchor off">A</button><button class="hbtn" type="button" aria-pressed="false" data-anc="-1" title="No anchor: the keys play the notes you press">None</button></div></div></div><div class="agrp"><span class="fl">Scale</span><div class="tsrow"><button class="hbtn" id="scp" type="button" aria-label="Previous scale">&lt;</button><div class="tsys"><select id="scaleSel" aria-label="Scale"></select></div><button class="hbtn" id="scn" type="button" aria-label="Next scale">&gt;</button></div></div><div class="agrp"><span class="fl">Play as</span><div class="tsys"><select id="patSel" aria-label="Play as"></select></div></div>
+                  <div class="arow"><div class="agrp"><span class="fl">Anchor</span><div class="anc" role="group" aria-label="Anchor"><button class="hbtn" type="button" aria-pressed="false" data-anc="0" title="Anchor C: play as if in C, transposed to the chosen key. Press again to turn the anchor off">C</button><button class="hbtn" type="button" aria-pressed="false" data-anc="9" title="Anchor A: play as if in A (the white keys are A minor). Press again to turn the anchor off">A</button><button class="hbtn" type="button" aria-pressed="false" data-anc="-1" title="No anchor: the keys play the notes you press">None</button></div></div></div><div class="agrp"><span class="fl">Play as</span><div class="tsys"><select id="patSel" aria-label="Play as"></select></div></div></div>
+                </div>
+                <div class="asp" id="mdPanel" hidden>
+                  <div class="mh"><span>Modes</span></div>
+                  <div class="mgrid" id="mdTiles"></div>
+                  <button class="hbtn" id="mdMore" type="button" aria-expanded="false">All tuning systems and scales</button>
+                  <div id="mdGroups" hidden></div>
+                  <div class="asact"><button class="hbtn" id="mdDone" type="button" style="color:var(--acc);border-color:var(--acc)">Done</button></div>
                 </div>
                 <div class="asp" id="asp" hidden>
                   <div class="mh"><span>Assign MIDI controls</span></div>
@@ -246,18 +285,39 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
     <span>&copy; 2026 Rex Audio</span>
   </footer>
 </div>
+<div id="tutBar" hidden role="dialog" aria-label="How to use">
+  <div class="tt" id="tutText"></div><div class="ts" id="tutSub"></div>
+  <div class="tb"><button type="button" id="tutBack">Back</button><span id="tutDots" aria-hidden="true"></span><button type="button" id="tutNext" class="pri">Next</button><button type="button" id="tutSkip">Skip</button></div>
+</div>
 <div id="bar"><div class="pill" role="group" aria-label="Player">
-  <button id="bp" type="button" aria-label="Previous tuning" title="Previous tuning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button id="bp" type="button" aria-label="Previous mode" title="Previous mode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <button class="go" id="playBtn" type="button" aria-pressed="false" aria-label="Play" title="Play / stop the scale chosen on the desktop"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button>
-  <button id="bn" type="button" aria-label="Next tuning" title="Next tuning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button id="bn" type="button" aria-label="Next mode" title="Next mode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <span class="name" id="barName" aria-live="polite"></span>
-  <button id="bnew" type="button" aria-label="Random tuning" title="Random tuning"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9" r="1.5" fill="currentColor"/><circle cx="15" cy="9" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="15" r="1.5" fill="currentColor"/><circle cx="15" cy="15" r="1.5" fill="currentColor"/></svg></button>
+  <button id="bnew" type="button" aria-label="Random mode" title="Random mode"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9" r="1.5" fill="currentColor"/><circle cx="15" cy="9" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="15" r="1.5" fill="currentColor"/><circle cx="15" cy="15" r="1.5" fill="currentColor"/></svg></button>
 </div></div>
 <script>
 const $ = s => document.querySelector(s);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 // each tuning: 12 steps above the tonic, as [n, d] ratios or cents
 const fifths = f => [0,7,2,-3,4,-1,6,1,8,3,-2,5].map(k => ((k * f) % 1200 + 1200) % 1200);   // meantone: a chain of equal fifths
+// Two anchors, the root and the 6th above it (C and A in the key of C), stay in 12-TET; every other note is just, measured from one of them.
+function rootSixthFifths() {   // pure fifths: C, G, D and F, Bb, Eb chain out from the root; A, E, B, F#, C#, G# chain out from the 6th
+  const P = 1200 * Math.log2(1.5), m = x => ((x % 1200) + 1200) % 1200, out = new Array(12);
+  out[0] = 0; out[9] = 900;
+  [[0, 1, 7], [0, 2, 2], [0, -1, 5], [0, -2, 10], [0, -3, 3], [900, 1, 4], [900, 2, 11], [900, 3, 6], [900, 4, 1], [900, 5, 8]].forEach(([a, n, pc]) => out[pc] = m(a + n * P));
+  return out;
+}
+function rootSixthSeries() {   // harmonic series: each note is the simplest harmonic (up to 32) of the root or of the 6th that lands within a quarter-tone of it; the root wins a tie
+  const m = x => ((x % 1200) + 1200) % 1200, out = [0, 0, 0, 0, 0, 0, 0, 0, 0, 900, 0, 0];
+  for (let d = 0; d < 12; d++) {
+    if (d === 0 || d === 9) continue;
+    let best = null;
+    for (let h = 1; h <= 32; h++) [0, 900].forEach(a => { const c = m(a + 1200 * Math.log2(h)); if (Math.abs(c - 100 * d) <= 50 && (!best || h < best.h)) best = { h, c }; });
+    out[d] = best ? best.c : 100 * d;
+  }
+  return out;
+}
 const GROUPS = [
   { name: "Equal", items: [
     { name: "12-TET", s: [0,100,200,300,400,500,600,700,800,900,1000,1100] } ] },
@@ -266,6 +326,9 @@ const GROUPS = [
     { name: "5-Limit JI (16/9 seventh)", s: [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[45,32],[3,2],[8,5],[5,3],[16,9],[15,8]] },
     { name: "7-Limit JI", s: [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[7,5],[3,2],[8,5],[5,3],[7,4],[15,8]] },
     { name: "Pythagorean", s: [[1,1],[256,243],[9,8],[32,27],[81,64],[4,3],[729,512],[3,2],[128,81],[27,16],[16,9],[243,128]] },
+    { name: "Root and 6th in 12-TET, pure fifths", s: rootSixthFifths() },
+    { name: "Root and 6th in 12-TET, harmonic series", s: rootSixthSeries() },
+    { name: "Pure fifths from the key", s: [0,1,2,3,4,5,6,7,8,9,10,11].map(d => (7 * d % 12) * 1200 * Math.log2(1.5) % 1200) },   // a chain of eleven pure 3:2 fifths up from the key (C, G, D, A, E, B, F#...), each folded into one octave
     { name: "Harmonic Series", s: [[1,1],[17,16],[9,8],[19,16],[5,4],[21,16],[11,8],[3,2],[13,8],[27,16],[7,4],[15,8]] } ] },
   { name: "Meantone", items: [
     { name: "Quarter-Comma Meantone", s: fifths(1200 * Math.log2(5) / 4) },
@@ -274,6 +337,9 @@ const GROUPS = [
     { name: "Werckmeister III", s: [0, 90.225, 192.180, 294.135, 390.225, 498.045, 588.270, 696.090, 792.180, 888.270, 996.090, 1092.180] },
     { name: "Kirnberger III", s: [0, 90.225, 193.157, 294.135, 386.314, 498.045, 590.224, 696.578, 792.180, 889.735, 996.090, 1088.269] },
     { name: "Vallotti", s: [0, 94.135, 196.090, 298.045, 392.180, 501.955, 592.180, 698.045, 796.090, 894.135, 1000.000, 1090.225] } ] }
+  ,{ name: "White keys just, black keys 12-TET", items: [   // play from C (or A) and change the key: the white keys are the just scale, the black keys stay equal. These switch the anchor on.
+    { name: "C major: white just, black 12-TET", anchor: 0, s: [0,100,[9,8],300,[5,4],[4,3],600,[3,2],800,[5,3],1000,[15,8]] },
+    { name: "A minor: white just, black 12-TET", anchor: 9, s: [0,100,[9,8],[6,5],400,[4,3],600,[3,2],[8,5],900,[9,5],1100] } ] }
 ];
 const PRESETS = GROUPS.flatMap(g => g.items);
 const stepCents = st => Array.isArray(st) ? 1200 * Math.log2(st[0] / st[1]) : st;
@@ -284,7 +350,7 @@ const keyNameOf = k => SHARP[k].length > 1 ? SHARP[k] + "/" + FLAT[k] : SHARP[k]
 const LOW = 48;
 
 // Anchor C (or A): the keyboard is laid out as if the key were that note, and only the sound is transposed to the chosen key. No anchor: the keys play the notes you press.
-const S = { pb: 0, preset: 0, key: 0, anchor: false, ancN: 0 };   // starts in 12-TET with no anchor
+const S = { scale: "chromatic", last: null, pb: 0, preset: 0, key: 0, anchor: false, ancN: 0, harm: 0 };   // harm: the keys play the harmonic series of the key, one harmonic per key, instead of notes   // starts in 12-TET with no anchor
 const K = () => S.anchor ? S.ancN : S.key;
 const shiftNow = () => { if (!S.anchor) return 0; const d = ((S.key - S.ancN) % 12 + 12) % 12; return d > 6 ? d - 12 : d; };
 const zoom = () => (parseFloat($("#app").style.zoom) || 1) * (parseFloat($("#site").style.zoom) || 1);
@@ -310,17 +376,11 @@ ddl.addEventListener("keydown", e => {
 });
 
 // ---------- tuning system and key ----------
-const ts = $("#tsPreset");
-GROUPS.forEach(g => {
-  const og = document.createElement("optgroup"); og.label = g.name;
-  g.items.forEach(it => { const o = document.createElement("option"); o.value = PRESETS.indexOf(it); o.textContent = it.name; og.appendChild(o); });
-  ts.appendChild(og);
-});
-const setPreset = i => { S.preset = i; refresh(); };
-// blur after a choice: computer keys must play the keyboard, not type-ahead a list
-ts.onchange = () => { setPreset(+ts.value); ts.blur(); };
-$("#pp").onclick = () => setPreset((S.preset + PRESETS.length - 1) % PRESETS.length);
-$("#pnx").onclick = () => setPreset((S.preset + 1) % PRESETS.length);
+const setPreset = i => {
+  S.preset = i; S.last = ITEMS.find(it => it.kind === "tuning" && it.v === i) || S.last;
+  const a = PRESETS[i].anchor;
+  if (a !== undefined) { S.anchor = true; S.ancN = a; stopPlay(); [...held.keys()].forEach(release); refresh(); flashWhites(); } else refresh();   // a mode made for playing from C or A switches that anchor on
+};
 $("#kp").onclick = () => KEYS.apply((S.key + 11) % 12);
 $("#kn").onclick = () => KEYS.apply((S.key + 1) % 12);
 
@@ -344,8 +404,24 @@ function ensureAudio() {
   }
   if (ctx.state === "suspended") ctx.resume();
 }
-function startVoice(m, level = 1) {
-  const t = ctx.currentTime, f = 440 * Math.pow(2, (m + shiftNow() - 69) / 12), cents = tuneNote(m).off;
+// the keys that do not play notes (mode 1: harmonic series; 2: every key the next pure fifth; 3: white keys pure fifths, black keys a pure major third above the fifth to their left)
+const WHITE_AT = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 }, BLACK_AFTER = { 1: 0, 3: 1, 6: 3, 8: 4, 10: 5 };   // semitone in the octave -> white key number, or the white key a black key follows
+function fifthIndex(m, mode) {   // which fifth (0 = the key itself) and whether it carries the extra third
+  const i = m - LOW, o = Math.floor(i / 12), s = ((i % 12) + 12) % 12;
+  if (mode === 2) return { j: i, third: false };
+  return s in WHITE_AT ? { j: 7 * o + WHITE_AT[s], third: false } : { j: 7 * o + BLACK_AFTER[s], third: true };
+}
+function freqFor(m, mode) {
+  if (m < LOW) return 0;
+  if (mode === 1) return 440 * Math.pow(2, (36 + S.key - 69) / 12) * (m - LOW + 1);   // the key's note from C2, times the harmonic this key stands for
+  const f0 = 440 * Math.pow(2, (LOW + S.key - 69) / 12), { j, third } = fifthIndex(m, mode);
+  let f = f0 * Math.pow(1.5, j) * (third ? 1.25 : 1);
+  return f / Math.pow(2, Math.floor(Math.log2(f / f0)));   // folded into the octave above the key. The 13th fifth is not the key again: it is a comma (23.5 cents) sharp
+}
+function startVoice(m, level = 1, hm = false) {
+  const f = hm ? freqFor(m, hm) : 440 * Math.pow(2, (m + shiftNow() - 69) / 12);
+  if (!f) return null;
+  const t = ctx.currentTime, cents = hm ? 0 : tuneNote(m).off;
   const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g1 = ctx.createGain(), g2 = ctx.createGain(), flt = ctx.createBiquadFilter(), vca = ctx.createGain(), vol = ctx.createGain();
   o1.type = "sawtooth"; o2.type = "square"; o1.frequency.value = f; o2.frequency.value = f;
   o1.detune.value = cents; o2.detune.value = cents + 4;   // the per-note cents; +4 is a fixed chorus-style spread
@@ -356,7 +432,7 @@ function startVoice(m, level = 1) {
   vca.gain.setValueAtTime(0, t); vca.gain.linearRampToValueAtTime(.8, t + .006); vca.gain.setTargetAtTime(.22, t + .006, .55);
   o1.connect(g1); o2.connect(g2); g1.connect(flt); g2.connect(flt); flt.connect(vca); vca.connect(vol); vol.connect(master);
   o1.start(t); o2.start(t);
-  return { o1, o2, vca, vol, flt, m };
+  return { o1, o2, vca, vol, flt, m, hm };
 }
 function stopVoice(v) {
   const t = ctx.currentTime, g = v.vca.gain;
@@ -365,7 +441,7 @@ function stopVoice(v) {
   v.o1.stop(t + 1); v.o2.stop(t + 1);
   v.o2.onended = () => { try { v.vca.disconnect(); v.vol.disconnect(); v.flt.disconnect(); } catch (e) {} };
 }
-const retune = v => { const c = tuneNote(v.m).off; v.o1.detune.setTargetAtTime(c, ctx.currentTime, .015); v.o2.detune.setTargetAtTime(c + 4, ctx.currentTime, .015); };
+const retune = v => { if (v.hm) return; const c = tuneNote(v.m).off; v.o1.detune.setTargetAtTime(c, ctx.currentTime, .015); v.o2.detune.setTargetAtTime(c + 4, ctx.currentTime, .015); };
 
 // ---------- virtual keyboard ----------
 const dock = $("#dock");
@@ -376,7 +452,12 @@ const dock = $("#dock");
 })();
 function labelDock() {   // each white key shows the note it sounds in the chosen key, so in key G anchored to C the C key reads G
   const sh = shiftNow();
-  dock.querySelectorAll(".dk").forEach(k => { const m = +k.dataset.m, n = m + sh; k.textContent = m % 12 === 0 ? noteName(n) : SHARP[((n % 12) + 12) % 12]; });
+  const lab = m => {   // the label for a key in the harmonic and fifth layouts
+    if (S.harm === 1) return String(m - LOW + 1);
+    const { j, third } = fifthIndex(m, S.harm); return SHARP[(S.key + 7 * j + (third ? 4 : 0)) % 12] + (j >= 12 ? "+" : "");
+  };
+  dock.querySelectorAll(".dk").forEach(k => { const m = +k.dataset.m, n = m + sh; k.textContent = S.harm ? lab(m) : m % 12 === 0 ? noteName(n) : SHARP[((n % 12) + 12) % 12]; });
+  dock.querySelectorAll(".bk").forEach(k => { k.textContent = S.harm ? lab(+k.dataset.m) : ""; });
 }
 function flashWhites() {   // one white key at a time turns blue, left to right (no fade)
   const ks = [...dock.querySelectorAll(".dk")], STEP = 130;
@@ -386,9 +467,9 @@ function flashWhites() {   // one white key at a time turns blue, left to right 
 
 const held = new Map();   // id of whatever is playing (a pointer, a key, a MIDI note, the player) -> its notes and voices
 function lightKeys(midis, on) { midis.forEach(m => { const k = dock.querySelector(`[data-m="${m}"]`); if (k) k.classList.toggle("down", on); }); }
-function press(pid, ms) {
+function press(pid, ms, hm = false) {   // hm: a key of the keyboard (not the player) while the keys play the harmonic series
   ensureAudio(); release(pid);
-  held.set(pid, { ms, voices: ms.map(m => startVoice(m)) }); lightKeys(ms, true);
+  held.set(pid, { ms, voices: ms.map(m => startVoice(m, 1, hm)).filter(Boolean) }); lightKeys(ms, true);
 }
 function release(pid) {
   const h = held.get(pid); if (!h) return; held.delete(pid);
@@ -396,7 +477,7 @@ function release(pid) {
 }
 dock.addEventListener("pointerdown", e => {
   const k = e.target.closest(".dk, .bk"); if (!k) return; e.preventDefault();
-  press(e.pointerId, [+k.dataset.m]);
+  press(e.pointerId, [+k.dataset.m], S.harm);
 });
 const up = e => release(e.pointerId);
 addEventListener("pointerup", up); addEventListener("pointercancel", up);
@@ -407,7 +488,7 @@ addEventListener("keydown", e => {
   if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
   const k = e.key.toLowerCase();
   if (k === "z" || k === "x") { oct = clamp(oct + (k === "x" ? 1 : -1), -2, 2); return; }
-  if (k in KM) press("k" + k, [LOW + 12 * oct + KM[k]]);
+  if (k in KM) press("k" + k, [LOW + 12 * oct + KM[k]], S.harm);
 });
 addEventListener("keyup", e => release("k" + e.key.toLowerCase()));
 
@@ -416,18 +497,15 @@ const SCALE_LIST = [["chromatic", "Chromatic", [0,1,2,3,4,5,6,7,8,9,10,11]], ["m
   ["pent", "Major pentatonic", [0,2,4,7,9]], ["mpent", "Minor pentatonic", [0,3,5,7,10]], ["dorian", "Dorian", [0,2,3,5,7,9,10]],
   ["hminor", "Harmonic minor", [0,2,3,5,7,8,11]], ["whole", "Whole tone", [0,2,4,6,8,10]]];
 const PATTERN_LIST = [["up", "Arp up"], ["down", "Arp down"], ["ud", "Arp up and down"], ["rnd", "Random notes"], ["chord", "Chord arpeggio"], ["block", "Chords"], ["walk", "Melody"], ["motif", "Tune"]];
-const scaleSel = $("#scaleSel"), patSel = $("#patSel"), playBtn = $("#playBtn");
-SCALE_LIST.forEach(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; scaleSel.appendChild(o); });
+const patSel = $("#patSel"), playBtn = $("#playBtn");
 PATTERN_LIST.forEach(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; patSel.appendChild(o); });
-scaleSel.onchange = () => { play.walk = 0; scaleSel.blur(); }; patSel.onchange = () => { play.walk = 0; patSel.blur(); };
-const stepScale = d => { scaleSel.selectedIndex = (scaleSel.selectedIndex + d + SCALE_LIST.length) % SCALE_LIST.length; play.walk = 0; };
-$("#scp").onclick = () => stepScale(-1); $("#scn").onclick = () => stepScale(1);
+patSel.onchange = () => { play.walk = 0; patSel.blur(); };
 
 const play = { on: false, t: 0, i: 0, walk: 0, ts: [] }, backing = new Set(), BPM = 100, MINORISH = ["minor", "hminor", "mpent", "dorian"];
 function playTick() {
   if (!play.on) return;
   const ms = 60000 / BPM / 2, i = play.i++, step = i % 8, bar = Math.floor(i / 8);
-  const name = scaleSel.value, pat = patSel.value, base = LOW + K(), def = SCALE_LIST.find(s => s[0] === name)[2];
+  const name = S.scale, pat = patSel.value, base = LOW + K(), def = SCALE_LIST.find(s => s[0] === name)[2];
   const cd = SCALE_LIST.find(s => s[0] === (MINORISH.includes(name) ? "minor" : "major"))[2], deg = j => cd[j % 7] + 12 * Math.floor(j / 7);   // the chords come from the major or minor scale
   const root = [0, 5, 3, 4][bar % 4], chord = [0, 2, 4].map(o => base + deg(root + o));
   const sc = def.map(pc => base + pc).concat(base + 12);   // the scale from the tonic up to the next tonic
@@ -463,11 +541,11 @@ playBtn.onclick = () => {
   playBtn.setAttribute("aria-pressed", true); playBtn.setAttribute("aria-label", "Stop"); playTick();
 };
 
-// ---------- the play bar: play / stop, previous / next tuning, a random tuning ----------
+// ---------- the play bar: play / stop, previous / next mode, a random mode ----------
 const barName = $("#barName");
-$("#bp").onclick = () => setPreset((S.preset + PRESETS.length - 1) % PRESETS.length);
-$("#bn").onclick = () => setPreset((S.preset + 1) % PRESETS.length);
-$("#bnew").onclick = () => { let i; do { i = Math.floor(Math.random() * PRESETS.length); } while (i === S.preset); setPreset(i); };
+$("#bp").onclick = () => stepMode(-1);
+$("#bn").onclick = () => stepMode(1);
+$("#bnew").onclick = () => { let t; do { t = TILES[Math.floor(Math.random() * TILES.length)]; } while (tileOn(t)); applyTile(t); };
 $("#bar").addEventListener("click", e => { const b = e.target.closest("button"); if (b && e.detail) b.blur(); });   // after a click the button lets go of focus, so the computer keys keep playing notes
 
 // ---------- tuning knob, key knob, mod wheel, pitch wheel ----------
@@ -551,22 +629,86 @@ function buildAssign() {
   hlCtl();
 }
 const hlCtl = () => ["#knob", "#knob2", "#wheel", "#pwheel"].forEach(i => $(i).classList.toggle("learnhl", !!learning));   // while Learn is waiting, the four controllers light up
-const assignOpen = on => { learning = null; $("#asp").hidden = !on; $("#win .mod").classList.toggle("assigning", on); $("#asBtn").setAttribute("aria-pressed", on); if (on) buildAssign(); hlCtl(); };
+const assignOpen = on => { if (on) openModes(false); learning = null; $("#asp").hidden = !on; $("#win .mod").classList.toggle("assigning", on); $("#asBtn").setAttribute("aria-pressed", on); if (on) buildAssign(); hlCtl(); };
 $("#asBtn").onclick = () => assignOpen($("#asp").hidden);
 $("#asBack").onclick = () => assignOpen(false);
 $("#asReset").onclick = () => { ASSIGN = JSON.parse(JSON.stringify(ASSIGN_DEFAULT)); learning = null; saveAssign(); ccLabels(); buildAssign(); refresh(); };
 ccLabels();
 
+// ---------- modes: one menu for the keyboard layouts, the tuning systems and the scales ----------
+const KEYMODES = [[0, "Notes"], [1, "Harmonic series"], [2, "Circle of fifths"], [3, "Fifths and thirds"]];
+const ITEMS = [], MENU = [], chips = new Map();   // ITEMS: every mode, in the order the arrows click through them
+const addGroup = (name, items) => { MENU.push({ name, items }); items.forEach(it => ITEMS.push(it)); };
+const tuningItems = g => g.items.map(it => ({ kind: "tuning", v: PRESETS.indexOf(it), name: it.name }));
+addGroup("Keyboard layout", KEYMODES.map(([v, name]) => ({ kind: "keys", v, name })));
+GROUPS.filter(g => g.items[0].anchor !== undefined).forEach(g => addGroup("Play from C or A: white keys just, black keys 12-TET", tuningItems(g)));
+GROUPS.filter(g => g.items[0].anchor === undefined).forEach(g => addGroup("Tuning: " + g.name, tuningItems(g)));
+addGroup("Scale (for the player)", SCALE_LIST.map(([v, name]) => ({ kind: "scale", v, name })));
+S.last = ITEMS.find(it => it.kind === "tuning" && it.v === S.preset);
+const itemOn = it => it.kind === "tuning" ? S.preset === it.v : it.kind === "scale" ? S.scale === it.v : S.harm === it.v;
+function applyItem(it) {
+  S.last = it;
+  if (it.kind === "tuning") setPreset(it.v);
+  else if (it.kind === "scale") { S.scale = it.v; play.walk = 0; refresh(); }
+  else { S.harm = it.v; stopPlay(); [...held.keys()].forEach(release); refresh(); }
+}
+// the modes: each one sets the keyboard layout, the tuning and the anchor in one go. The menu shows these as big buttons; the long lists of tunings and scales sit under "All tuning systems and scales".
+const P = name => PRESETS.findIndex(x => x.name === name);
+const TILES = [
+  { name: "Normal keyboard", lines: ["Normal keyboard", "12-TET notes"], harm: 0, preset: 0, anchor: -1 },
+  { name: "Harmonic series", lines: ["Harmonic series", "each key the next harmonic"], harm: 1 },
+  { name: "Circle of fifths", lines: ["Circle of fifths", "each key the next fifth"], harm: 2 },
+  { name: "Fifths and thirds", lines: ["Fifths and thirds", "white keys fifths, black keys thirds"], harm: 3 },
+  { name: "C major: just white keys and 12-TET black keys", lines: ["C major:", "just white keys and 12-TET black keys"], harm: 0, preset: P("C major: white just, black 12-TET"), anchor: 0 },
+  { name: "A minor: just white keys and 12-TET black keys", lines: ["A minor:", "just white keys and 12-TET black keys"], harm: 0, preset: P("A minor: white just, black 12-TET"), anchor: 9 },
+  { name: "Pure fifths", lines: ["Pure fifths", "a chain of just fifths"], harm: 0, preset: P("Pure fifths from the key") },
+  { name: "C and A in 12-TET, pure fifths", lines: ["C and A in 12-TET", "the rest pure fifths"], harm: 0, preset: P("Root and 6th in 12-TET, pure fifths") },
+  { name: "C and A in 12-TET, harmonic series", lines: ["C and A in 12-TET", "the rest harmonic series"], harm: 0, preset: P("Root and 6th in 12-TET, harmonic series") }
+];
+const tileOn = t => S.harm === t.harm && (t.preset === undefined || S.preset === t.preset) && (t.anchor === undefined || (t.anchor < 0 ? !S.anchor : S.anchor && S.ancN === t.anchor));
+function applyTile(t) {
+  stopPlay(); [...held.keys()].forEach(release);
+  S.harm = t.harm; S.anchor = false;
+  if (t.preset !== undefined) setPreset(t.preset); else refresh();   // a tuning made for playing from C or A switches that anchor back on
+  S.last = t; modesUI();
+}
+const stepMode = d => { const i = TILES.findIndex(tileOn); applyTile(TILES[(i + d + TILES.length) % TILES.length]); };
+const tileEls = new Map();
+(() => {
+  const box = $("#mdTiles");
+  TILES.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.className = "mtile"; b.innerHTML = "<b></b><b></b>"; b.firstChild.textContent = t.lines[0]; b.lastChild.textContent = t.lines[1]; b.onclick = () => applyTile(t); box.appendChild(b); tileEls.set(t, b); });
+  $("#mdMore").onclick = () => { const g = $("#mdGroups"); g.hidden = !g.hidden; $("#mdMore").setAttribute("aria-expanded", !g.hidden); };
+})();
+(() => {
+  const box = $("#mdGroups");
+  MENU.forEach(g => {
+    const h = document.createElement("div"); h.className = "mgh"; h.textContent = g.name; box.appendChild(h);
+    const row = document.createElement("div"); row.className = "mchips"; box.appendChild(row);
+    g.items.forEach(it => { const b = document.createElement("button"); b.type = "button"; b.className = "hbtn mchip"; b.textContent = it.name; b.onclick = () => applyItem(it); row.appendChild(b); chips.set(it, b); });
+  });
+})();
+const mdBtn = $("#mdBtn");
+function openModes(on) { $("#mdPanel").hidden = !on; $("#win .mod").classList.toggle("assigning", on); mdBtn.setAttribute("aria-expanded", on); if (on && !$("#asp").hidden) { $("#asp").hidden = true; $("#asBtn").setAttribute("aria-pressed", false); } }
+mdBtn.onclick = () => openModes($("#mdPanel").hidden);
+$("#mdDone").onclick = () => openModes(false);
+$("#mdPrev").onclick = () => stepMode(-1); $("#mdNext").onclick = () => stepMode(1);
+function modesUI() {
+  const sc = SCALE_LIST.find(x => x[0] === S.scale)[1], km = KEYMODES.find(x => x[0] === S.harm)[1];
+  const cur = TILES.find(tileOn) || S.last; $("#mdName").textContent = cur.name; $("#mdSum").textContent = PRESETS[S.preset].name + " · " + sc + " · keys: " + km;
+  barName.textContent = cur.name; tileEls.forEach((b, t) => b.setAttribute("aria-pressed", tileOn(t)));
+  chips.forEach((b, it) => b.setAttribute("aria-pressed", itemOn(it)));
+}
+
 // ---------- refresh ----------
 function refresh() {
-  ts.value = S.preset; $("#ddv").textContent = keyName(); ddKeys.forEach((o, k) => o.setAttribute("aria-selected", k === S.key)); barName.textContent = PRESETS[S.preset].name;
+  $("#ddv").textContent = keyName(); ddKeys.forEach((o, k) => o.setAttribute("aria-selected", k === S.key)); modesUI();
   ancBtns.forEach(b => b.setAttribute("aria-pressed", +b.dataset.anc < 0 ? !S.anchor : S.anchor && S.ancN === +b.dataset.anc));
   const fr = src => { const i = src.info(); return i.n > 1 ? i.idx / (i.n - 1) : 0; }, s1 = srcFor(ASSIGN.k1.fn), s2 = srcFor(ASSIGN.k2.fn), sw = srcFor(ASSIGN.mod.fn), f1 = fr(s1), f2 = fr(s2), fw = fr(sw);
   $("#knob i").style.transform = `rotate(${-135 + 270 * f1}deg)`; $("#knob2 i").style.transform = `rotate(${-135 + 270 * f2}deg)`;
   $("#wheel").style.backgroundPositionY = -(fw * 70) + "px"; $("#wmark").style.top = (84 - fw * 84) + "px";
   [["#knob", s1], ["#knob2", s2], ["#wheel", sw]].forEach(([id, s]) => { const el = $(id), i = s.info(); el.setAttribute("aria-valuemin", 0); el.setAttribute("aria-valuemax", Math.max(0, i.n - 1)); el.setAttribute("aria-valuenow", i.idx); });
   labelDock();
-  dock.querySelectorAll(".dk, .bk").forEach(k => k.classList.toggle("anc", +k.dataset.m % 12 === K()));   // blue: the anchor note, or with no anchor the key
+  dock.querySelectorAll(".dk, .bk").forEach(k => { const h = +k.dataset.m - LOW + 1; k.classList.toggle("anc", S.harm === 1 ? (h & (h - 1)) === 0 : S.harm ? fifthIndex(+k.dataset.m, S.harm).j % 12 === 0 && !fifthIndex(+k.dataset.m, S.harm).third : +k.dataset.m % 12 === K()); });   // blue: the anchor note, or with no anchor the key
   if (ctx) { held.forEach(h => h.voices.forEach(retune)); backing.forEach(retune); }   // sounding notes follow a tuning change at once
 }
 
@@ -581,7 +723,7 @@ function midiCC(n, v) {
 }
 function onMidi(e) {
   const [st, d1, d2] = e.data, cmd = st & 0xf0;
-  if (cmd === 0x90 && d2 > 0) press("m" + d1, [d1]);
+  if (cmd === 0x90 && d2 > 0) press("m" + d1, [d1], S.harm);
   else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) release("m" + d1);
   else if (cmd === 0xE0) { if (learning === "pitch") { learning = null; buildAssign(); } clearInterval(pbT); setPb(((d2 << 7 | d1) - 8192) / 8192); }
   else if (cmd === 0xB0 && d1 < 120) midiCC(d1, d2);
@@ -600,6 +742,64 @@ midiBtn.onclick = () => {
     acc.onstatechange = hook; hook();
   }).catch(() => { midiMsg.textContent = "MIDI access was blocked. Allow it in the browser to play with your keyboard."; });
 };
+
+
+// ---------- the tutorial: a few words at a time, with a cursor showing it happen ----------
+let tutTok = 0;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const wait = async (tok, ms) => { await sleep(ms); if (tok !== tutTok) throw "tut-cancel"; };
+let SPD = .6;   // how fast the demo cursor moves
+const CUR = document.createElement("div"); CUR.id = "tutCur"; CUR.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26"><path d="M3 2l15 9-6.5 1.6L8 19z" fill="#fff" stroke="#0d141b" stroke-width="1.6" stroke-linejoin="round"/></svg>'; document.body.appendChild(CUR);
+async function curTo(tok, el) { el.scrollIntoView({ block: "center" }); await wait(tok, 80); const r = el.getBoundingClientRect(); CUR.style.transition = `transform ${Math.round(750 * SPD)}ms cubic-bezier(.4, 0, .2, 1), opacity .2s`; CUR.style.transform = `translate(${r.left + r.width / 2}px, ${r.top + r.height / 2}px)`; CUR.classList.add("on"); await wait(tok, Math.round(750 * SPD) + 60); }
+async function clickEl(tok, el) { await curTo(tok, el); CUR.classList.add("down"); await wait(tok, 120); CUR.classList.remove("down"); el.click(); await wait(tok, 350); }
+async function pressKey(tok, m, hold = 380) {   // a real press on the keyboard, so it sounds and lights up as it does for you
+  const k = dock.querySelector(`[data-m="${m}"]`); await curTo(tok, k); CUR.classList.add("down");
+  k.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 77, button: 0, isPrimary: true })); await wait(tok, hold);
+  dock.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 77 })); CUR.classList.remove("down"); await wait(tok, 140);
+}
+const pickMode = async (tok, name) => { if ($("#mdPanel").hidden) await clickEl(tok, mdBtn); await clickEl(tok, tileEls.get(TILES.find(t => t.name === name))); };
+const closeModes = async tok => { if (!$("#mdPanel").hidden) await clickEl(tok, $("#mdDone")); };
+function resetAll() {
+  stopPlay(); [...held.keys()].forEach(release); openModes(false);
+  S.key = 0; S.anchor = false; S.harm = 0; S.scale = "chromatic"; S.preset = 0; S.last = ITEMS.find(it => it.kind === "tuning" && it.v === 0); refresh();
+}
+const TUT_STEPS = [
+  { t: "Pick a mode.", sub: "Click a big button, or use the arrows to step through them.", ring: "#mdBtn", demo: async tok => {
+    resetAll(); await pickMode(tok, "Pure fifths"); await pickMode(tok, "Harmonic series"); await pickMode(tok, "Normal keyboard"); await closeModes(tok); } },
+  { t: "Harmonic series: every key is the next harmonic.", sub: "The left key is the key itself, then 2, 3, 4...", ring: "#dock", demo: async tok => {
+    resetAll(); await pickMode(tok, "Harmonic series"); await closeModes(tok); for (const m of [48, 49, 50, 51, 52, 53]) await pressKey(tok, m, 450); } },
+  { t: "Or lay the keys out as fifths.", sub: "Every key a fifth, or white keys fifths with a third on each black key.", ring: "#dock", demo: async tok => {
+    resetAll(); await pickMode(tok, "Circle of fifths"); await closeModes(tok); for (const m of [48, 49, 50, 51]) await pressKey(tok, m, 420);
+    await pickMode(tok, "Fifths and thirds"); await closeModes(tok); for (const m of [48, 50, 52, 49]) await pressKey(tok, m, 420); } },
+  { t: "Play from C: white keys just, black keys 12-TET.", sub: "A minor works the same. The anchor switches on for you.", ring: "#dock", demo: async tok => {
+    resetAll(); await pickMode(tok, "C major: just white keys and 12-TET black keys"); await closeModes(tok); for (const m of [48, 52, 55, 49]) await pressKey(tok, m, 480); } },
+  { t: "Change the key, keep playing from C.", sub: "The white keys follow the key and stay just.", ring: "#dd", demo: async tok => {
+    resetAll(); await pickMode(tok, "C major: just white keys and 12-TET black keys"); await closeModes(tok);
+    await clickEl(tok, ddb); await clickEl(tok, ddKeys[7]); for (const m of [48, 52, 55]) await pressKey(tok, m, 550); } },
+  { t: "Plug in a MIDI keyboard to play it.", sub: "Chrome or Edge. Your notes play, with the same modes.", ring: "#midiBtn" }
+];
+let tutI = -1, tutRing = null;
+const tutStop = () => { tutTok++; CUR.classList.remove("on", "down"); stopPlay(); [...held.keys()].forEach(release); };
+function tutApply() {
+  const st = TUT_STEPS[tutI];
+  tutStop(); if (tutRing) { tutRing.classList.remove("tut-ring"); tutRing = null; }
+  if (st.ring) { tutRing = $(st.ring); tutRing.classList.add("tut-ring"); }
+  $("#tutText").textContent = st.t; $("#tutSub").textContent = st.sub || "";
+  $("#tutBack").disabled = tutI === 0; $("#tutNext").textContent = tutI === TUT_STEPS.length - 1 ? "Done" : "Next";
+  $("#tutDots").innerHTML = TUT_STEPS.map((_, i) => `<i class="${i === tutI ? "on" : ""}"></i>`).join("");
+  const tok = tutTok; CUR.style.transform = "translate(50vw, 60vh)";
+  if (st.demo) (async () => { try { await wait(tok, 500); await st.demo(tok); } catch (e) { if (e !== "tut-cancel") console.error(e); } })();
+  else resetAll();
+}
+function tutGo(i) { if (i >= TUT_STEPS.length) return tutEnd(); tutI = Math.max(0, i); tutApply(); }
+function tutStart() { resetAll(); document.body.classList.add("tutoring"); $("#tutBar").hidden = false; tutGo(0); }
+function tutEnd() {
+  tutI = -1; tutStop(); if (tutRing) tutRing.classList.remove("tut-ring"); tutRing = null;
+  $("#tutBar").hidden = true; document.body.classList.remove("tutoring"); resetAll();
+}
+$("#howBtn").onclick = tutStart; $("#tutNext").onclick = () => tutGo(tutI + 1); $("#tutBack").onclick = () => tutGo(tutI - 1); $("#tutSkip").onclick = tutEnd;
+document.addEventListener("keydown", e => { if (e.key === "Escape" && tutI >= 0) tutEnd(); });
+document.addEventListener("pointerdown", e => { if (tutI >= 0 && e.isTrusted && !(e.target.closest && e.target.closest("#tutBar"))) { tutTok++; CUR.classList.remove("on", "down"); } }, true);   // you take over: the demo stops
 
 // ---------- the page is a 720px canvas scaled to the window (like the home page); the keyboard is scaled inside it ----------
 const fit = () => { const w = $(".demo").clientWidth - 24; $("#app").style.zoom = Math.min(1, w / 760); };
