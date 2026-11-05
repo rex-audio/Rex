@@ -99,7 +99,6 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decora
     <a class="brand" href="index.html">Rex Audio</a>
     <nav aria-label="Main">
       <a href="shapes.html">Shapes</a>
-      <a href="chordseq.html">ChordSeq</a>
       <a href="drums.html">Drums</a>
       <a href="colours.html">Colours</a>
       <a href="loops.html" aria-current="page">Loops</a>
@@ -452,5 +451,6 @@ const fitSite = () => { const w = document.documentElement.clientWidth || window
 fitSite(); addEventListener("resize", fitSite);
 S.name = "Key: " + HARM[hi]; setName(S.name); DEFAULT.forEach(() => addNext());   // opens with the usual five loops, and the types ready to add more
 </script>
+<script src="nav.js"></script>
 </body>
 </html>
