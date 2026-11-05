@@ -145,13 +145,18 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
 (function () {
   var site = document.getElementById('site');
   function fit() {
-    var w = document.documentElement.clientWidth || window.innerWidth;
+    var w = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
     var wide = w >= 1000;
     site.classList.toggle('wide', wide);
     site.style.zoom = wide ? 1 : Math.min(Math.max(w / 720, 0.3), 1.5);
   }
   window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  window.addEventListener('load', fit);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
   fit();
+  setTimeout(fit, 100);
+  setTimeout(fit, 500);
 })();
 </script>
 </body>
