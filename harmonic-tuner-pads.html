@@ -21,7 +21,7 @@
 
   /* the window, as on the Microtonal tuner page */
   #wrap { position:relative; margin:0 auto; }
-  #winf { position:absolute; left:0; top:0; width:756px; height:1040px; transform-origin:0 0; border:1px solid #2c3d4a; border-radius:12px; overflow:hidden; background:#0d141b; box-shadow:0 14px 40px rgba(0,0,0,.5); }
+  #winf { position:absolute; left:0; top:0; width:756px; height:932px; transform-origin:0 0; border:1px solid #2c3d4a; border-radius:12px; overflow:hidden; background:#0d141b; box-shadow:0 14px 40px rgba(0,0,0,.5); }
   #winf .dbar { height:34px; display:flex; align-items:center; gap:10px; padding:0 14px; background:linear-gradient(#1b2731,#111a22); border-bottom:1px solid #1f2e3b; }
   #winf .ddot { width:10px; height:10px; border-radius:50%; background:#6fd3ff; box-shadow:0 0 8px #6fd3ff99; }
   #winf .dtitle { font:700 13px Arial; color:#dbe9f5; letter-spacing:.04em; } #winf .dsub { font:500 12px Arial; color:#6f879b; }
@@ -29,7 +29,7 @@
   #winf .dlogo { margin-left:6px; font:300 17px "Helvetica Neue",Inter,Arial,sans-serif; letter-spacing:.06em; color:#dbe9f5; } #winf .dlogo b { font-weight:800; color:#6fd3ff; }
 
   /* the wooden module */
-  #mod { position:absolute; left:16px; top:50px; width:724px; height:974px; overflow:hidden; border:1px solid #9a7048; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.45); user-select:none; -webkit-user-select:none; touch-action:manipulation;
+  #mod { position:absolute; left:16px; top:50px; width:724px; height:866px; overflow:hidden; border:1px solid #9a7048; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.45); user-select:none; -webkit-user-select:none; touch-action:manipulation;
     background-color:#573821;
     background-image:radial-gradient(ellipse 190px 23px at 14% 9%, rgba(205,151,91,.32), transparent 78%), radial-gradient(ellipse 280px 15px at 81% 24%, rgba(15,6,2,.43), transparent 82%), radial-gradient(ellipse 230px 25px at 45% 42%, rgba(163,105,57,.23), transparent 76%), radial-gradient(ellipse 310px 18px at 67% 69%, rgba(15,6,2,.34), transparent 83%), radial-gradient(ellipse 210px 21px at 22% 88%, rgba(229,176,116,.18), transparent 80%), linear-gradient(135deg,#76502f,#573821 52%,#302016);
     background-blend-mode:screen,multiply,soft-light,multiply,screen,normal; }
@@ -64,7 +64,7 @@
   .mode-toggle[aria-pressed="true"] { background:linear-gradient(135deg,#d9b17b,#c5965e 55%,#b7844f); box-shadow:inset 0 2px 4px rgba(82,48,20,.24), 0 1px 0 rgba(255,241,204,.45); }
 
   /* the key bed: light honey wood, the black keys above and the white keys below, each with its own column of knobs */
-  #dock { left:14px; top:62px; width:696px; height:852px; border:1px solid #a87948; border-radius:8px; overflow:hidden; touch-action:none; background:linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e); box-shadow:inset 0 2px 8px rgba(76,43,17,.22); }
+  #dock { left:14px; top:62px; width:696px; height:744px; border:1px solid #a87948; border-radius:8px; overflow:hidden; touch-action:none; background:linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e); box-shadow:inset 0 2px 8px rgba(76,43,17,.22); }
   #dock::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.13; mix-blend-mode:multiply; filter:url(#organicWoodNoise); background:rgba(91,53,22,.34); }
   #dock > * { position:absolute; z-index:1; }
   .rl.r { left:auto; right:4px; text-align:right; color:#5a3a22; } .rl { left:4px; width:24px; font:700 8.5px/1 Arial; color:#7a5230; text-align:left; margin-top:-4px; }
@@ -92,7 +92,7 @@
     box-shadow:0 3px 5px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,241,204,.7), inset 0 -2px 2px rgba(70,38,13,.32), 0 0 0 2px rgba(255,240,205,.55), 0 0 8px 1px rgba(255,226,160,.6); }
   .key .kn.on.xen { color:#7a2a10; }
   .kn:focus-visible { outline:2px solid #fff; outline-offset:2px; }
-  .bot { left:14px; width:696px; display:flex; gap:10px; height:34px; } #bot1 { top:926px; }
+  .bot { left:14px; width:696px; display:flex; gap:10px; height:34px; } #bot1 { top:818px; }
   .tbtn { flex:1 1 0; min-width:0; height:34px; padding:0 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:8px; border:1px solid #28180e; cursor:pointer; color:#f0d6ad; font:700 12px Arial; letter-spacing:.02em; text-shadow:0 1px 2px rgba(0,0,0,.55); touch-action:manipulation;
     background-color:#573821; background-image:repeating-linear-gradient(3deg,rgba(35,17,7,.22) 0 1px,transparent 1px 4px,rgba(236,190,130,.12) 4px 5px,transparent 5px 11px),linear-gradient(135deg,#8a603a,#5a3822 58%,#3b2518);
     box-shadow:0 2px 0 #211309,inset 0 1px 0 rgba(255,226,183,.25),inset 0 -1px 0 rgba(25,12,5,.45); }
@@ -132,10 +132,36 @@
   .ta { width:46px; height:30px; border:0; border-radius:5px; background:none; color:inherit; font:700 22px/1 Arial; cursor:pointer; } .ta:hover { background:rgba(255,255,255,.12); }
   .mh { display:none; touch-action:none; cursor:ns-resize; user-select:none; z-index:3; } .v4 .mh { display:flex; }
   .v3 .key.w .kn:not(.on) { color:#37414b; } .v3 .key.b .kn:not(.on) { color:#e1e7ec; } .v3 .key .kn { font-size:8.5px; }
-  #pkb { position:absolute; top:744px; height:96px; display:flex; background:#000; border:1px solid #1f2e3b; border-radius:4px; overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none; }
-  #pkb .dk { position:relative; flex:1; background:#e9eef2; border-right:1px solid #8896a2; display:flex; align-items:flex-end; justify-content:center; padding-bottom:3px; font:9px Arial; color:#6c7a86; cursor:pointer; }
-  #pkb .bk { position:absolute; top:0; height:60%; z-index:2; background:#0d141b; border:1px solid #000; border-radius:0 0 3px 3px; cursor:pointer; display:flex; align-items:flex-end; justify-content:center; padding-bottom:3px; font:9px Arial; color:#8ea4b6; }
-  #pkb .dk.down, #pkb .bk.down { background:#6fd3ff; color:#070b0f; }
+  /* the keyboard module, as on the Tunings page: monitor stand, cable, then the MIDI card */
+  #scene { position:absolute; left:0; top:0; width:756px; transform-origin:0 0; }
+  #below { position:absolute; left:16px; top:931px; width:724px; --acc:#6fd3ff; --muted:#6f879b; --line:#1f2e3b; --win:#0d141b; --text:#dbe9f5; --bg:#070b0f; }
+  .monneck { width:70px; height:20px; margin:0 auto; border-left:2px solid var(--acc); border-right:2px solid var(--acc); background:#0b1218; }
+  .monbase { width:210px; height:10px; margin:0 auto; border:2px solid var(--acc); border-radius:6px; background:#0b1218; }
+  #cable { display:block; width:100%; height:84px; color:var(--acc); margin:-1px 0 0; }
+  #test { position:relative; padding:12px 14px 14px; border:1px solid var(--line); border-radius:6px; background:var(--win); }
+  .mrow { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px; }
+  #midiMsg { font:500 12px/1.45 Arial; color:var(--muted); min-width:0; }
+  .sq { display:inline-flex; align-items:center; gap:8px; font:700 11px Arial; letter-spacing:.06em; text-transform:uppercase; padding:5px 11px; border:1px solid var(--line); border-radius:999px; background:transparent; color:var(--muted); cursor:pointer; white-space:nowrap; }
+  .sq i { width:10px; height:10px; border:1.5px solid var(--muted); border-radius:2px; }
+  .sq[aria-pressed="true"] { color:var(--text); border-color:var(--acc); } .sq[aria-pressed="true"] i { background:var(--acc); border-color:var(--acc); }
+  .rig { display:flex; gap:14px; align-items:stretch; }
+  .lcol { flex:none; display:flex; flex-direction:column; justify-content:flex-end; }
+  .ctls { flex:none; display:flex; gap:12px; align-items:flex-end; justify-content:center; padding:0 2px; }
+  .cc { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .cc .fl { font:500 10px Arial; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); text-align:center; display:flex; flex-direction:column; gap:2px; } .cc .fl b { font-weight:700; } .cc .fl small { font-size:9px; letter-spacing:.06em; }
+  #knob, #knob2 { position:relative; width:60px; height:60px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #2b3d4d, #121b24 70%); border:1px solid var(--muted); box-shadow:0 3px 8px rgba(0,0,0,.5); cursor:ns-resize; touch-action:none; }
+  #knob::before, #knob2::before { content:""; position:absolute; inset:-7px; border-radius:50%; border:1px dashed var(--line); }
+  #knob i, #knob2 i { position:absolute; left:50%; top:5px; width:3px; height:15px; margin-left:-1.5px; border-radius:2px; background:var(--acc); transform-origin:50% 25px; }
+  #wheelw, #pwheelw { position:relative; width:34px; height:84px; }
+  #wheel, #pwheel { position:absolute; inset:0; border-radius:8px; border:1px solid var(--muted); cursor:ns-resize; touch-action:none; box-shadow:0 3px 8px rgba(0,0,0,.5), inset 0 0 14px rgba(0,0,0,.7); background:repeating-linear-gradient(to bottom, #2e4152 0 3px, #101921 3px 7px); background-size:100% 7px; }
+  #wheel::after, #pwheel::after { content:""; position:absolute; inset:0; border-radius:8px; background:linear-gradient(to bottom, rgba(0,0,0,.65), rgba(255,255,255,.12) 45%, rgba(0,0,0,.65)); pointer-events:none; }
+  #wmark, #pmark { position:absolute; left:-8px; width:6px; height:6px; margin-top:-3px; border-radius:50%; background:var(--acc); } #pmark { top:42px; }
+  #knob:focus-visible, #knob2:focus-visible, #wheel:focus-visible, #pwheel:focus-visible { outline:2px solid #fff; outline-offset:3px; }
+  .kcol { flex:1; min-width:0; display:flex; flex-direction:column; }
+  #kbd { position:relative; display:flex; flex:1; min-height:104px; background:#000; border:1px solid var(--line); border-radius:4px; overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #kbd .dk { position:relative; flex:1; background:#e9eef2; border-right:1px solid #8896a2; display:flex; align-items:flex-end; justify-content:center; padding-bottom:3px; font:9px Arial; color:#6c7a86; cursor:pointer; }
+  #kbd .bk { position:absolute; top:0; height:60%; z-index:2; background:#0d141b; border:1px solid #000; border-radius:0 0 3px 3px; cursor:pointer; }
+  #kbd .dk.down, #kbd .bk.down { background:var(--acc); color:#070b0f; }
 </style>
 </head>
 <body>
@@ -150,7 +176,7 @@
     <feComponentTransfer in="mono"><feFuncR type="gamma" amplitude="1.5" exponent="1.8" offset="-0.2"/><feFuncG type="gamma" amplitude="1.5" exponent="1.8" offset="-0.2"/><feFuncB type="gamma" amplitude="1.5" exponent="1.8" offset="-0.2"/></feComponentTransfer>
   </filter>
 </svg>
-<div id="wrap">
+<div id="wrap"><div id="scene">
   <div id="winf" aria-label="Harmonic tuner window">
     <div class="dbar"><span class="ddot"></span><span class="dtitle">Microtonal Tools</span><span class="dsub">Harmonic tuner, chord pads</span><span class="dst" id="read"></span><span class="dlogo">rex<b>audio</b></span></div>
     <div id="mod">
@@ -162,8 +188,24 @@
       
     </div>
   </div>
-</div>
-<p class="hint">Laid out like the Microtonal tuner: black keys above, white keys below, each with a column of chord pads for harmonics above and undertones below. Use the < and > in the title to step through overtones, undertones, all harmonics, microtones (pick one ratio per key) and manual pitch (drag each key's handle). Press the bottom of a key, or a key on the keyboard underneath, to play it. The top-left panel cycles the panel colour (or use a MIDI keyboard, or the keys A W S E D F T G Y H U J).</p>
+  <div id="below">
+    <div class="monneck"></div><div class="monbase"></div>
+    <svg id="cable" viewBox="0 0 760 84" preserveAspectRatio="xMidYMid meet" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M380 4V60"/><rect x="369" y="-2" width="22" height="8" rx="2" fill="#18232e"/><rect x="366" y="60" width="28" height="16" rx="3" fill="#18232e"/><path d="M373 76v8M387 76v8"/></svg>
+    <div id="test">
+      <div class="mrow"><span id="midiMsg" role="status" aria-live="polite">Connect a MIDI keyboard, or play with the mouse or computer keys.</span><button class="sq" id="midiBtn" type="button" aria-pressed="false" title="Use a real MIDI keyboard: its notes play, and its pitch wheel bends them"><i></i>Connect MIDI</button></div>
+      <div class="rig">
+        <div class="lcol"><div class="ctls">
+          <div class="cc"><div id="knob" tabindex="0" role="slider" aria-label="Mode knob"><i></i></div><span class="fl"><b>Knob 1</b><small id="sm1">Mode</small></span></div>
+          <div class="cc"><div id="knob2" tabindex="0" role="slider" aria-label="Panel colour knob"><i></i></div><span class="fl"><b>Knob 2</b><small id="sm2">Panel</small></span></div>
+          <div class="cc"><div id="wheelw"><div id="wheel" tabindex="0" role="slider" aria-label="Mod wheel (octave)"></div><div id="wmark"></div></div><span class="fl">Mod<small>Octave</small></span></div>
+          <div class="cc"><div id="pwheelw"><div id="pwheel" tabindex="0" role="slider" aria-label="Pitch wheel" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0"></div><div id="pmark"></div></div><span class="fl">Pitch<small>Bend</small></span></div>
+        </div></div>
+        <div class="kcol"><div id="kbd"></div></div>
+      </div>
+    </div>
+  </div>
+</div></div>
+<p class="hint">Laid out like the Microtonal tuner: black keys above, white keys below, each with a column of chord pads for harmonics above and undertones below. Use the < and > in the title to step through overtones, undertones, all harmonics, microtones (pick one ratio per key) and manual pitch (drag each key's handle). Press the bottom of a key, or a key on the keyboard module underneath, to play it. The top-left panel cycles the panel colour (or use a MIDI keyboard, or the keys A W S E D F T G Y H U J).</p>
 <p class="sitefoot">&copy; 2026 Rex Audio. <a href="licence.html">Licence and copyright</a></p>
 <script>
 const $ = s => document.querySelector(s);
@@ -211,7 +253,7 @@ const pitchOf = (c, k) => 60 + c + (k >= 1 ? 12 * Math.log2(k) - 12 * Math.log2(
 const nameOf = p => NAMES[((Math.round(p) % 12) + 12) % 12];
 
 // ---- the wooden keys and their columns ----
-const kbEls = [], setDown = (c, on) => { keyEls[c].classList.toggle("down", !!on); if (kbEls[c]) kbEls[c].classList.toggle("down", !!on); };
+const kbEls = Array.from({ length: 12 }, () => []), setDown = (c, on) => { keyEls[c].classList.toggle("down", !!on); kbEls[c].forEach(e => e.classList.toggle("down", !!on)); };
 const dock = $("#dock"), kn = {}, keyEls = [], railEls = [], mhs = [], tks = {};
 const MH0 = 167, MHR = 143, mhY = v => MH0 - v / 50 * MHR;
 function dragHandle(mh, c, key) {
@@ -235,12 +277,6 @@ for (let c = 0; c < 12; c++) {
   const lb = document.createElement("span"); lb.className = "lb"; lb.textContent = NAMES[c]; key.appendChild(lb);
   dock.appendChild(key); keyEls.push(key);
 }
-// ---- the Tunings plugin's keyboard, under the pads: each key plays its own column ----
-const kbd = document.createElement("div"); kbd.id = "pkb"; kbd.style.left = PAD + "px"; kbd.style.width = (7 * PITCH) + "px"; dock.appendChild(kbd);
-[0, 2, 4, 5, 7, 9, 11].forEach(c => { const k = document.createElement("div"); k.className = "dk"; k.dataset.c = c; k.textContent = NAMES[c]; kbd.appendChild(k); kbEls[c] = k; });
-[1, 3, 6, 8, 10].forEach(c => { const k = document.createElement("div"); k.className = "bk"; k.dataset.c = c; k.style.left = ((WI[c - 1] + 1) * PITCH - PITCH * .3) + "px"; k.style.width = (PITCH * .6) + "px"; k.textContent = NAMES[c]; kbd.appendChild(k); kbEls[c] = k; });
-kbd.addEventListener("pointerdown", e => { const k = e.target.closest(".dk, .bk"); if (!k) return; e.preventDefault(); try { k.setPointerCapture(e.pointerId); } catch (x) {} down("b" + e.pointerId, +k.dataset.c, .8); });
-["pointerup", "pointercancel"].forEach(ev => kbd.addEventListener(ev, e => up("b" + e.pointerId)));
 function paint() {
   document.body.classList.toggle("v3", S.view === 3); document.body.classList.toggle("v4", S.view === 4);
   rls.forEach(([l, ri]) => { const k = S.view < 3 ? RV[S.view][ri] : 0; l.textContent = !k ? "" : k > 1 ? "×" + k : k === 1 ? "key" : "÷" + (-k); });
@@ -309,7 +345,7 @@ function voice(midi, vel, n, gate) {
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + .004); g.gain.setTargetAtTime(peak * .35, t + .005, .6);
   const all = [car, mod, bell]; all.forEach(o => o.start(t));
   const h = { stop() { const u = ctx.currentTime; g.gain.cancelScheduledValues(u); g.gain.setTargetAtTime(0, u, .08); all.forEach(o => { try { o.stop(u + .5); } catch (e) {} }); live.delete(h); } };
-  live.add(h); if (gate) setTimeout(() => h.stop(), gate); return h;
+  h.bend = cents => all.forEach(o => { o.detune.value = cents; }); all.forEach(o => { o.detune.value = bendC; }); live.add(h); if (gate) setTimeout(() => h.stop(), gate); return h;
 }
 // the notes of a column, as midi pitches: undertones stay low as the bass; the key alone if nothing is picked
 function notesOf(c, ks) {
@@ -323,10 +359,10 @@ function notesOf(c, ks) {
 }
 function blip(c, k) { audio(); voice(notesOf(c, [k])[0], .7, 1, 700); }
 const held = new Map(), latched = new Set();
-function down(id, c, vel) {
+function down(id, c, vel, oc = 0) {
   audio();
   if (S.hold && latched.has(c)) { latched.delete(c); stopCol(c); return; }
-  up(id, true); const ps = keyNotes(c, S.sel[c]); held.set(id, { c, vs: ps.map(p => voice(p, vel, ps.length)) });
+  up(id, true); const ps = keyNotes(c, S.sel[c]).map(p => p + 12 * oc); held.set(id, { c, vs: ps.map(p => voice(p, vel, ps.length)) });
   setDown(c, 1); readout(c); if (S.hold) latched.add(c);
 }
 function stopCol(c) { [...held.entries()].forEach(([id, h]) => { if (h.c === c) { held.delete(id); h.vs.forEach(v => v.stop()); } }); setDown(c, 0); }
@@ -355,14 +391,33 @@ $("#vPrev").onclick = () => { S.view = (S.view + 4) % 5; paint(); save(); $("#re
 $("#vNext").onclick = () => { S.view = (S.view + 1) % 5; paint(); save(); $("#read").textContent = ""; };
 syncFns.push(() => { $("#bTune").textContent = S.pure ? "Pure tuning" : "12-TET"; $("#bTune").setAttribute("aria-pressed", String(S.pure)); });
 
-// ---- MIDI keyboard: each key plays its own column ----
-if (navigator.requestMIDIAccess) document.addEventListener("pointerdown", () => {
-  if (window.__midi) return; window.__midi = true;
-  navigator.requestMIDIAccess().then(acc => { const bind = () => acc.inputs.forEach(i => { i.onmidimessage = e => { const [st, a, b] = e.data, cmd = st & 0xf0; if (cmd === 0x90 && b > 0) down("m" + a, a % 12, Math.pow(b / 127, .8)); else if (cmd === 0x80 || (cmd === 0x90 && b === 0)) up("m" + a); }; }); acc.onstatechange = bind; bind(); }).catch(() => {});
-}, { once: true });
+// ---- the keyboard module: two octaves, each key plays its own column; knobs, wheels and MIDI as on the Tunings page ----
+const kbd = $("#kbd"), WK = [0, 2, 4, 5, 7, 9, 11], BK = { 0: 1, 1: 3, 3: 6, 4: 8, 5: 10 };
+for (let o = 0; o < 2; o++) WK.forEach(c => { const k = document.createElement("div"); k.className = "dk"; k.dataset.c = c; k.dataset.o = o; if (c === 0) k.textContent = "C" + (3 + o); else k.textContent = NAMES[c]; kbd.appendChild(k); kbEls[c].push(k); });
+for (let o = 0; o < 2; o++) Object.keys(BK).forEach(i => { const c = BK[i], k = document.createElement("div"); k.className = "bk"; k.dataset.c = c; k.dataset.o = o; k.style.left = ((o * 7 + +i + 1) * 100 / 14 - 2.4) + "%"; k.style.width = "4.8%"; kbd.appendChild(k); kbEls[c].push(k); });
+kbd.addEventListener("pointerdown", e => { const k = e.target.closest(".dk, .bk"); if (!k) return; e.preventDefault(); try { k.setPointerCapture(e.pointerId); } catch (x) {} down("b" + e.pointerId, +k.dataset.c, .8, +k.dataset.o); });
+["pointerup", "pointercancel"].forEach(ev => kbd.addEventListener(ev, e => up("b" + e.pointerId)));
+function drag(el, step, onStep) { let y0 = null, a = 0; el.addEventListener("pointerdown", e => { e.preventDefault(); el.setPointerCapture(e.pointerId); y0 = e.clientY; a = 0; }); el.addEventListener("pointermove", e => { if (y0 == null) return; const sc = el.getBoundingClientRect().height / el.offsetHeight || 1, n = Math.trunc((y0 - e.clientY) / (step * sc)); if (n !== a) { onStep(n - a); a = n; } }); ["pointerup", "pointercancel"].forEach(ev => el.addEventListener(ev, () => { y0 = null; })); }
+drag($("#knob"), 14, d => { S.view = (S.view + d + 50) % 5; paint(); save(); $("#read").textContent = ""; });
+drag($("#knob2"), 14, d => { S.panel = (S.panel + d + 70) % PANELS.length; applyPanel(); paint(); save(); });
+syncFns.push(() => { $("#knob i").style.transform = `rotate(${-135 + 270 * S.view / 4}deg)`; $("#knob2 i").style.transform = `rotate(${-135 + 270 * S.panel / (PANELS.length - 1)}deg)`; $("#sm1").textContent = VIEWS[S.view]; $("#sm2").textContent = PANELS[S.panel][0]; $("#wmark").style.top = (42 - S.oct * 36) + "px"; });
+// mod wheel: octave -1 / 0 / +1; pitch wheel: bend, springs back
+function wheelPos(el, e) { const r = el.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)); }
+{ const w = $("#wheel"); let on = false; const set = e => { S.oct = Math.round((.5 - wheelPos(w, e)) * 2); S.oct = Math.max(-1, Math.min(1, S.oct)); w.style.backgroundPositionY = -S.oct * 30 + "px"; w.setAttribute("aria-valuenow", S.oct); paint(); save(); };
+  w.addEventListener("pointerdown", e => { e.preventDefault(); w.setPointerCapture(e.pointerId); on = true; set(e); }); w.addEventListener("pointermove", e => { if (on) set(e); }); ["pointerup", "pointercancel"].forEach(ev => w.addEventListener(ev, () => { on = false; })); }
+let bendC = 0; function setBend(v) { v = Math.max(-1, Math.min(1, v)); bendC = v * 200; $("#pmark").style.top = 42 - v * 42 + "px"; $("#pwheel").style.backgroundPositionY = -v * 30 + "px"; $("#pwheel").setAttribute("aria-valuenow", v.toFixed(2)); live.forEach(h => h.bend && h.bend(bendC)); }
+{ const w = $("#pwheel"); let on = false; const set = e => setBend(1 - 2 * wheelPos(w, e));
+  w.addEventListener("pointerdown", e => { e.preventDefault(); w.setPointerCapture(e.pointerId); on = true; set(e); }); w.addEventListener("pointermove", e => { if (on) set(e); }); ["pointerup", "pointercancel"].forEach(ev => w.addEventListener(ev, () => { on = false; setBend(0); })); }
+$("#midiBtn").onclick = () => {
+  const m = $("#midiMsg"), btn = $("#midiBtn"); if (!navigator.requestMIDIAccess) { m.textContent = "This browser has no MIDI support. Use the mouse or the computer keys."; return; }
+  navigator.requestMIDIAccess().then(acc => {
+    const bind = () => { let n = 0; acc.inputs.forEach(i => { n++; i.onmidimessage = e => { const [st, a, b] = e.data, cmd = st & 0xf0, o = Math.max(0, Math.min(1, Math.floor(a / 12) - 5)); if (cmd === 0x90 && b > 0) down("m" + a, a % 12, Math.pow(b / 127, .8), Math.floor(a / 12) - 5); else if (cmd === 0x80 || (cmd === 0x90 && b === 0)) up("m" + a); else if (cmd === 0xE0) setBend(((b << 7 | a) - 8192) / 8192); }; }); btn.setAttribute("aria-pressed", String(n > 0)); m.textContent = n ? "MIDI connected: each key plays its own column; the pitch wheel bends." : "No MIDI keyboard found. Plug one in."; };
+    acc.onstatechange = bind; bind();
+  }).catch(() => { m.textContent = "MIDI access was blocked. Allow it in the browser to use a keyboard."; });
+};
 
 // ---- scale the window to the screen, like the microtonal tuner ----
-function fit() { const w = Math.min(document.documentElement.clientWidth, 960), s = w / 756; $("#winf").style.transform = "scale(" + s + ")"; const wr = $("#wrap"); wr.style.width = w + "px"; wr.style.height = (1040 * s) + "px"; }
+function fit() { const w = Math.min(document.documentElement.clientWidth, 960), s = w / 756, H = 931 + $("#below").offsetHeight + 16; $("#scene").style.transform = "scale(" + s + ")"; $("#scene").style.height = H + "px"; const wr = $("#wrap"); wr.style.width = w + "px"; wr.style.height = (H * s) + "px"; }
 addEventListener("resize", fit); fit(); paint();
 </script>
 <script src="nav.js"></script>
