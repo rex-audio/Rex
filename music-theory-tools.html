@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Music theory tools you can play in your browser: the Harmonic Grid, the Harmonic Circle of Fifths, ChordSeq and Tunings.">
+<title>Music theory tools | Rex Audio</title>
+<style>
+/* Same page frame as the other pages: a 720px "desktop" page scaled to the window. */
+:root {
+  --bg: #e4e7e9;
+  --panel: #f3f4f5;
+  --fg: #15181a;
+  --muted: #5a6166;
+  --line: #c3c9cc;
+  --focus: #c8321e;
+  --sans: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; }
+#site { width: 720px; margin: 0 auto; zoom: 0.54; }
+a { color: inherit; }
+a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, p { margin: 0; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 26px 36px 0; }
+.brand { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+.top nav a:hover { border-bottom-color: var(--fg); }
+
+.intro { text-align: center; padding: 56px 36px 0; }
+.intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; }
+.intro .lead { font-size: 19px; line-height: 1.5; margin: 16px auto 0; max-width: 520px; }
+
+.cards { display: grid; gap: 16px; padding: 44px 36px 0; }
+.card { display: block; text-decoration: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.card img { display: block; width: 100%; height: auto; background: #0d141b; border-bottom: 1px solid var(--line); }
+.card img.crop { aspect-ratio: 16 / 9; object-fit: cover; object-position: top; }
+.card .txt { display: block; padding: 22px 28px 26px; }
+.card:hover { border-color: var(--fg); }
+.card h2 { font-size: 26px; line-height: 1.2; letter-spacing: -0.01em; margin-top: 4px; }
+.card p { margin-top: 6px; font-size: 16px; line-height: 1.5; color: var(--muted); }
+.card .go { display: inline-block; margin-top: 12px; font-size: 15px; font-weight: 700; }
+
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="site">
+  <header class="top">
+    <a class="brand" href="index.html" aria-current="page">Rex Audio</a>
+    <nav aria-label="Main">
+      <a href="shapes.html">Shapes</a>
+      <a href="chordseq.html">ChordSeq</a>
+      <a href="music-theory-tools.html" aria-current="page">Theory</a>
+      <a href="drums.html">Drums</a>
+      <a href="colours.html">Colours</a>
+      <a href="loops.html">Loops</a>
+      <a href="shapes.html#support">Support</a>
+    </nav>
+  </header>
+
+  <section class="intro">
+    <p class="label">Play them in your browser</p>
+    <h1>Music theory tools</h1>
+    <p class="lead">Harmony, tuning and chord progressions you can hear: two ways to play the harmonic series on the circle of fifths, a chord sequencer and tuning presets.</p>
+  </section>
+
+  <section class="cards" aria-label="Tools">
+    <a class="card" href="harmonic-grid.html">
+      <img src="harmonic-grid-preview.png" width="972" height="946" alt="The Harmonic Grid: a column for each fifth, with harmonics above and undertones below" loading="lazy">
+      <span class="txt">
+        <span class="label">Harmonic Keyboard · design one</span>
+        <h2>Harmonic Grid</h2>
+        <p>A column for each fifth. Pick undertones as the fundamental, then any of their harmonics, with a page for the fifths and one for their relative minors.</p>
+        <span class="go">Open the Harmonic Grid &rarr;</span>
+      </span>
+    </a>
+    <a class="card" href="harmonic-circle.html">
+      <img src="harmonic-circle-preview.png" width="972" height="1110" alt="The Harmonic Circle of Fifths: overtones of each fifth going out and overtones of its relative minor coming in" loading="lazy">
+      <span class="txt">
+        <span class="label">Harmonic Keyboard · design two</span>
+        <h2>Harmonic Circle of Fifths</h2>
+        <p>The circle of fifths itself. Overtones of each fifth go out and those of its relative minor come in, with a second page for undertones.</p>
+        <span class="go">Open the Harmonic Circle of Fifths &rarr;</span>
+      </span>
+    </a>
+    <a class="card" href="chordseq.html">
+      <img class="crop" src="chordseq-preview.png" width="1280" height="720" alt="The ChordSeq sequencer and piano roll side by side" loading="lazy">
+      <span class="txt">
+        <span class="label">Plugin</span>
+        <h2>ChordSeq</h2>
+        <p>Sequence chords, key changes, tuning changes, voicings and arpeggios, with presets you can keep in your browser.</p>
+        <span class="go">Open ChordSeq &rarr;</span>
+      </span>
+    </a>
+    <a class="card" href="tunings.html">
+      <img src="tunings-preview.webp" width="1296" height="826" alt="The tunings page: key, tuning system and anchor controls above a virtual MIDI keyboard" loading="lazy">
+      <span class="txt">
+        <span class="label">Tuning</span>
+        <h2>Tunings</h2>
+        <p>Browse tuning presets and play them with a virtual MIDI keyboard.</p>
+        <span class="go">Open Tunings &rarr;</span>
+      </span>
+    </a>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 Rex Audio</span>
+  </footer>
+</div>
+<script>
+(function () {
+  var site = document.getElementById('site');
+  function fit() {
+    var w = document.documentElement.clientWidth || window.innerWidth;
+    site.style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5);
+  }
+  window.addEventListener('resize', fit);
+  fit();
+})();
+</script>
+</body>
+</html>
