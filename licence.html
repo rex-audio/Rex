@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="The Rex Audio licence: free for personal use, a paid licence to release music, no distributing or modifying without permission.">
+<title>Licence | Rex Audio</title>
+<style>
+/* Same page frame as the other pages: a 720px "desktop" page scaled to the window. */
+:root {
+  --bg: #e4e7e9;
+  --panel: #f3f4f5;
+  --fg: #15181a;
+  --muted: #5a6166;
+  --line: #c3c9cc;
+  --focus: #c8321e;
+  --sans: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; }
+#site { width: 720px; margin: 0 auto; zoom: 0.54; }
+a { color: inherit; }
+a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, p { margin: 0; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 26px 36px 0; }
+.brand { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+.top nav a:hover { border-bottom-color: var(--fg); }
+
+.intro { text-align: center; padding: 56px 36px 0; }
+.intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; }
+.intro .lead { font-size: 19px; line-height: 1.5; margin: 16px auto 0; max-width: 520px; }
+
+.group { padding: 44px 36px 0; }
+.ghead h2 { font-size: 34px; line-height: 1.1; letter-spacing: -0.03em; }
+.ghead p { margin-top: 4px; font-size: 16px; color: var(--muted); }
+.terms { padding: 40px 36px 0; display: grid; gap: 14px; }
+.terms section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; }
+.terms h2 { font-size: 24px; letter-spacing: -0.01em; }
+.terms p { margin-top: 8px; font-size: 16px; line-height: 1.55; }
+.terms a.btn { display: inline-block; margin-top: 14px; padding: 12px 26px; border-radius: 8px; background: var(--fg); color: var(--panel); text-decoration: none; font-weight: 700; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="site">
+  <header class="top">
+    <a class="brand" href="index.html">Rex Audio</a>
+    <nav aria-label="Main"></nav>
+  </header>
+  <section class="intro">
+    <p class="label">One licence for everything</p>
+    <h1>Licence</h1>
+    <p class="lead">Every Rex Audio web app, digital plugin and hardware design is under the same licence.</p>
+  </section>
+  <div class="terms">
+    <section>
+      <h2>Free</h2>
+      <p>Use the website to play the instruments, for yourself. Personal use only.</p>
+    </section>
+    <section>
+      <h2>Paid</h2>
+      <p>Commercially release music made with any of the software, including the sounds it makes.</p>
+      <a class="btn" href="mailto:rex-audio@outlook.com?subject=Paid%20licence">Get a paid licence</a>
+    </section>
+    <section>
+      <h2>Not allowed without permission</h2>
+      <p>You may not distribute the software or modify it, free or paid, unless Rex Audio has agreed in writing.</p>
+    </section>
+    <section>
+      <h2>Copyright</h2>
+      <p>&copy; 2026 Rex Audio. All rights reserved. Rex Audio retains all rights to its designs: web apps, digital plugins and hardware. Interested in the hardware? Get in touch and we&rsquo;ll build it.</p>
+      <a class="btn" href="mailto:rex-audio@outlook.com?subject=Hardware">Get in touch</a>
+    </section>
+  </div>
+  <footer>
+    <span>&copy; 2026 Rex Audio</span>
+  </footer>
+</div>
+<script>
+(function () {
+  var site = document.getElementById('site');
+  function fit() { var w = document.documentElement.clientWidth || window.innerWidth; site.style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); }
+  window.addEventListener('resize', fit); fit();
+})();
+</script>
+<script src="nav.js"></script>
+</body>
+</html>
