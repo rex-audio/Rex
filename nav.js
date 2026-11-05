@@ -15,6 +15,7 @@
     "harmonic-circle.html": "music-theory-tools.html",
     "harmonics.html": "music-theory-tools.html",
     "microtonal-tuner.html": "music-theory-tools.html",
+    "microtonal-tuner-keyboard.html": "music-theory-tools.html",
     "chordseq.html": "music-theory-tools.html",
     "tunings.html": "music-theory-tools.html"
   };
