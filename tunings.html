@@ -164,7 +164,8 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
   .asact { margin-top:14px; }
   .arow { grid-column:1 / -1; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px 28px; }
   .agrp { display:flex; align-items:center; gap:10px; }
-  #scaleSel, #patSel { width:150px; } .agrp .tsys select { height:42px; }
+  #scaleSel, #patSel, #keysSel { width:150px; }
+  .bk { display:flex; align-items:flex-end; justify-content:center; padding-bottom:3px; font:9px Arial; color:#8ea4b6; } .bk.down { color:var(--bg); } .agrp .tsys select { height:42px; }
   #dock .dk.anc.down { background:var(--acc); color:var(--bg); box-shadow:inset 0 0 0 3px #0d4565; } #dock .bk.anc.down { background:var(--acc); box-shadow:inset 0 0 0 3px #0d4565; }
   #win, .mod { border:0; background:transparent; border-radius:0; }
   .body { padding:4px 4px 6px; }
@@ -212,7 +213,7 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
                   </div>
                   <div class="fld tsf"><span class="fl">Tuning system</span><div class="tsrow"><button class="hbtn" id="pp" type="button" aria-label="Previous tuning">&lt;</button><div class="tsys"><select id="tsPreset" aria-label="Tuning system"></select></div><button class="hbtn" id="pnx" type="button" aria-label="Next tuning">&gt;</button></div></div>
                   <div class="fld asf"><span class="fl">&nbsp;</span><button class="hbtn" id="asBtn" type="button" title="Choose what each wheel and knob controls on your MIDI keyboard">Assign</button></div>
-                  <div class="arow"><div class="agrp"><span class="fl">Anchor</span><div class="anc" role="group" aria-label="Anchor"><button class="hbtn" type="button" aria-pressed="false" data-anc="0" title="Anchor C: play as if in C, transposed to the chosen key. Press again to turn the anchor off">C</button><button class="hbtn" type="button" aria-pressed="false" data-anc="9" title="Anchor A: play as if in A (the white keys are A minor). Press again to turn the anchor off">A</button><button class="hbtn" type="button" aria-pressed="false" data-anc="-1" title="No anchor: the keys play the notes you press">None</button></div></div></div><div class="agrp"><span class="fl">Scale</span><div class="tsrow"><button class="hbtn" id="scp" type="button" aria-label="Previous scale">&lt;</button><div class="tsys"><select id="scaleSel" aria-label="Scale"></select></div><button class="hbtn" id="scn" type="button" aria-label="Next scale">&gt;</button></div></div><div class="agrp"><span class="fl">Play as</span><div class="tsys"><select id="patSel" aria-label="Play as"></select></div></div>
+                  <div class="arow"><div class="agrp"><span class="fl">Anchor</span><div class="anc" role="group" aria-label="Anchor"><button class="hbtn" type="button" aria-pressed="false" data-anc="0" title="Anchor C: play as if in C, transposed to the chosen key. Press again to turn the anchor off">C</button><button class="hbtn" type="button" aria-pressed="false" data-anc="9" title="Anchor A: play as if in A (the white keys are A minor). Press again to turn the anchor off">A</button><button class="hbtn" type="button" aria-pressed="false" data-anc="-1" title="No anchor: the keys play the notes you press">None</button></div></div></div><div class="agrp"><span class="fl">Scale</span><div class="tsrow"><button class="hbtn" id="scp" type="button" aria-label="Previous scale">&lt;</button><div class="tsys"><select id="scaleSel" aria-label="Scale"></select></div><button class="hbtn" id="scn" type="button" aria-label="Next scale">&gt;</button></div></div><div class="agrp"><span class="fl">Play as</span><div class="tsys"><select id="patSel" aria-label="Play as"></select></div></div><div class="agrp"><span class="fl">Keys</span><div class="tsys"><select id="keysSel" aria-label="What the keys play"><option value="0">Notes</option><option value="1">Harmonic series</option></select></div></div>
                 </div>
                 <div class="asp" id="asp" hidden>
                   <div class="mh"><span>Assign MIDI controls</span></div>
@@ -266,6 +267,7 @@ const GROUPS = [
     { name: "5-Limit JI (16/9 seventh)", s: [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[45,32],[3,2],[8,5],[5,3],[16,9],[15,8]] },
     { name: "7-Limit JI", s: [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[7,5],[3,2],[8,5],[5,3],[7,4],[15,8]] },
     { name: "Pythagorean", s: [[1,1],[256,243],[9,8],[32,27],[81,64],[4,3],[729,512],[3,2],[128,81],[27,16],[16,9],[243,128]] },
+    { name: "Pure fifths from the key", s: [0,1,2,3,4,5,6,7,8,9,10,11].map(d => (7 * d % 12) * 1200 * Math.log2(1.5) % 1200) },   // a chain of eleven pure 3:2 fifths up from the key (C, G, D, A, E, B, F#...), each folded into one octave
     { name: "Harmonic Series", s: [[1,1],[17,16],[9,8],[19,16],[5,4],[21,16],[11,8],[3,2],[13,8],[27,16],[7,4],[15,8]] } ] },
   { name: "Meantone", items: [
     { name: "Quarter-Comma Meantone", s: fifths(1200 * Math.log2(5) / 4) },
@@ -284,7 +286,7 @@ const keyNameOf = k => SHARP[k].length > 1 ? SHARP[k] + "/" + FLAT[k] : SHARP[k]
 const LOW = 48;
 
 // Anchor C (or A): the keyboard is laid out as if the key were that note, and only the sound is transposed to the chosen key. No anchor: the keys play the notes you press.
-const S = { pb: 0, preset: 0, key: 0, anchor: false, ancN: 0 };   // starts in 12-TET with no anchor
+const S = { pb: 0, preset: 0, key: 0, anchor: false, ancN: 0, harm: 0 };   // harm: the keys play the harmonic series of the key, one harmonic per key, instead of notes   // starts in 12-TET with no anchor
 const K = () => S.anchor ? S.ancN : S.key;
 const shiftNow = () => { if (!S.anchor) return 0; const d = ((S.key - S.ancN) % 12 + 12) % 12; return d > 6 ? d - 12 : d; };
 const zoom = () => (parseFloat($("#app").style.zoom) || 1) * (parseFloat($("#site").style.zoom) || 1);
@@ -344,8 +346,11 @@ function ensureAudio() {
   }
   if (ctx.state === "suspended") ctx.resume();
 }
-function startVoice(m, level = 1) {
-  const t = ctx.currentTime, f = 440 * Math.pow(2, (m + shiftNow() - 69) / 12), cents = tuneNote(m).off;
+const harmF = m => m < LOW ? 0 : 440 * Math.pow(2, (36 + S.key - 69) / 12) * (m - LOW + 1);   // harmonic mode: the key's note from C2, times the harmonic this key stands for
+function startVoice(m, level = 1, hm = false) {
+  const f = hm ? harmF(m) : 440 * Math.pow(2, (m + shiftNow() - 69) / 12);
+  if (!f) return null;
+  const t = ctx.currentTime, cents = hm ? 0 : tuneNote(m).off;
   const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g1 = ctx.createGain(), g2 = ctx.createGain(), flt = ctx.createBiquadFilter(), vca = ctx.createGain(), vol = ctx.createGain();
   o1.type = "sawtooth"; o2.type = "square"; o1.frequency.value = f; o2.frequency.value = f;
   o1.detune.value = cents; o2.detune.value = cents + 4;   // the per-note cents; +4 is a fixed chorus-style spread
@@ -356,7 +361,7 @@ function startVoice(m, level = 1) {
   vca.gain.setValueAtTime(0, t); vca.gain.linearRampToValueAtTime(.8, t + .006); vca.gain.setTargetAtTime(.22, t + .006, .55);
   o1.connect(g1); o2.connect(g2); g1.connect(flt); g2.connect(flt); flt.connect(vca); vca.connect(vol); vol.connect(master);
   o1.start(t); o2.start(t);
-  return { o1, o2, vca, vol, flt, m };
+  return { o1, o2, vca, vol, flt, m, hm };
 }
 function stopVoice(v) {
   const t = ctx.currentTime, g = v.vca.gain;
@@ -365,7 +370,7 @@ function stopVoice(v) {
   v.o1.stop(t + 1); v.o2.stop(t + 1);
   v.o2.onended = () => { try { v.vca.disconnect(); v.vol.disconnect(); v.flt.disconnect(); } catch (e) {} };
 }
-const retune = v => { const c = tuneNote(v.m).off; v.o1.detune.setTargetAtTime(c, ctx.currentTime, .015); v.o2.detune.setTargetAtTime(c + 4, ctx.currentTime, .015); };
+const retune = v => { if (v.hm) return; const c = tuneNote(v.m).off; v.o1.detune.setTargetAtTime(c, ctx.currentTime, .015); v.o2.detune.setTargetAtTime(c + 4, ctx.currentTime, .015); };
 
 // ---------- virtual keyboard ----------
 const dock = $("#dock");
@@ -376,7 +381,8 @@ const dock = $("#dock");
 })();
 function labelDock() {   // each white key shows the note it sounds in the chosen key, so in key G anchored to C the C key reads G
   const sh = shiftNow();
-  dock.querySelectorAll(".dk").forEach(k => { const m = +k.dataset.m, n = m + sh; k.textContent = m % 12 === 0 ? noteName(n) : SHARP[((n % 12) + 12) % 12]; });
+  dock.querySelectorAll(".dk").forEach(k => { const m = +k.dataset.m, n = m + sh; k.textContent = S.harm ? m - LOW + 1 : m % 12 === 0 ? noteName(n) : SHARP[((n % 12) + 12) % 12]; });
+  dock.querySelectorAll(".bk").forEach(k => { k.textContent = S.harm ? +k.dataset.m - LOW + 1 : ""; });
 }
 function flashWhites() {   // one white key at a time turns blue, left to right (no fade)
   const ks = [...dock.querySelectorAll(".dk")], STEP = 130;
@@ -386,9 +392,9 @@ function flashWhites() {   // one white key at a time turns blue, left to right 
 
 const held = new Map();   // id of whatever is playing (a pointer, a key, a MIDI note, the player) -> its notes and voices
 function lightKeys(midis, on) { midis.forEach(m => { const k = dock.querySelector(`[data-m="${m}"]`); if (k) k.classList.toggle("down", on); }); }
-function press(pid, ms) {
+function press(pid, ms, hm = false) {   // hm: a key of the keyboard (not the player) while the keys play the harmonic series
   ensureAudio(); release(pid);
-  held.set(pid, { ms, voices: ms.map(m => startVoice(m)) }); lightKeys(ms, true);
+  held.set(pid, { ms, voices: ms.map(m => startVoice(m, 1, hm)).filter(Boolean) }); lightKeys(ms, true);
 }
 function release(pid) {
   const h = held.get(pid); if (!h) return; held.delete(pid);
@@ -396,7 +402,7 @@ function release(pid) {
 }
 dock.addEventListener("pointerdown", e => {
   const k = e.target.closest(".dk, .bk"); if (!k) return; e.preventDefault();
-  press(e.pointerId, [+k.dataset.m]);
+  press(e.pointerId, [+k.dataset.m], !!S.harm);
 });
 const up = e => release(e.pointerId);
 addEventListener("pointerup", up); addEventListener("pointercancel", up);
@@ -407,7 +413,7 @@ addEventListener("keydown", e => {
   if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
   const k = e.key.toLowerCase();
   if (k === "z" || k === "x") { oct = clamp(oct + (k === "x" ? 1 : -1), -2, 2); return; }
-  if (k in KM) press("k" + k, [LOW + 12 * oct + KM[k]]);
+  if (k in KM) press("k" + k, [LOW + 12 * oct + KM[k]], !!S.harm);
 });
 addEventListener("keyup", e => release("k" + e.key.toLowerCase()));
 
@@ -419,6 +425,8 @@ const PATTERN_LIST = [["up", "Arp up"], ["down", "Arp down"], ["ud", "Arp up and
 const scaleSel = $("#scaleSel"), patSel = $("#patSel"), playBtn = $("#playBtn");
 SCALE_LIST.forEach(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; scaleSel.appendChild(o); });
 PATTERN_LIST.forEach(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; patSel.appendChild(o); });
+const keysSel = $("#keysSel");
+keysSel.onchange = () => { S.harm = +keysSel.value; stopPlay(); [...held.keys()].forEach(release); refresh(); keysSel.blur(); };
 scaleSel.onchange = () => { play.walk = 0; scaleSel.blur(); }; patSel.onchange = () => { play.walk = 0; patSel.blur(); };
 const stepScale = d => { scaleSel.selectedIndex = (scaleSel.selectedIndex + d + SCALE_LIST.length) % SCALE_LIST.length; play.walk = 0; };
 $("#scp").onclick = () => stepScale(-1); $("#scn").onclick = () => stepScale(1);
@@ -566,7 +574,7 @@ function refresh() {
   $("#wheel").style.backgroundPositionY = -(fw * 70) + "px"; $("#wmark").style.top = (84 - fw * 84) + "px";
   [["#knob", s1], ["#knob2", s2], ["#wheel", sw]].forEach(([id, s]) => { const el = $(id), i = s.info(); el.setAttribute("aria-valuemin", 0); el.setAttribute("aria-valuemax", Math.max(0, i.n - 1)); el.setAttribute("aria-valuenow", i.idx); });
   labelDock();
-  dock.querySelectorAll(".dk, .bk").forEach(k => k.classList.toggle("anc", +k.dataset.m % 12 === K()));   // blue: the anchor note, or with no anchor the key
+  dock.querySelectorAll(".dk, .bk").forEach(k => { const h = +k.dataset.m - LOW + 1; k.classList.toggle("anc", S.harm ? (h & (h - 1)) === 0 : +k.dataset.m % 12 === K()); });   // blue: the anchor note, or with no anchor the key
   if (ctx) { held.forEach(h => h.voices.forEach(retune)); backing.forEach(retune); }   // sounding notes follow a tuning change at once
 }
 
@@ -581,7 +589,7 @@ function midiCC(n, v) {
 }
 function onMidi(e) {
   const [st, d1, d2] = e.data, cmd = st & 0xf0;
-  if (cmd === 0x90 && d2 > 0) press("m" + d1, [d1]);
+  if (cmd === 0x90 && d2 > 0) press("m" + d1, [d1], !!S.harm);
   else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) release("m" + d1);
   else if (cmd === 0xE0) { if (learning === "pitch") { learning = null; buildAssign(); } clearInterval(pbT); setPb(((d2 << 7 | d1) - 8192) / 8192); }
   else if (cmd === 0xB0 && d1 < 120) midiCC(d1, d2);
