@@ -101,15 +101,17 @@
   .tbtn:disabled { opacity:.45; cursor:default; }
 
   /* grey hardware with the Tunings plugin's blue light: mid grey panel, plain white and black keys, grey pads that glow round the edge when picked */
-  #mod { background:linear-gradient(180deg,#6d7378,#5a6065); border-color:#3d4246; background-image:none; }
+  #mod { background:linear-gradient(180deg,var(--p1,#6d7378),var(--p2,#5a6065)); border-color:var(--pb,#3d4246); background-image:none; }
   #mod::before { display:none; }
-  .tpanel.brand, #mtitle, .tbtn { background:#3b4045; background-image:none; border-color:#2a2e32; color:#e6eaed; text-shadow:none; box-shadow:0 2px 0 #1b1e21, inset 0 1px 0 rgba(255,255,255,.14); }
+  .tpanel.brand, #mtitle, .tbtn { background:var(--btn,#3b4045); background-image:none; border-color:var(--pb,#2a2e32); color:#e6eaed; text-shadow:none; box-shadow:0 2px 0 #1b1e21, inset 0 1px 0 rgba(255,255,255,.14); }
   .tpanel.brand b { background:none; -webkit-background-clip:border-box; background-clip:border-box; color:#6fd3ff; }
   #mtitle { color:#e6eaed; }
+  .bot { gap:6px; } .tbtn { font-size:11.5px; padding:0 3px; }
   .tbtn:hover { color:#fff; border-color:#6fd3ff; } .tbtn[aria-pressed="true"] { color:#fff; border-color:#6fd3ff; box-shadow:0 0 8px rgba(111,211,255,.5),0 2px 0 #1b1e21; }
-  #dock { background:linear-gradient(180deg,#7a8086,#686e73); border-color:#3d4246; box-shadow:inset 0 2px 8px rgba(0,0,0,.35); }
+  #dock { background:linear-gradient(180deg,var(--d1,#7a8086),var(--d2,#686e73)); border-color:var(--pb,#3d4246); box-shadow:inset 0 2px 8px rgba(0,0,0,.35); }
   #dock::before { display:none; }
-  .rl, .rl.r { color:#2b2f33; }
+  .rl, .rl.r { color:var(--lbl,#2b2f33); }
+  #tpL { text-transform:none; cursor:pointer; } #tpL:hover { filter:brightness(1.15); }
   .key.w { background:linear-gradient(100deg,#f4f8fb,#d3dde6 50%,#eef3f7); border:1px solid #7f93a6; box-shadow:0 2px 3px rgba(0,0,0,.55); }
   .key.b { background:linear-gradient(100deg,#1a232c,#05080b 50%,#1c2630); border:1px solid #000; box-shadow:0 3px 6px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.1); }
   .key.w .lb { color:#1b2a38; } .key.b .lb { color:#dbe9f5; }
@@ -144,7 +146,7 @@
   <div id="winf" aria-label="Harmonic tuner window">
     <div class="dbar"><span class="ddot"></span><span class="dtitle">Microtonal Tools</span><span class="dsub">Harmonic tuner, chord pads</span><span class="dst" id="read"></span><span class="dlogo">rex<b>audio</b></span></div>
     <div id="mod">
-      <div class="tpanel brand" id="tpL"><span>Audio out</span></div>
+      <div class="tpanel brand" id="tpL" role="button" tabindex="0" title="Change the panel colour"><span id="panelName">Panel</span></div>
       <div id="mtitle">Harmonic tuner</div>
       <div class="tpanel brand" id="tpR">rex<b>audio</b></div>
       <div id="dock"></div>
@@ -153,7 +155,7 @@
     </div>
   </div>
 </div>
-<p class="hint">Laid out like the Microtonal tuner: black keys above, white keys below, each with a column of chord pads for harmonics above and undertones below. Tap a pad to light it, then press the bottom of the key (or use a MIDI keyboard, or the keys A W S E D F T G Y H U J).</p>
+<p class="hint">Laid out like the Microtonal tuner: black keys above, white keys below, each with a column of chord pads for harmonics above and undertones below. Tap a pad to light it, then press the bottom of the key. The top-left panel cycles the panel colour; the bottom button switches between overtones, undertones or both (or use a MIDI keyboard, or the keys A W S E D F T G Y H U J).</p>
 <p class="sitefoot">&copy; 2026 Rex Audio. <a href="licence.html">Licence and copyright</a></p>
 <script>
 const $ = s => document.querySelector(s);
@@ -164,9 +166,19 @@ const PAD = 22, PITCH = (696 - 2 * PAD) / 7, ROWY = k => 24 + ROWK.indexOf(k) * 
 const WI = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 };
 const keyX = c => BLACK.has(c) ? PAD + (WI[c - 1] + 1) * PITCH : PAD + (WI[c] + .5) * PITCH, keyY = c => BLACK.has(c) ? 12 : 380;
 const blank = () => Array.from({ length: 12 }, () => []);
-const S = { sel: blank(), oct: 0, pure: true, fund: true, hold: false, pre: 0 };
-try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-pads-v1")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => ROWK.includes(k))); S.pure = o.pure !== false; } } catch (e) {}
-const save = () => { try { localStorage.setItem("rex-harmonic-tuner-pads-v1", JSON.stringify({ sel: S.sel, oct: S.oct, pure: S.pure, fund: S.fund })); } catch (e) {} };
+const S = { sel: blank(), oct: 0, pure: true, fund: true, hold: false, pre: 0, mode: 0, panel: 0 };
+const MODES = ["Over + under", "Overtones", "Undertones"], vis = k => S.mode === 0 || (S.mode === 1 && k >= 1) || (S.mode === 2 && k <= 1);
+const PANELS = [
+  ["Mid grey", "#6d7378", "#5a6065", "#7a8086", "#686e73", "#3d4246", "#3b4045", "#2b2f33"],
+  ["Graphite", "#3a3d41", "#2a2c2f", "#4a4e53", "#383b3f", "#17181a", "#26282b", "#c2c7cc"],
+  ["Silver", "#b4b9be", "#9ba0a5", "#c2c6ca", "#aeb2b7", "#6e7378", "#4a4f54", "#33383c"],
+  ["Navy", "#1d3a5a", "#142b45", "#2a4b70", "#1e3a58", "#0b1a2b", "#16324d", "#b9d3ee"],
+  ["Olive", "#59634a", "#46503a", "#68735a", "#566048", "#2b3322", "#373f2d", "#222a19"],
+  ["Brick", "#7a4640", "#63362f", "#8a5a52", "#744640", "#3a1c18", "#4d2a25", "#2d1612"],
+  ["Sand", "#cdc2a8", "#b8ad92", "#dad0b8", "#c6bba1", "#7e7458", "#5b523c", "#463d29"]
+];
+try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-pads-v1")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => ROWK.includes(k))); S.pure = o.pure !== false; if (o.mode >= 0 && o.mode < 3) S.mode = o.mode; if (o.panel >= 0 && o.panel < 7) S.panel = o.panel; } } catch (e) {}
+const save = () => { try { localStorage.setItem("rex-harmonic-tuner-pads-v1", JSON.stringify({ sel: S.sel, oct: S.oct, pure: S.pure, fund: S.fund, mode: S.mode, panel: S.panel })); } catch (e) {} };
 let hist = [], fut = [];
 const snap = () => JSON.stringify(S.sel);
 const commit = before => { if (snap() !== before) { hist.push(before); if (hist.length > 100) hist.shift(); fut = []; } };
@@ -197,15 +209,16 @@ function paint() {
   for (let c = 0; c < 12; c++) {
     ROWK.forEach(k => {
       const b = kn[c + ":" + k], p = pitchOf(c, k), dev = (p - Math.round(p)) * 100, on = S.sel[c].includes(k);
-      b.classList.toggle("on", on); b.classList.toggle("xen", Math.abs(dev) > 25); b.setAttribute("aria-pressed", String(on)); b.textContent = on ? nameOf(p) : "";
+      b.style.visibility = vis(k) ? "" : "hidden"; b.classList.toggle("on", on && vis(k)); b.classList.toggle("xen", Math.abs(dev) > 25); b.setAttribute("aria-pressed", String(on)); b.textContent = on ? nameOf(p) : "";
       b.title = (k > 1 ? "Harmonic " + k : k === 1 ? "The key" : "Undertone " + (-k)) + " of " + NAMES[c] + " → " + nameOf(p) + (Math.abs(dev) >= 1 ? " " + (dev > 0 ? "+" : "−") + Math.abs(Math.round(dev)) + "¢" : "");
     });
-    railEls[c].classList.toggle("on", S.sel[c].length > 0); keyEls[c].classList.toggle("has", S.sel[c].length > 0);
+    const n = S.sel[c].filter(vis).length; railEls[c].classList.toggle("on", n > 0); keyEls[c].classList.toggle("has", n > 0);
   }
   syncBtns();
   $("#bUndo").disabled = !hist.length; $("#bRedo").disabled = !fut.length; $("#bHold").setAttribute("aria-pressed", String(S.hold));
 }
 function toggle(c, k) {
+  if (!vis(k)) return;
   const b0 = snap(), a = S.sel[c], i = a.indexOf(k); if (i >= 0) a.splice(i, 1); else { a.push(k); a.sort((x, y) => y - x); }
   commit(b0); paint(); save(); readout(c); if (i < 0) blip(c, k);
 }
@@ -225,6 +238,9 @@ function loadPre(i) {
   S.pre = (i + EX.length) % EX.length; const b0 = snap(); S.sel = blank(); EX[S.pre][1].forEach(([c, k]) => S.sel[c].push(k)); S.sel.forEach(a => a.sort((x, y) => y - x));
   commit(b0); paint(); save(); $("#read").textContent = EX[S.pre][0];
 }
+function applyPanel() { const p = PANELS[S.panel], r = document.documentElement.style; ["p1", "p2", "d1", "d2", "pb", "btn", "lbl"].forEach((n, i) => r.setProperty("--" + n, p[i + 1])); $("#panelName").textContent = p[0]; }
+$("#tpL").onclick = () => { S.panel = (S.panel + 1) % PANELS.length; applyPanel(); save(); };
+$("#tpL").onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#tpL").click(); } };
 function bot(label, fn, id, row) { const b = document.createElement("button"); b.type = "button"; b.className = "tbtn"; b.id = id; b.textContent = label; b.onclick = fn; $(row || "#bot1").appendChild(b); return b; }
 
 // ---- the sound: a mellow electric-piano voice that holds until the key lets go ----
@@ -246,7 +262,7 @@ function voice(midi, vel, n, gate) {
 }
 // the notes of a column, as midi pitches: undertones stay low as the bass; the key alone if nothing is picked
 function notesOf(c, ks) {
-  ks = ks && ks.length ? ks : [1];
+  ks = (ks || []).filter(vis); if (!ks.length) ks = [1];
   const out = ks.filter(k => S.fund || k >= 1).map(k => {
     let p = pitchOf(c, k) - 12; if (k <= -2) { while (p < 31) p += 12; }
     p += 12 * S.oct; while (p < 24) p += 12;
@@ -271,7 +287,7 @@ addEventListener("keydown", e => { if (e.repeat || e.ctrlKey || e.metaKey || e.a
 addEventListener("keyup", e => { const c = QW[e.key.toLowerCase()]; if (c != null) up("k" + c); });
 function silence() { [...live].forEach(v => v.stop()); held.clear(); latched.clear(); keyEls.forEach(k => k.classList.remove("down")); }
 function hear() {
-  audio(); const all = [].concat(...S.sel.map((ks, c) => ks.length ? notesOf(c, ks) : []));
+  audio(); const all = [].concat(...S.sel.map((ks, c) => ks.filter(vis).length ? notesOf(c, ks) : []));
   const seen = []; all.forEach(p => { if (!seen.some(q => Math.abs(q - p) < .25)) seen.push(p); }); seen.sort((a, b) => a - b);
   seen.forEach(p => voice(p, .8, seen.length, 2400));
 }
@@ -280,7 +296,9 @@ bot("Undo", () => { if (!hist.length) return; fut.push(snap()); S.sel = JSON.par
 bot("Redo", () => { if (!fut.length) return; hist.push(snap()); S.sel = JSON.parse(fut.pop()); paint(); save(); }, "bRedo");
 bot("Clear", () => { const b0 = snap(); S.sel = blank(); commit(b0); $("#read").textContent = ""; paint(); save(); }, "bClear");
 bot("Pure tuning", () => { S.pure = !S.pure; paint(); save(); }, "bTune");
+bot("Over + under", () => { S.mode = (S.mode + 1) % 3; paint(); save(); $("#read").textContent = MODES[S.mode]; }, "bMode");
 bot("▶ Hear chord", hear, "bHear");
+syncFns.push(() => { $("#bMode").textContent = MODES[S.mode]; applyPanel();});
 syncFns.push(() => { $("#bTune").textContent = S.pure ? "Pure tuning" : "12-TET"; $("#bTune").setAttribute("aria-pressed", String(S.pure)); });
 
 // ---- MIDI keyboard: each key plays its own column ----
