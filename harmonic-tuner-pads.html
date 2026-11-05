@@ -279,7 +279,7 @@ const PANELS = [
   ["Slate", "#2b333c", "#20272f", "#38434e", "#2b343e", "#232e39", "#242d37", "#b0bdc9"]
 ];
 try { const raw = localStorage.getItem("rex-harmonic-pads-panel-v2"), pn = +raw; if (raw !== null && pn >= 0 && pn < PANELS.length) S.panel = pn; } catch (e) {}
-try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-pads-v1")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => Number.isInteger(k) && k >= -14 && k <= 14 && k !== 0 && k !== -1)); S.pure = o.pure !== false; if (o.view >= 0 && o.view < 5) S.view = o.view; S.fifths = o.fifths === true; S.kmode = o.kmode ? 1 : 0; if (Array.isArray(o.micro) && o.micro.length === 12) S.micro = o.micro; if (Array.isArray(o.man) && o.man.length === 12) S.man = o.man.map(x => Math.max(-50, Math.min(50, +x || 0))); } } catch (e) {}
+try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-pads-v1")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => Number.isInteger(k) && k >= -14 && k <= 14 && k !== 0 && k !== -1)); S.pure = o.pure !== false; if (o.view >= 0 && o.view < 5) S.view = o.view; S.fifths = o.fifths === true; S.kmode = o.kmode === 1 || o.kmode === 2 ? o.kmode : 0; if (Array.isArray(o.micro) && o.micro.length === 12) S.micro = o.micro; if (Array.isArray(o.man) && o.man.length === 12) S.man = o.man.map(x => Math.max(-50, Math.min(50, +x || 0))); } } catch (e) {}
 const save = () => { try { localStorage.setItem("rex-harmonic-tuner-pads-v1", JSON.stringify({ sel: S.sel, oct: S.oct, pure: S.pure, fund: S.fund, view: S.view, fifths: S.fifths, micro: S.micro, man: S.man, panel: S.panel, kmode: S.kmode })); localStorage.setItem("rex-harmonic-pads-panel-v2", S.panel); } catch (e) {} };
 let hist = [], fut = [];
 const snap = () => JSON.stringify(S.sel);
@@ -399,10 +399,10 @@ function notesOf(c, ks) {
 }
 function blip(c, k) { audio(); voice(notesOf(c, [k])[0], .7, 1, 700); }
 const held = new Map(), latched = new Set();
-function down(id, c, vel, oc = 0, n = null) {
+function down(id, c, vel, oc = 0, n = null, dg = null) {
   audio();
   if (S.hold && latched.has(c)) { latched.delete(c); stopCol(c); return; }
-  up(id, true); let ps = null; if (S.kmode && n != null) { const ch = chordMidis(false); if (ch.length) { const sh = n + 12 * S.oct - ch[0]; ps = ch.map(p => p + sh); } } if (!ps) ps = keyNotes(c, S.sel[c]).map(p => p + 12 * oc); held.set(id, { c, vs: ps.map(p => voice(p, vel, ps.length)) });
+  up(id, true); let ps = null; if (S.kmode === 2 && dg != null) { const ch = chordMidis(false); if (ch.length) ps = ch.map(p => p + dg); } else if (S.kmode === 1 && n != null) { const ch = chordMidis(false); if (ch.length) { const sh = n + 12 * S.oct - ch[0]; ps = ch.map(p => p + sh); } } if (!ps) ps = keyNotes(c, S.sel[c]).map(p => p + 12 * oc); held.set(id, { c, vs: ps.map(p => voice(p, vel, ps.length)) });
   setDown(c, 1); readout(c); if (S.hold) latched.add(c);
 }
 function stopCol(c) { [...held.entries()].forEach(([id, h]) => { if (h.c === c) { held.delete(id); h.vs.forEach(v => v.stop()); } }); setDown(c, 0); }
@@ -425,10 +425,10 @@ bot("Undo", () => { if (!hist.length) return; fut.push(snap()); S.sel = JSON.par
 bot("Redo", () => { if (!fut.length) return; hist.push(snap()); S.sel = JSON.parse(fut.pop()); paint(); save(); }, "bRedo");
 bot("Clear", () => { const b0 = snap(); S.sel = blank(); S.micro = Array(12).fill(null); S.man = Array(12).fill(0); commit(b0); $("#read").textContent = ""; paint(); save(); }, "bClear");
 bot("Pure tuning", () => { S.pure = !S.pure; paint(); save(); }, "bTune");
-bot("Tuning", () => { S.kmode = S.kmode ? 0 : 1; paint(); save(); $("#read").textContent = S.kmode ? "Keyboard now makes chords: the chord on the pads, with its lowest note on the key you press" : "Keyboard now plays the tuning: each key sounds its own pads"; }, "bKmode");
+bot("Tuning", () => { S.kmode = (S.kmode + 1) % 3; paint(); save(); $("#read").textContent = ["Keyboard plays the tuning: each key sounds its own pads", "Keyboard makes chords: the chord on the pads, with its lowest note on the key you press", "Keyboard plays degrees: the chord as built is degree 1 on C, and each key moves it up that many semitones, like the Progression row"][S.kmode]; }, "bKmode");
 bot("Semitones", () => { S.fifths = !S.fifths; paint(); save(); $("#read").textContent = S.fifths ? "Keys are now fifths: C G D A E B F♯ …" : ""; }, "bFifths");
 bot("▶ Hear chord", hear, "bHear");
-syncFns.push(() => { $("#bKmode").textContent = S.kmode ? "Chords" : "Tuning"; $("#bKmode").title = S.kmode ? "Keyboard makes chords from the pads in hand" : "Keyboard plays the tuning: each key sounds its own pads"; $("#bKmode").setAttribute("aria-pressed", String(!!S.kmode)); });
+syncFns.push(() => { $("#bKmode").textContent = ["Tuning", "Chords", "Degrees"][S.kmode]; $("#bKmode").title = ["Keyboard plays the tuning: each key sounds its own pads", "Keyboard makes chords with the lowest note on the key", "Keyboard moves the chord by degree, like the sequencer Progression row"][S.kmode]; $("#bKmode").setAttribute("aria-pressed", String(!!S.kmode)); });
 syncFns.push(() => { $("#bFifths").textContent = S.fifths ? "Fifths" : "Semitones"; $("#bFifths").setAttribute("aria-pressed", String(S.fifths)); });
 syncFns.push(() => { applyPanel(); $("#vName").textContent = VIEWS[S.view]; });
 $("#vPrev").onclick = () => { S.view = (S.view + 4) % 5; paint(); save(); $("#read").textContent = ""; };
@@ -439,7 +439,7 @@ syncFns.push(() => { $("#bTune").textContent = S.pure ? "Pure tuning" : "12-TET"
 const kbd = $("#kbd"), WK = [0, 2, 4, 5, 7, 9, 11], BK = { 0: 1, 1: 3, 3: 6, 4: 8, 5: 10 };
 for (let o = 0; o < 2; o++) WK.forEach(c => { const k = document.createElement("div"); k.className = "dk"; k.dataset.c = c; k.dataset.o = o; if (c === 0) k.textContent = "C" + (3 + o); else k.textContent = NAMES[c]; kbd.appendChild(k); kbEls[c].push(k); });
 for (let o = 0; o < 2; o++) Object.keys(BK).forEach(i => { const c = BK[i], k = document.createElement("div"); k.className = "bk"; k.dataset.c = c; k.dataset.o = o; k.style.left = ((o * 7 + +i + 1) * 100 / 14 - 2.4) + "%"; k.style.width = "4.8%"; kbd.appendChild(k); kbEls[c].push(k); });
-kbd.addEventListener("pointerdown", e => { const k = e.target.closest(".dk, .bk"); if (!k) return; e.preventDefault(); try { k.setPointerCapture(e.pointerId); } catch (x) {} down("b" + e.pointerId, +k.dataset.c, .8, +k.dataset.o, 48 + 12 * +k.dataset.o + pcOf(+k.dataset.c)); });
+kbd.addEventListener("pointerdown", e => { const k = e.target.closest(".dk, .bk"); if (!k) return; e.preventDefault(); try { k.setPointerCapture(e.pointerId); } catch (x) {} down("b" + e.pointerId, +k.dataset.c, .8, +k.dataset.o, 48 + 12 * +k.dataset.o + pcOf(+k.dataset.c), pcOf(+k.dataset.c) + 12 * +k.dataset.o); });
 ["pointerup", "pointercancel"].forEach(ev => kbd.addEventListener(ev, e => up("b" + e.pointerId)));
 function drag(el, step, onStep) { let y0 = null, a = 0; el.addEventListener("pointerdown", e => { e.preventDefault(); el.setPointerCapture(e.pointerId); y0 = e.clientY; a = 0; }); el.addEventListener("pointermove", e => { if (y0 == null) return; const sc = el.getBoundingClientRect().height / el.offsetHeight || 1, n = Math.trunc((y0 - e.clientY) / (step * sc)); if (n !== a) { onStep(n - a); a = n; } }); ["pointerup", "pointercancel"].forEach(ev => el.addEventListener(ev, () => { y0 = null; })); }
 drag($("#knob"), 14, d => { S.view = (S.view + d + 50) % 5; paint(); save(); $("#read").textContent = ""; });
@@ -455,22 +455,23 @@ let bendC = 0; function setBend(v) { v = Math.max(-1, Math.min(1, v)); bendC = v
 $("#midiBtn").onclick = () => {
   const m = $("#midiMsg"), btn = $("#midiBtn"); if (!navigator.requestMIDIAccess) { m.textContent = "This browser has no MIDI support. Use the mouse or the computer keys."; return; }
   navigator.requestMIDIAccess().then(acc => {
-    const bind = () => { let n = 0; acc.inputs.forEach(i => { n++; i.onmidimessage = e => { const [st, a, b] = e.data, cmd = st & 0xf0, o = Math.max(0, Math.min(1, Math.floor(a / 12) - 5)); if (cmd === 0x90 && b > 0) down("m" + a, slotOf(a % 12), Math.pow(b / 127, .8), Math.floor(a / 12) - 5, a); else if (cmd === 0x80 || (cmd === 0x90 && b === 0)) up("m" + a); else if (cmd === 0xE0) setBend(((b << 7 | a) - 8192) / 8192); }; }); btn.setAttribute("aria-pressed", String(n > 0)); m.textContent = n ? "MIDI connected: each key plays its own column; the pitch wheel bends." : "No MIDI keyboard found. Plug one in."; };
+    const bind = () => { let n = 0; acc.inputs.forEach(i => { n++; i.onmidimessage = e => { const [st, a, b] = e.data, cmd = st & 0xf0, o = Math.max(0, Math.min(1, Math.floor(a / 12) - 5)); if (cmd === 0x90 && b > 0) down("m" + a, slotOf(a % 12), Math.pow(b / 127, .8), Math.floor(a / 12) - 5, a, a - 60); else if (cmd === 0x80 || (cmd === 0x90 && b === 0)) up("m" + a); else if (cmd === 0xE0) setBend(((b << 7 | a) - 8192) / 8192); }; }); btn.setAttribute("aria-pressed", String(n > 0)); m.textContent = n ? "MIDI connected: each key plays its own column; the pitch wheel bends." : "No MIDI keyboard found. Plug one in."; };
     acc.onstatechange = bind; bind();
   }).catch(() => { m.textContent = "MIDI access was blocked. Allow it in the browser to use a keyboard."; });
 };
 
 
 // ---- the sequencer: store the pads as a bar, play the bars round (minimised until opened) ----
-const SQ = { n: 4, bpm: 75, bars: Array(8).fill(null), key: Array(8).fill(0), oct: Array(8).fill(2), voi: Array(8).fill(0), cur: -1, playing: false, tok: 0 };
+const SQ = { n: 4, bpm: 75, bars: Array(8).fill(null), key: Array(8).fill(0), prog: Array(8).fill(0), oct: Array(8).fill(2), voi: Array(8).fill(0), cur: -1, playing: false, tok: 0 };
 const VOI = ["Close", "1st inv", "2nd inv", "Drop 2", "Open", "Bass root"];
-const SQROWS = [{ id: "key", label: "Key", c: "#e8c45a", n: 12, t: v => NAMES[v] }, { id: "oct", label: "Octave", c: "#79b8ff", n: 5, t: v => { v -= 2; return (v > 0 ? "+" : v < 0 ? "\u2212" : "") + Math.abs(v); } }, { id: "voi", label: "Voicing", c: "#f0a45d", n: 6, t: v => VOI[v] }];
-try { const o = JSON.parse(localStorage.getItem("rex-harmonic-pads-seq-v1")); if (o) { SQ.n = Math.max(2, Math.min(8, o.n | 0 || 4)); SQ.bpm = Math.max(40, Math.min(220, +o.bpm || 75)); if (Array.isArray(o.bars)) SQ.bars = o.bars.slice(0, 8).concat(Array(8).fill(null)).slice(0, 8); ["key", "oct", "voi"].forEach(r => { if (Array.isArray(o[r])) SQ[r] = o[r].slice(0, 8).concat(Array(8).fill(r === "oct" ? 2 : 0)).slice(0, 8).map(x => x | 0); }); } } catch (e) {}
-const sqSave = () => { try { localStorage.setItem("rex-harmonic-pads-seq-v1", JSON.stringify({ n: SQ.n, bpm: SQ.bpm, bars: SQ.bars, key: SQ.key, oct: SQ.oct, voi: SQ.voi })); } catch (e) {} };
+const DEG = ["1", "♭2", "2", "♭3", "3", "4", "♭5", "5", "♭6", "6", "♭7", "7"];
+const SQROWS = [{ id: "key", label: "Key", c: "#e8c45a", n: 12, step: 7, t: v => NAMES[v] }, { id: "prog", label: "Progression", c: "#e0628e", n: 12, step: 1, t: v => DEG[v] }, { id: "oct", label: "Octave", c: "#79b8ff", n: 5, t: v => { v -= 2; return (v > 0 ? "+" : v < 0 ? "\u2212" : "") + Math.abs(v); } }, { id: "voi", label: "Voicing", c: "#f0a45d", n: 6, t: v => VOI[v] }];
+try { const o = JSON.parse(localStorage.getItem("rex-harmonic-pads-seq-v1")); if (o) { SQ.n = Math.max(2, Math.min(8, o.n | 0 || 4)); SQ.bpm = Math.max(40, Math.min(220, +o.bpm || 75)); if (Array.isArray(o.bars)) SQ.bars = o.bars.slice(0, 8).concat(Array(8).fill(null)).slice(0, 8); ["key", "prog", "oct", "voi"].forEach(r => { if (Array.isArray(o[r])) SQ[r] = o[r].slice(0, 8).concat(Array(8).fill(r === "oct" ? 2 : 0)).slice(0, 8).map(x => x | 0); }); } } catch (e) {}
+const sqSave = () => { try { localStorage.setItem("rex-harmonic-pads-seq-v1", JSON.stringify({ n: SQ.n, bpm: SQ.bpm, bars: SQ.bars, key: SQ.key, prog: SQ.prog, oct: SQ.oct, voi: SQ.voi })); } catch (e) {} };
 const snapNow = () => JSON.parse(JSON.stringify({ view: S.view, fifths: S.fifths, oct: S.oct, sel: S.sel, micro: S.micro, man: S.man }));
 function withSnap(sn, fn) { const keep = { view: S.view, fifths: S.fifths, oct: S.oct, sel: S.sel, micro: S.micro, man: S.man }; Object.assign(S, JSON.parse(JSON.stringify(sn))); try { return fn(); } finally { Object.assign(S, keep); } }
 function sqVoice(ms, i) {
-  let a = ms.slice().sort((x, y) => x - y); const v = SQ.voi[i], k = SQ.key[i], o = (SQ.oct[i] - 2) * 12;
+  let a = ms.slice().sort((x, y) => x - y); const v = SQ.voi[i], k = SQ.key[i] + SQ.prog[i], o = (SQ.oct[i] - 2) * 12;
   if (a.length > 1) { if (v === 1) a.push(a.shift() + 12); else if (v === 2) { a.push(a.shift() + 12); a.push(a.shift() + 12); } else if (v === 3 && a.length > 2) a[a.length - 2] -= 12; else if (v === 4) a = a.map((x, j) => j % 2 ? x + 12 : x); }
   if (v === 5) a.unshift(a[0] - 12);
   return a.map(x => x + k + o);
@@ -483,7 +484,7 @@ function sqRender() {
     const sn = SQ.bars[i], b = document.createElement("button"); b.type = "button"; b.className = "sqBar" + (sn ? " has" : "") + (i === SQ.cur ? " cur" : "");
     b.innerHTML = '<span class="n">' + (i + 1) + "</span>" + (sn ? "<b>" + sqName(withSnap(sn, () => chordMidis(false))) + "</b><i>" + VIEWS[sn.view] + (sn.fifths ? " · fifths" : "") + '</i><span class="x" role="button" aria-label="Clear bar">×</span>' : "<i>empty</i>");
     b.onclick = e => {
-      if (e.target.classList.contains("x")) { SQ.bars[i] = null; SQ.key[i] = 0; SQ.oct[i] = 2; SQ.voi[i] = 0; sqSave(); sqRender(); return; }
+      if (e.target.classList.contains("x")) { SQ.bars[i] = null; SQ.key[i] = 0; SQ.prog[i] = 0; SQ.oct[i] = 2; SQ.voi[i] = 0; sqSave(); sqRender(); return; }
       if (sn) { Object.assign(S, JSON.parse(JSON.stringify(sn))); paint(); save(); audio(); const ms = chordMidis(true); ms.forEach(p => voice(p, .8, ms.length, 900)); return; }
       const now = withSnap(snapNow(), () => chordMidis(false)); if (!now.length) { $("#read").textContent = "Pick some pads first, then click a bar"; return; }
       SQ.bars[i] = snapNow(); sqSave(); sqRender();
@@ -492,8 +493,8 @@ function sqRender() {
   }
   const rows = $("#sqRows"); rows.textContent = ""; rows.style.setProperty("--n", SQ.n);
   SQROWS.forEach(R => { const w = document.createElement("div"); w.className = "sqR"; w.style.setProperty("--c", R.c); w.style.setProperty("--n", SQ.n); w.innerHTML = '<span class="rl">' + R.label + "</span>";
-    for (let i = 0; i < SQ.n; i++) { const b = document.createElement("button"); b.type = "button"; const on = !!SQ.bars[i], v = SQ[R.id][i]; b.disabled = !on; b.className = (R.id === "key" ? v === 0 : R.id === "oct" ? v === 2 : v === 0) ? "off" : ""; b.textContent = R.t(v); b.title = R.label + " (shift-click goes back)";
-      b.onclick = e => { SQ[R.id][i] = (v + (e.shiftKey ? R.n - 1 : 1)) % R.n; sqSave(); sqRender(); audio(); const ms = sqChord(i); ms.forEach(p => voice(p, .8, ms.length, 700)); }; w.appendChild(b); }
+    for (let i = 0; i < SQ.n; i++) { const b = document.createElement("button"); b.type = "button"; const on = !!SQ.bars[i], v = SQ[R.id][i]; b.disabled = !on; b.className = (R.id === "oct" ? v === 2 : v === 0) ? "off" : ""; b.textContent = R.t(v); b.title = R.label + " (shift-click goes back)";
+      b.onclick = e => { SQ[R.id][i] = (v + (e.shiftKey ? R.n - (R.step || 1) : (R.step || 1))) % R.n; sqSave(); sqRender(); audio(); const ms = sqChord(i); ms.forEach(p => voice(p, .8, ms.length, 700)); }; w.appendChild(b); }
     rows.appendChild(w); });
   $("#sqBars").textContent = SQ.n; $("#sqBpmV").textContent = SQ.bpm; $("#sqBpm").value = SQ.bpm;
 }
@@ -512,7 +513,7 @@ $("#sqPlay").onclick = sqPlay;
 $("#sqBpm").oninput = e => { SQ.bpm = +e.target.value; $("#sqBpmV").textContent = SQ.bpm; sqSave(); };
 $("#sqDn").onclick = () => { SQ.n = Math.max(2, SQ.n - 1); sqSave(); sqRender(); };
 $("#sqUp").onclick = () => { SQ.n = Math.min(8, SQ.n + 1); sqSave(); sqRender(); };
-$("#sqClear").onclick = () => { SQ.bars = Array(8).fill(null); SQ.key.fill(0); SQ.oct.fill(2); SQ.voi.fill(0); sqSave(); sqRender(); };
+$("#sqClear").onclick = () => { SQ.bars = Array(8).fill(null); SQ.key.fill(0); SQ.prog.fill(0); SQ.oct.fill(2); SQ.voi.fill(0); sqSave(); sqRender(); };
 sqRender();
 
 // ---- scale the window to the screen, like the microtonal tuner ----
