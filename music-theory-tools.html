@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<meta name="description" content="Music theory tools you can play in your browser: the Harmonic Grid, the Harmonic Circle of Fifths, ChordSeq and Tunings.">
-<title>Music theory tools | Rex Audio</title>
+<meta name="description" content="Theory tools you can play in your browser: the Harmonic Grid, the Harmonic Circle of Fifths, ChordSeq and Tunings.">
+<title>Theory tools | Rex Audio</title>
 <style>
 /* Same page frame as the other pages: a 720px "desktop" page scaled to the window. */
 :root {
@@ -37,8 +37,6 @@ h1, h2, p { margin: 0; }
 .intro .lead { font-size: 19px; line-height: 1.5; margin: 16px auto 0; max-width: 520px; }
 
 .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 44px 36px 0; }
-#site.wide { width: 1120px; zoom: 1; }
-#site.wide .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .card { display: block; text-decoration: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .card { display: flex; flex-direction: column; }
 .card img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: top; background: #0d141b; border-bottom: 1px solid var(--line); }
@@ -67,7 +65,7 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
 
   <section class="intro">
     <p class="label">Play them in your browser</p>
-    <h1>Music theory tools</h1>
+    <h1>Theory tools</h1>
     <p class="lead">Harmony, tuning and chord progressions you can hear: two ways to play the harmonic series on the circle of fifths, a chord sequencer, tuning presets and a keyboard that plays the harmonic series of any key.</p>
   </section>
 
@@ -128,9 +126,7 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
   var site = document.getElementById('site');
   function fit() {
     var w = document.documentElement.clientWidth || window.innerWidth;
-    var wide = w >= 1000;
-    site.classList.toggle('wide', wide);
-    site.style.zoom = wide ? 1 : Math.min(Math.max(w / 720, 0.3), 1.5);
+    site.style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5);
   }
   window.addEventListener('resize', fit);
   fit();
