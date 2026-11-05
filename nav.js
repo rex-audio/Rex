@@ -73,7 +73,7 @@
     foot.parentNode.insertBefore(hw, foot);
   }
   var f = document.querySelector("footer"), here2 = here;
-  var MAIN = "© 2026 Rex Audio. All rights reserved. Free: personal use of the website to play the instruments. Paid licence: commercially release music made with any Rex Audio software. Distributing or modifying it needs permission. ";
+  var MAIN = "© 2026 Rex Audio. All rights reserved. Free plugins: use them in any music you make. The website instruments and trial or demo versions: personal use, and a paid licence lets you commercially release music made with them. Distributing or modifying any Rex Audio software needs permission. ";
   if (f && f.querySelector(".rx-lic") === null) {
     Array.prototype.slice.call(f.querySelectorAll("span, br")).forEach(function (e) { if (e.tagName === "BR" || /rights|©/.test(e.textContent)) e.parentNode.removeChild(e); });
     var sp = document.createElement("span"); sp.className = "rx-lic"; sp.appendChild(document.createTextNode(MAIN));
