@@ -168,11 +168,14 @@
   #sqBody { margin-top:8px; padding:16px; border:1px solid #2c3d4a; border-radius:14px; background:linear-gradient(#0f1820,#0a1118); }
   .sqTop { display:flex; justify-content:center; }
   .sqCirc { width:56px; height:56px; border-radius:50%; border:2px solid #5fc4ee; background:#10202b; color:#fff; cursor:pointer; display:grid; place-items:center; padding:0; } .sqCirc svg { width:26px; height:26px; } .sqCirc .st { display:none; } .sqCirc[aria-pressed="true"] { background:#2a86b0; } .sqCirc[aria-pressed="true"] .st { display:block; } .sqCirc[aria-pressed="true"] .pl { display:none; }
-  .sqLane { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px; }
+  .sqLane { display:grid; grid-template-columns:repeat(var(--n,4),1fr); gap:8px; margin-top:14px; }
   .sqBar { position:relative; min-height:78px; border:1px dashed #3a4f5e; border-radius:10px; background:transparent; color:#8fa3b1; font:13px/1.3 Arial,sans-serif; padding:18px 6px 8px; cursor:pointer; }
   .sqBar.has { border-style:solid; border-color:#5a7487; background:#14232e; color:#fff; } .sqBar.cur { border-color:#5fc4ee; box-shadow:0 0 0 2px #5fc4ee55; }
   .sqBar b { display:block; font-size:16px; } .sqBar i { display:block; font-style:normal; font-size:11px; color:#9db3c2; }
   .sqBar .n { position:absolute; left:7px; top:4px; font-size:11px; color:#7b909e; } .sqBar .x { position:absolute; right:3px; top:0; font-size:16px; color:#9db3c2; padding:2px 6px; }
+  .sqR { display:grid; grid-template-columns:repeat(var(--n,4),1fr); gap:8px; margin-top:8px; position:relative; }
+  .sqR .rl { grid-column:1/-1; font:700 10px Arial; letter-spacing:.1em; text-transform:uppercase; color:var(--c); margin-bottom:-2px; }
+  .sqR button { border:1px solid var(--c); background:transparent; color:var(--c); border-radius:8px; padding:6px 2px; font:700 12px Arial; cursor:pointer; } .sqR button:disabled { opacity:.3; cursor:default; } .sqR button.off { color:#7b909e; border-color:#2c3d4a; }
   .sqRow { display:flex; flex-wrap:wrap; gap:14px 22px; align-items:center; justify-content:center; margin-top:14px; font-size:13px; }
   .sqRow label { display:flex; align-items:center; gap:8px; letter-spacing:.08em; text-transform:uppercase; color:#9db3c2; font-weight:700; }
   .sqRow button { background:#14232e; color:#fff; border:1px solid #3a4f5e; border-radius:8px; padding:7px 12px; font:700 13px Arial,sans-serif; cursor:pointer; }
@@ -225,6 +228,7 @@
   <div id="sqBody" hidden>
     <div class="sqTop"><button id="sqPlay" class="sqCirc" type="button" aria-pressed="false" aria-label="Play" title="Play / stop"><svg class="pl" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="st" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
     <div class="sqLane" id="sqLane"></div>
+    <div id="sqRows"></div>
     <div class="sqRow">
       <label>BPM <input id="sqBpm" type="range" min="40" max="220" value="75" aria-label="BPM"><span id="sqBpmV">75</span></label>
       <label>Bars <button id="sqDn" type="button" aria-label="Fewer bars">&minus;</button><span id="sqBars">4</span><button id="sqUp" type="button" aria-label="More bars">+</button></label>
@@ -456,25 +460,39 @@ $("#midiBtn").onclick = () => {
 
 
 // ---- the sequencer: store the pads as a bar, play the bars round (minimised until opened) ----
-const SQ = { n: 4, bpm: 75, bars: Array(8).fill(null), cur: -1, playing: false, tok: 0 };
-try { const o = JSON.parse(localStorage.getItem("rex-harmonic-pads-seq-v1")); if (o) { SQ.n = Math.max(2, Math.min(8, o.n | 0 || 4)); SQ.bpm = Math.max(40, Math.min(220, +o.bpm || 75)); if (Array.isArray(o.bars)) SQ.bars = o.bars.slice(0, 8).concat(Array(8).fill(null)).slice(0, 8); } } catch (e) {}
-const sqSave = () => { try { localStorage.setItem("rex-harmonic-pads-seq-v1", JSON.stringify({ n: SQ.n, bpm: SQ.bpm, bars: SQ.bars })); } catch (e) {} };
+const SQ = { n: 4, bpm: 75, bars: Array(8).fill(null), key: Array(8).fill(0), oct: Array(8).fill(2), voi: Array(8).fill(0), cur: -1, playing: false, tok: 0 };
+const VOI = ["Close", "1st inv", "2nd inv", "Drop 2", "Open", "Bass root"];
+const SQROWS = [{ id: "key", label: "Key", c: "#e8c45a", n: 12, t: v => NAMES[v] }, { id: "oct", label: "Octave", c: "#79b8ff", n: 5, t: v => { v -= 2; return (v > 0 ? "+" : v < 0 ? "\u2212" : "") + Math.abs(v); } }, { id: "voi", label: "Voicing", c: "#f0a45d", n: 6, t: v => VOI[v] }];
+try { const o = JSON.parse(localStorage.getItem("rex-harmonic-pads-seq-v1")); if (o) { SQ.n = Math.max(2, Math.min(8, o.n | 0 || 4)); SQ.bpm = Math.max(40, Math.min(220, +o.bpm || 75)); if (Array.isArray(o.bars)) SQ.bars = o.bars.slice(0, 8).concat(Array(8).fill(null)).slice(0, 8); ["key", "oct", "voi"].forEach(r => { if (Array.isArray(o[r])) SQ[r] = o[r].slice(0, 8).concat(Array(8).fill(r === "oct" ? 2 : 0)).slice(0, 8).map(x => x | 0); }); } } catch (e) {}
+const sqSave = () => { try { localStorage.setItem("rex-harmonic-pads-seq-v1", JSON.stringify({ n: SQ.n, bpm: SQ.bpm, bars: SQ.bars, key: SQ.key, oct: SQ.oct, voi: SQ.voi })); } catch (e) {} };
 const snapNow = () => JSON.parse(JSON.stringify({ view: S.view, fifths: S.fifths, oct: S.oct, sel: S.sel, micro: S.micro, man: S.man }));
 function withSnap(sn, fn) { const keep = { view: S.view, fifths: S.fifths, oct: S.oct, sel: S.sel, micro: S.micro, man: S.man }; Object.assign(S, JSON.parse(JSON.stringify(sn))); try { return fn(); } finally { Object.assign(S, keep); } }
+function sqVoice(ms, i) {
+  let a = ms.slice().sort((x, y) => x - y); const v = SQ.voi[i], k = SQ.key[i], o = (SQ.oct[i] - 2) * 12;
+  if (a.length > 1) { if (v === 1) a.push(a.shift() + 12); else if (v === 2) { a.push(a.shift() + 12); a.push(a.shift() + 12); } else if (v === 3 && a.length > 2) a[a.length - 2] -= 12; else if (v === 4) a = a.map((x, j) => j % 2 ? x + 12 : x); }
+  if (v === 5) a.unshift(a[0] - 12);
+  return a.map(x => x + k + o);
+}
+const sqChord = i => { const sn = SQ.bars[i]; return sn ? sqVoice(withSnap(sn, () => chordMidis(false)), i) : []; };
 const sqName = ms => { const n = []; ms.forEach(p => { const x = nameOf(p); if (!n.includes(x)) n.push(x); }); return n.slice(0, 4).join(" ") + (n.length > 4 ? " …" : ""); };
 function sqRender() {
-  const lane = $("#sqLane"); lane.textContent = "";
+  const lane = $("#sqLane"); lane.textContent = ""; lane.style.setProperty("--n", SQ.n);
   for (let i = 0; i < SQ.n; i++) {
     const sn = SQ.bars[i], b = document.createElement("button"); b.type = "button"; b.className = "sqBar" + (sn ? " has" : "") + (i === SQ.cur ? " cur" : "");
     b.innerHTML = '<span class="n">' + (i + 1) + "</span>" + (sn ? "<b>" + sqName(withSnap(sn, () => chordMidis(false))) + "</b><i>" + VIEWS[sn.view] + (sn.fifths ? " · fifths" : "") + '</i><span class="x" role="button" aria-label="Clear bar">×</span>' : "<i>empty</i>");
     b.onclick = e => {
-      if (e.target.classList.contains("x")) { SQ.bars[i] = null; sqSave(); sqRender(); return; }
+      if (e.target.classList.contains("x")) { SQ.bars[i] = null; SQ.key[i] = 0; SQ.oct[i] = 2; SQ.voi[i] = 0; sqSave(); sqRender(); return; }
       if (sn) { Object.assign(S, JSON.parse(JSON.stringify(sn))); paint(); save(); audio(); const ms = chordMidis(true); ms.forEach(p => voice(p, .8, ms.length, 900)); return; }
       const now = withSnap(snapNow(), () => chordMidis(false)); if (!now.length) { $("#read").textContent = "Pick some pads first, then click a bar"; return; }
       SQ.bars[i] = snapNow(); sqSave(); sqRender();
     };
     lane.appendChild(b);
   }
+  const rows = $("#sqRows"); rows.textContent = ""; rows.style.setProperty("--n", SQ.n);
+  SQROWS.forEach(R => { const w = document.createElement("div"); w.className = "sqR"; w.style.setProperty("--c", R.c); w.style.setProperty("--n", SQ.n); w.innerHTML = '<span class="rl">' + R.label + "</span>";
+    for (let i = 0; i < SQ.n; i++) { const b = document.createElement("button"); b.type = "button"; const on = !!SQ.bars[i], v = SQ[R.id][i]; b.disabled = !on; b.className = (R.id === "key" ? v === 0 : R.id === "oct" ? v === 2 : v === 0) ? "off" : ""; b.textContent = R.t(v); b.title = R.label + " (shift-click goes back)";
+      b.onclick = e => { SQ[R.id][i] = (v + (e.shiftKey ? R.n - 1 : 1)) % R.n; sqSave(); sqRender(); audio(); const ms = sqChord(i); ms.forEach(p => voice(p, .8, ms.length, 700)); }; w.appendChild(b); }
+    rows.appendChild(w); });
   $("#sqBars").textContent = SQ.n; $("#sqBpmV").textContent = SQ.bpm; $("#sqBpm").value = SQ.bpm;
 }
 async function sqPlay() {
@@ -482,7 +500,7 @@ async function sqPlay() {
   audio(); SQ.playing = true; $("#sqPlay").setAttribute("aria-pressed", "true"); const tk = ++SQ.tok; let i = 0;
   while (SQ.playing && tk === SQ.tok) {
     SQ.cur = i; sqRender(); const sn = SQ.bars[i], dur = 240000 / SQ.bpm;
-    if (sn) { const ms = withSnap(sn, () => chordMidis(false)); ms.forEach(p => voice(p, .8, ms.length, dur * .95)); }
+    if (sn) { const ms = sqChord(i); ms.forEach(p => voice(p, .8, ms.length, dur * .95)); }
     await new Promise(r => setTimeout(r, dur)); i = (i + 1) % SQ.n;
   }
   SQ.cur = -1; sqRender();
@@ -492,7 +510,7 @@ $("#sqPlay").onclick = sqPlay;
 $("#sqBpm").oninput = e => { SQ.bpm = +e.target.value; $("#sqBpmV").textContent = SQ.bpm; sqSave(); };
 $("#sqDn").onclick = () => { SQ.n = Math.max(2, SQ.n - 1); sqSave(); sqRender(); };
 $("#sqUp").onclick = () => { SQ.n = Math.min(8, SQ.n + 1); sqSave(); sqRender(); };
-$("#sqClear").onclick = () => { SQ.bars = Array(8).fill(null); sqSave(); sqRender(); };
+$("#sqClear").onclick = () => { SQ.bars = Array(8).fill(null); SQ.key.fill(0); SQ.oct.fill(2); SQ.voi.fill(0); sqSave(); sqRender(); };
 sqRender();
 
 // ---- scale the window to the screen, like the microtonal tuner ----
