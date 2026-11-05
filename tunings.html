@@ -185,6 +185,12 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
   .mdb b { font:600 14px Arial; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .mdb small { font:9px Arial; color:var(--muted); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .mdb[aria-expanded="true"] { border-color:var(--acc); }
+  .mgrid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; padding:16px 20px 4px; }
+  .mtile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-height:92px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--text); font-family:Arial, sans-serif; cursor:pointer; text-align:center; }
+  .mtile b { font:700 17px/1.2 Arial; } .mtile small { font:12px/1.3 Arial; color:var(--muted); }
+  .mtile:hover { border-color:var(--muted); } .mtile[aria-pressed="true"] { border-color:var(--acc); color:var(--acc); } .mtile[aria-pressed="true"] small { color:var(--text); }
+  .mtile:focus-visible, #mdMore:focus-visible { outline:2px solid var(--text); outline-offset:2px; }
+  #mdMore { display:block; margin:14px auto 4px; }
   .mgh { font:700 10px Arial; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:14px 20px 6px; text-align:left; }
   .mchips { display:flex; flex-wrap:wrap; gap:6px; padding:0 20px; }
   .mchip { height:30px; font:600 12px Arial; padding:0 11px; }
@@ -242,7 +248,9 @@ footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--
                 </div>
                 <div class="asp" id="mdPanel" hidden>
                   <div class="mh"><span>Modes</span></div>
-                  <div id="mdGroups"></div>
+                  <div class="mgrid" id="mdTiles"></div>
+                  <button class="hbtn" id="mdMore" type="button" aria-expanded="false">All tuning systems and scales</button>
+                  <div id="mdGroups" hidden></div>
                   <div class="asact"><button class="hbtn" id="mdDone" type="button" style="color:var(--acc);border-color:var(--acc)">Done</button></div>
                 </div>
                 <div class="asp" id="asp" hidden>
@@ -537,7 +545,7 @@ playBtn.onclick = () => {
 const barName = $("#barName");
 $("#bp").onclick = () => stepMode(-1);
 $("#bn").onclick = () => stepMode(1);
-$("#bnew").onclick = () => { let it; do { it = ITEMS[Math.floor(Math.random() * ITEMS.length)]; } while (it === S.last); applyItem(it); };
+$("#bnew").onclick = () => { let t; do { t = TILES[Math.floor(Math.random() * TILES.length)]; } while (tileOn(t)); applyTile(t); };
 $("#bar").addEventListener("click", e => { const b = e.target.closest("button"); if (b && e.detail) b.blur(); });   // after a click the button lets go of focus, so the computer keys keep playing notes
 
 // ---------- tuning knob, key knob, mod wheel, pitch wheel ----------
@@ -644,7 +652,33 @@ function applyItem(it) {
   else if (it.kind === "scale") { S.scale = it.v; play.walk = 0; refresh(); }
   else { S.harm = it.v; stopPlay(); [...held.keys()].forEach(release); refresh(); }
 }
-const stepMode = d => applyItem(ITEMS[(ITEMS.indexOf(S.last) + d + ITEMS.length) % ITEMS.length]);
+// the modes: each one sets the keyboard layout, the tuning and the anchor in one go. The menu shows these as big buttons; the long lists of tunings and scales sit under "All tuning systems and scales".
+const P = name => PRESETS.findIndex(x => x.name === name);
+const TILES = [
+  { name: "Normal keyboard", sub: "12-TET, the keys play the notes", harm: 0, preset: 0, anchor: -1 },
+  { name: "Harmonic series", sub: "every key is the next harmonic of the key", harm: 1 },
+  { name: "Circle of fifths", sub: "every key is the next fifth", harm: 2 },
+  { name: "Fifths and thirds", sub: "white keys fifths, black keys thirds", harm: 3 },
+  { name: "C major: white just", sub: "white keys just major, black keys 12-TET", harm: 0, preset: P("C major: white just, black 12-TET"), anchor: 0 },
+  { name: "A minor: white just", sub: "white keys just minor, black keys 12-TET", harm: 0, preset: P("A minor: white just, black 12-TET"), anchor: 9 },
+  { name: "Pure fifths", sub: "a chain of just fifths from the key", harm: 0, preset: P("Pure fifths from the key") },
+  { name: "C and A in 12-TET, fifths", sub: "root and 6th equal, the rest pure fifths", harm: 0, preset: P("Root and 6th in 12-TET, pure fifths") },
+  { name: "C and A in 12-TET, harmonics", sub: "root and 6th equal, the rest harmonic series", harm: 0, preset: P("Root and 6th in 12-TET, harmonic series") }
+];
+const tileOn = t => S.harm === t.harm && (t.preset === undefined || S.preset === t.preset) && (t.anchor === undefined || (t.anchor < 0 ? !S.anchor : S.anchor && S.ancN === t.anchor));
+function applyTile(t) {
+  stopPlay(); [...held.keys()].forEach(release);
+  S.harm = t.harm; S.anchor = false;
+  if (t.preset !== undefined) setPreset(t.preset); else refresh();   // a tuning made for playing from C or A switches that anchor back on
+  S.last = t; modesUI();
+}
+const stepMode = d => { const i = TILES.findIndex(tileOn); applyTile(TILES[(i + d + TILES.length) % TILES.length]); };
+const tileEls = new Map();
+(() => {
+  const box = $("#mdTiles");
+  TILES.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.className = "mtile"; b.innerHTML = "<b></b><small></small>"; b.firstChild.textContent = t.name; b.lastChild.textContent = t.sub; b.onclick = () => applyTile(t); box.appendChild(b); tileEls.set(t, b); });
+  $("#mdMore").onclick = () => { const g = $("#mdGroups"); g.hidden = !g.hidden; $("#mdMore").setAttribute("aria-expanded", !g.hidden); };
+})();
 (() => {
   const box = $("#mdGroups");
   MENU.forEach(g => {
@@ -660,8 +694,8 @@ $("#mdDone").onclick = () => openModes(false);
 $("#mdPrev").onclick = () => stepMode(-1); $("#mdNext").onclick = () => stepMode(1);
 function modesUI() {
   const sc = SCALE_LIST.find(x => x[0] === S.scale)[1], km = KEYMODES.find(x => x[0] === S.harm)[1];
-  $("#mdName").textContent = S.last.name; $("#mdSum").textContent = PRESETS[S.preset].name + " · " + sc + " · keys: " + km;
-  barName.textContent = S.last.name;
+  const cur = TILES.find(tileOn) || S.last; $("#mdName").textContent = cur.name; $("#mdSum").textContent = PRESETS[S.preset].name + " · " + sc + " · keys: " + km;
+  barName.textContent = cur.name; tileEls.forEach((b, t) => b.setAttribute("aria-pressed", tileOn(t)));
   chips.forEach((b, it) => b.setAttribute("aria-pressed", itemOn(it)));
 }
 
@@ -723,24 +757,24 @@ async function pressKey(tok, m, hold = 380) {   // a real press on the keyboard,
   k.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 77, button: 0, isPrimary: true })); await wait(tok, hold);
   dock.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 77 })); CUR.classList.remove("down"); await wait(tok, 140);
 }
-const pickMode = async (tok, name) => { if ($("#mdPanel").hidden) await clickEl(tok, mdBtn); await clickEl(tok, chips.get(ITEMS.find(i => i.name === name))); };
+const pickMode = async (tok, name) => { if ($("#mdPanel").hidden) await clickEl(tok, mdBtn); await clickEl(tok, tileEls.get(TILES.find(t => t.name === name))); };
 const closeModes = async tok => { if (!$("#mdPanel").hidden) await clickEl(tok, $("#mdDone")); };
 function resetAll() {
   stopPlay(); [...held.keys()].forEach(release); openModes(false);
   S.key = 0; S.anchor = false; S.harm = 0; S.scale = "chromatic"; S.preset = 0; S.last = ITEMS.find(it => it.kind === "tuning" && it.v === 0); refresh();
 }
 const TUT_STEPS = [
-  { t: "Pick a mode: tunings, scales and keyboard layouts.", sub: "Click one, or use the arrows to step through them all.", ring: "#mdBtn", demo: async tok => {
-    resetAll(); await pickMode(tok, "5-Limit JI"); await pickMode(tok, "Pythagorean"); await pickMode(tok, "Minor"); await closeModes(tok); } },
+  { t: "Pick a mode.", sub: "Click a big button, or use the arrows to step through them.", ring: "#mdBtn", demo: async tok => {
+    resetAll(); await pickMode(tok, "Pure fifths"); await pickMode(tok, "Harmonic series"); await pickMode(tok, "Normal keyboard"); await closeModes(tok); } },
   { t: "Harmonic series: every key is the next harmonic.", sub: "The left key is the key itself, then 2, 3, 4...", ring: "#dock", demo: async tok => {
     resetAll(); await pickMode(tok, "Harmonic series"); await closeModes(tok); for (const m of [48, 49, 50, 51, 52, 53]) await pressKey(tok, m, 450); } },
   { t: "Or lay the keys out as fifths.", sub: "Every key a fifth, or white keys fifths with a third on each black key.", ring: "#dock", demo: async tok => {
     resetAll(); await pickMode(tok, "Circle of fifths"); await closeModes(tok); for (const m of [48, 49, 50, 51]) await pressKey(tok, m, 420);
     await pickMode(tok, "Fifths and thirds"); await closeModes(tok); for (const m of [48, 50, 52, 49]) await pressKey(tok, m, 420); } },
   { t: "Play from C: white keys just, black keys 12-TET.", sub: "A minor works the same. The anchor switches on for you.", ring: "#dock", demo: async tok => {
-    resetAll(); await pickMode(tok, "C major: white just, black 12-TET"); await closeModes(tok); for (const m of [48, 52, 55, 49]) await pressKey(tok, m, 480); } },
+    resetAll(); await pickMode(tok, "C major: white just"); await closeModes(tok); for (const m of [48, 52, 55, 49]) await pressKey(tok, m, 480); } },
   { t: "Change the key, keep playing from C.", sub: "The white keys follow the key and stay just.", ring: "#dd", demo: async tok => {
-    resetAll(); await pickMode(tok, "C major: white just, black 12-TET"); await closeModes(tok);
+    resetAll(); await pickMode(tok, "C major: white just"); await closeModes(tok);
     await clickEl(tok, ddb); await clickEl(tok, ddKeys[7]); for (const m of [48, 52, 55]) await pressKey(tok, m, 550); } },
   { t: "Plug in a MIDI keyboard to play it.", sub: "Chrome or Edge. Your notes play, with the same modes.", ring: "#midiBtn" }
 ];
