@@ -93,6 +93,12 @@ footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
 .cap { font: 700 10px var(--sans); letter-spacing: .14em; text-transform: uppercase; }
 .grow { stroke: #151f29; stroke-width: 1; } .grow.oct { stroke: #25323f; stroke-dasharray: 3 7; } .grow.mid { stroke: #31404d; stroke-width: 1.4; }
 .gcol { stroke: #111a22; stroke-width: 1; } .gcol.focus { stroke: #2f3d49; }
+#pk { display: block; width: 100%; height: auto; touch-action: none; user-select: none; -webkit-user-select: none; margin-top: -4px; }
+#pk .link { fill: none; stroke: #26343f; stroke-width: 1.4; } #pk .link.has { stroke: #d6a24a; } #pk .link.on { stroke: #5fc4ee; stroke-width: 2.2; }
+#pk .wk { fill: #e8edf0; stroke: #0d141b; stroke-width: 2; cursor: pointer; } #pk .bk { fill: #1b252e; stroke: #05090d; stroke-width: 2; cursor: pointer; }
+#pk .wk.has { fill: #f3dfb0; } #pk .bk.has { fill: #6b5a2c; } #pk .on.wk { fill: #7fd0f2; } #pk .on.bk { fill: #2a86b0; }
+#pk text { font: 700 14px Arial, sans-serif; pointer-events: none; } #pk .wl { fill: #3b4650; text-anchor: middle; } #pk .bl { fill: #cdd6dc; text-anchor: middle; font-size: 12px; }
+.pkcap { margin: 6px 0 0; text-align: center; font: 600 12px/1.4 Arial, sans-serif; color: #7d8b97; }
 .rowlbl { fill: #6d7b87; font: 700 13px Arial, sans-serif; }
 .node { cursor: pointer; }
 .node circle { fill: #17212b; stroke: #8795a0; stroke-width: 1.4; }
@@ -213,6 +219,8 @@ body.tutoring #howBtn { display: none; }
         <div id="readout" title="Drag the chord into a bar"><div id="chName" class="empty">Pick a note</div><div id="chSub"></div></div>
         <div id="circRow" hidden style="display:none"><span class="eng">Page</span><div class="dseg" id="circSeg"><button type="button" data-v="0">Fifths</button><button type="button" data-v="1">Relative minors</button></div><span class="eng" id="midiTag"></span></div>
         <svg id="kb" class="grid" viewBox="0 0 1010 830" role="application" aria-label="Harmonic keyboard: a column for each key of the keyboard. Pick an undertone below the middle, then any harmonics of it in the middle row or above."></svg>
+        <svg id="pk" viewBox="0 0 1010 215" role="group" aria-label="One octave of the keyboard. Each key plays the notes picked in the column above it."></svg>
+        <p class="pkcap">Each key plays the notes you picked in its column. A key with nothing picked plays its own note.</p>
       </div>
       <div class="sp" id="seqpanel" style="margin-top:14px">
         <div class="circwrap"><button id="seqCircle" class="circ" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
@@ -521,6 +529,7 @@ function syncKB() {
     }
   }
   document.querySelectorAll("#circSeg button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.v === VIEW)));
+  if (typeof syncPK === "function") syncPK();
 }
 function render() {
   const keys = handKeys(), nm = $("#chName");
@@ -771,17 +780,41 @@ function restore() {
   } catch (e) { return false; }
 }
 
-// ---------- MIDI keyboard: play the chord shape from the notes you play ----------
+// ---------- the keyboard under the grid: key pc sits under column pc ----------
+const WHITE_PC = [0, 2, 4, 5, 7, 9, 11], BLACK_PC = [[1, 1], [3, 2], [6, 4], [8, 5], [10, 6]], PK0 = 67.5, PKW = 125;
+function buildPK() {
+  let h = "";
+  const cx = pc => { const w = WHITE_PC.indexOf(pc); return w >= 0 ? PK0 + (w + .5) * PKW : PK0 + BLACK_PC.find(b => b[0] === pc)[1] * PKW; };
+  for (let c = 0; c < 12; c++) h += `<path class="link" data-pc="${c}" d="M${GX(c)},0 C${GX(c)},28 ${cx(c)},22 ${cx(c)},60"/>`;
+  WHITE_PC.forEach((pc, i) => { h += `<rect class="wk" data-pc="${pc}" x="${PK0 + i * PKW}" y="60" width="${PKW}" height="150" rx="6"/><text class="wl" x="${PK0 + (i + .5) * PKW}" y="198">${NAMES[pc]}</text>`; });
+  BLACK_PC.forEach(([pc, b]) => { h += `<rect class="bk" data-pc="${pc}" x="${PK0 + b * PKW - 36}" y="60" width="72" height="92" rx="5"/><text class="bl" x="${PK0 + b * PKW}" y="140">${NAMES[pc]}</text>`; });
+  $("#pk").innerHTML = h;
+}
+function syncPK() {
+  const has = new Set(handKeys().map(q => unkey(q).s % 12));
+  document.querySelectorAll("#pk [data-pc]").forEach(e => { const pc = +e.dataset.pc; e.classList.toggle("has", has.has(pc)); e.classList.toggle("on", pkHeld.has(pc)); });
+}
+(function pkEvents() {
+  const down = new Map();
+  $("#pk").addEventListener("pointerdown", e => { const t = e.target.closest("[data-pc]"); if (!t || t.classList.contains("link")) return; e.preventDefault(); const n = 48 + +t.dataset.pc; down.set(e.pointerId, n); midiOn(n, .8); });
+  const up = e => { const n = down.get(e.pointerId); if (n != null) { down.delete(e.pointerId); midiOff(n); } };
+  ["pointerup", "pointercancel", "pointerleave"].forEach(ev => $("#pk").addEventListener(ev, up));
+})();
+
+// ---------- MIDI keyboard: each key plays the notes in its column ----------
 ACT.midi = new Set(); const midiHeld = new Map();
-function midiOn(n, vel) {
-  if (!hand.size) return; ctx.resume(); midiOff(n);
-  const keys = handKeys(), lo = place(keys)[0]; if (!lo) return;
-  const d = (((n - lo.m) % 12) + 12) % 12, ps = place(transposeKeys(keys, d)); if (!ps.length) return;
-  const sh = Math.round((n - ps[0].m) / 12) * 12, t = ctx.currentTime + .005;
-  midiHeld.set(n, ps.map(p => voice(p.m + sh, p.c, clamp(vel, .2, 1), t, 60, ps.length, "midi")));   // the chord shape, with its lowest note on the key you pressed
+const colKeys = pc => { const ks = handKeys().filter(q => unkey(q).s % 12 === pc); return ks.length ? ks : [key(pc, 1)]; };   // the notes picked in this column, or just its own note
+const pkHeld = new Map();
+function midiOn(n, vel) {   // each key of the keyboard plays its own column
+  ctx.resume(); midiOff(n);
+  const pc = ((n % 12) + 12) % 12, ps = place(colKeys(pc)); if (!ps.length) return;
+  const sh = 12 * (Math.floor(n / 12) - 4), t = ctx.currentTime + .005;
+  midiHeld.set(n, ps.map(p => voice(p.m + sh, p.c, clamp(vel, .2, 1), t, 60, ps.length, "midi")));
+  pkHeld.set(pc, (pkHeld.get(pc) || 0) + 1); syncPK();
 }
 function midiOff(n) {
   const hs = midiHeld.get(n); if (!hs) return; midiHeld.delete(n); const t = ctx.currentTime;
+  const pc = ((n % 12) + 12) % 12, c = (pkHeld.get(pc) || 1) - 1; if (c > 0) pkHeld.set(pc, c); else pkHeld.delete(pc); syncPK();
   hs.forEach(h => { try { h.g.gain.cancelScheduledValues(t); h.g.gain.setTargetAtTime(0, t, .08); h.all.forEach(o => { try { o.stop(t + .5); } catch (e) {} }); } catch (e) {} ACT.midi.delete(h); });
 }
 let midiStarted = false;
@@ -826,7 +859,7 @@ async function demoSeq(tok) {
     await clickEl(tok, $("#seqCircle")); await wait(tok, 6500); if (playing) togglePlay();
   } finally { SPD = .6; }
 }
-const T_MIDI = { t: "Plug in a MIDI keyboard to play your chord shape.", sub: "Chrome or Edge. Your lowest note is the key you press.", show: T_ALL, ring: "#readout", piano: true, demo: demoMidi };
+const T_MIDI = { t: "Plug in a MIDI keyboard. Each key plays its own column.", sub: "Chrome or Edge. Each key plays the notes in its column.", show: T_ALL, ring: "#readout", piano: true, demo: demoMidi };
 const T_SEQ = { t: "Or sequence the progression.", sub: "Click a bar to add the chord, then press play.", show: T_ALL, ring: "#seqpanel", demo: demoSeq };
 const TUT_STEPS = CFG.kind === "circle" ? [
   { t: "Click notes to make a chord shape. Go around the circle of fifths.", show: T_FIFTHS, demo: async tok => {
@@ -878,7 +911,7 @@ document.addEventListener("pointerdown", e => { if (tutI >= 0 && e.isTrusted && 
 
 const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); };
 window.addEventListener("resize", fitSite); fitSite();
-const had = restore(); buildKB(); controls(); kbInit(); laneInit();
+const had = restore(); buildKB(); buildPK(); controls(); kbInit(); laneInit();
 if (had) { $("#preSel").value = curPre; $("#presetName").textContent = PRESETS[curPre].n; renderLane(); } else loadPreset(0);
 render();
 </script>
