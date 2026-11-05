@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DAW licence | Rex Audio</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1217;color:#e4e9ec;font:16px system-ui,sans-serif}
+form{width:min(420px,90vw);display:grid;gap:12px}h1{margin:0;font-size:22px}p{margin:0;color:#9aa8b2;font-size:14px}
+input,button{font:inherit;padding:12px;border-radius:8px;border:1px solid #2a3845;background:#13202a;color:inherit}button{background:#e4e9ec;color:#0b1217;font-weight:600;cursor:pointer}
+#msg{min-height:1.2em;color:#e0628e;font-size:14px}a{color:#e4e9ec}</style></head>
+<body><form id="f"><h1>Rex Audio DAW</h1><p>Enter the licence key from your Gumroad receipt. Your projects are saved in this browser, so use Export file for a backup copy.</p>
+<input id="k" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX" aria-label="Licence key">
+<button>Open the DAW</button><div id="msg" role="status"></div><p><a href="index.html">Back to Rex Audio</a></p></form>
+<script>
+// The DAW itself is not in this repository: it is sent by the licence server only when the key checks out.
+const API="https://vercel-omega-woad-23.vercel.app/api/daw";
+const f=document.getElementById("f"),k=document.getElementById("k"),m=document.getElementById("msg");
+async function go(key,quiet){
+  m.textContent=quiet?"":"Checking…";
+  try{
+    const r=await fetch(API,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key})});
+    if(!r.ok){let e={};try{e=await r.json()}catch(_){}; if(r.status===403)try{localStorage.removeItem("rexdaw-key")}catch(_){}; m.textContent=e.error||"Something went wrong.";return}
+    const html=await r.text(); try{localStorage.setItem("rexdaw-key",key)}catch(_){}
+    document.open();document.write(html);document.close();
+  }catch(_){m.textContent="No connection. Try again."}
+}
+f.onsubmit=e=>{e.preventDefault();go(k.value.trim())};
+let s=null;try{s=localStorage.getItem("rexdaw-key")}catch(_){} if(s){k.value=s;go(s,true)}
+</script></body></html>
