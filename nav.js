@@ -15,6 +15,7 @@
     "harmonic-circle.html": "music-theory-tools.html",
     "harmonics.html": "music-theory-tools.html",
     "microtonal-tuner.html": "music-theory-tools.html",
+    "microtonal-tuner-keyboard.html": "music-theory-tools.html",
     "chordseq.html": "music-theory-tools.html",
     "tunings.html": "music-theory-tools.html"
   };
@@ -73,11 +74,11 @@
     foot.parentNode.insertBefore(hw, foot);
   }
   var f = document.querySelector("footer"), here2 = here;
-  var MAIN = "© 2026 Rex Audio. All rights reserved. Plugins, free or paid, can be used in any music you make. Trial and demo versions cannot. The website is for personal use. Distributing or modifying any Rex Audio software needs permission. ";
+  var MAIN = "© 2026 Rex Audio. ";
   if (f && f.querySelector(".rx-lic") === null) {
     Array.prototype.slice.call(f.querySelectorAll("span, br")).forEach(function (e) { if (e.tagName === "BR" || /rights|©/.test(e.textContent)) e.parentNode.removeChild(e); });
     var sp = document.createElement("span"); sp.className = "rx-lic"; sp.appendChild(document.createTextNode(MAIN));
-    if (here2 !== "licence.html") { var l = document.createElement("a"); l.href = "licence.html"; l.textContent = "Licence"; sp.appendChild(l); }
+    if (here2 !== "licence.html") { var l = document.createElement("a"); l.href = "licence.html"; l.textContent = "Licence and copyright"; sp.appendChild(l); }
     if (f.classList.contains("sitefoot")) f.innerHTML = "";
     f.appendChild(sp);
   }
