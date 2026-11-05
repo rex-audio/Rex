@@ -130,7 +130,6 @@
   .key .kn.on.xen { color:#b2330a; } .key.b .kn.on.xen { color:#ffb29a; }
   #mtitle { justify-content:space-between; padding:0 6px; } #mtitle span { flex:1; text-align:center; }
   .ta { width:46px; height:30px; border:0; border-radius:5px; background:none; color:inherit; font:700 22px/1 Arial; cursor:pointer; } .ta:hover { background:rgba(255,255,255,.12); }
-  .kn.off { opacity:.55; pointer-events:none; }
   .mh { display:none; touch-action:none; cursor:ns-resize; user-select:none; z-index:3; } .v4 .mh { display:flex; }
   .v3 .key.w .kn:not(.on) { color:#37414b; } .v3 .key.b .kn:not(.on) { color:#e1e7ec; } .v3 .key .kn { font-size:8.5px; }
 </style>
@@ -166,20 +165,22 @@
 const $ = s => document.querySelector(s);
 const NAMES = ["C", "D♭", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"], BLACK = new Set([1, 3, 6, 8, 10]);
 const ROWK = [8, 7, 6, 5, 4, 3, 2, 1, -2, -3, -4, -5, -6, -7];   // ×n harmonics, the key itself, ÷n undertones
-const PAD = 22, PITCH = (696 - 2 * PAD) / 7, ROWY = k => 24 + ROWK.indexOf(k) * 22;
+const PAD = 22, PITCH = (696 - 2 * PAD) / 7, ROWY = ri => 24 + ri * 22;
+// every view uses all 14 slots of a key: overtones x14..key, undertones key..÷14, or the mixed layout
+const RV = [Array.from({ length: 14 }, (_, i) => 14 - i), [1].concat(Array.from({ length: 13 }, (_, i) => -(i + 2))), ROWK];
 // laid out like the original Microtonal tuner: the five black keys in a row above, the seven white keys in a row below, each black key between its two white neighbours
 const WI = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 };
 const keyX = c => BLACK.has(c) ? PAD + (WI[c - 1] + 1) * PITCH : PAD + (WI[c] + .5) * PITCH, keyY = c => BLACK.has(c) ? 12 : 380;
 const blank = () => Array.from({ length: 12 }, () => []);
 const S = { sel: blank(), oct: 0, pure: true, fund: true, hold: false, pre: 0, view: 2, panel: 0, micro: Array(12).fill(null), man: Array(12).fill(0) };
-const VIEWS = ["Overtones", "Undertones", "All harmonics", "Microtones", "Manual pitch"], vis = k => S.view === 2 || (S.view === 0 && k >= 1) || (S.view === 1 && k <= 1);
+const VIEWS = ["Overtones", "Undertones", "All harmonics", "Microtones", "Manual pitch"], vis = k => S.view < 3 && RV[S.view].includes(k);
 // Microtones (set 1): the simplest just ratios between a key's two neighbours' just tunings, up to ten per key, highest pitch first
 const JUSTR = [1, 16 / 15, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 45 / 32, 3 / 2, 8 / 5, 5 / 3, 9 / 5, 15 / 8], gcdN = (a, b) => b ? gcdN(b, a % b) : a, oddN = q => { while (q % 2 === 0) q /= 2; return q; };
 const MC = [], cands = c => {
   if (MC[c]) return MC[c];
   const ctr = JUSTR[c], lo = c ? JUSTR[c - 1] : JUSTR[11] / 2, hi = c < 11 ? JUSTR[c + 1] : 2, L = [];
-  for (let d = 1; d <= 64; d++) for (let n = Math.floor(lo * d) + 1; n < hi * d - 1e-9; n++) if (gcdN(n, d) === 1 && (Math.max(oddN(n), oddN(d)) <= 31 || Math.abs(n / d - ctr) < 1e-9)) L.push({ lab: n + "/" + d, v: n / d, cx: n * d, center: Math.abs(n / d - ctr) < 1e-9 });
-  L.sort((a, b) => a.cx - b.cx); let top = L.slice(0, 10); if (!top.some(x => x.center)) top[top.length - 1] = L.find(x => x.center);
+  for (let d = 1; d <= 96; d++) for (let n = Math.floor(lo * d) + 1; n < hi * d - 1e-9; n++) if (gcdN(n, d) === 1 && (Math.max(oddN(n), oddN(d)) <= 41 || Math.abs(n / d - ctr) < 1e-9)) L.push({ lab: n + "/" + d, v: n / d, cx: n * d, center: Math.abs(n / d - ctr) < 1e-9 });
+  L.sort((a, b) => a.cx - b.cx); let top = L.slice(0, 14); if (!top.some(x => x.center)) top[top.length - 1] = L.find(x => x.center);
   return MC[c] = top.sort((a, b) => b.v - a.v);
 };
 const chosen = c => { const cs = cands(c); return cs.find(x => x.lab === S.micro[c]) || cs.find(x => x.center) || cs[0]; };
@@ -194,7 +195,7 @@ const PANELS = [
   ["Brick", "#7a4640", "#63362f", "#8a5a52", "#744640", "#3a1c18", "#4d2a25", "#2d1612"],
   ["Sand", "#cdc2a8", "#b8ad92", "#dad0b8", "#c6bba1", "#7e7458", "#5b523c", "#463d29"]
 ];
-try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-pads-v1")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => ROWK.includes(k))); S.pure = o.pure !== false; if (o.view >= 0 && o.view < 5) S.view = o.view; if (Array.isArray(o.micro) && o.micro.length === 12) S.micro = o.micro; if (Array.isArray(o.man) && o.man.length === 12) S.man = o.man.map(x => Math.max(-50, Math.min(50, +x || 0))); if (o.panel >= 0 && o.panel < 7) S.panel = o.panel; } } catch (e) {}
+try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-pads-v1")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => Number.isInteger(k) && k >= -14 && k <= 14 && k !== 0 && k !== -1)); S.pure = o.pure !== false; if (o.view >= 0 && o.view < 5) S.view = o.view; if (Array.isArray(o.micro) && o.micro.length === 12) S.micro = o.micro; if (Array.isArray(o.man) && o.man.length === 12) S.man = o.man.map(x => Math.max(-50, Math.min(50, +x || 0))); if (o.panel >= 0 && o.panel < 7) S.panel = o.panel; } } catch (e) {}
 const save = () => { try { localStorage.setItem("rex-harmonic-tuner-pads-v1", JSON.stringify({ sel: S.sel, oct: S.oct, pure: S.pure, fund: S.fund, view: S.view, micro: S.micro, man: S.man, panel: S.panel })); } catch (e) {} };
 let hist = [], fut = [];
 const snap = () => JSON.stringify(S.sel);
@@ -206,7 +207,7 @@ const pitchOf = (c, k) => 60 + c + (k >= 1 ? 12 * Math.log2(k) - 12 * Math.log2(
 const nameOf = p => NAMES[((Math.round(p) % 12) + 12) % 12];
 
 // ---- the wooden keys and their columns ----
-const dock = $("#dock"), kn = {}, keyEls = [], railEls = [], mhs = [];
+const dock = $("#dock"), kn = {}, keyEls = [], railEls = [], mhs = [], tks = {};
 const MH0 = 167, MHR = 143, mhY = v => MH0 - v / 50 * MHR;
 function dragHandle(mh, c, key) {
   const at = e => { const r = key.getBoundingClientRect(), sc = r.height / key.offsetHeight, v = Math.round((MH0 - (e.clientY - r.top) / sc) / MHR * 50); S.man[c] = Math.abs(v) <= 2 ? 0 : Math.max(-50, Math.min(50, v)); paint(); readout(c); };
@@ -215,17 +216,15 @@ function dragHandle(mh, c, key) {
   mh.addEventListener("pointerup", e => { mh._d = false; save(); });
   mh.addEventListener("dblclick", () => { S.man[c] = 0; paint(); save(); });
 }
-const gutter = (y0, r) => ROWK.forEach(k => { const l = document.createElement("div"); l.className = "rl" + (r ? " r" : ""); l.style.top = (y0 + ROWY(k)) + "px"; l.textContent = k > 1 ? "×" + k : k === 1 ? "key" : "÷" + (-k); dock.appendChild(l); });
+const rls = [], gutter = (y0, r) => RV[2].forEach((k, ri) => { const l = document.createElement("div"); l.className = "rl" + (r ? " r" : ""); l.style.top = (y0 + ROWY(ri)) + "px"; dock.appendChild(l); rls.push([l, ri]); });
 gutter(380); gutter(12);
 for (let c = 0; c < 12; c++) {
   const key = document.createElement("div"); key.className = "key " + (BLACK.has(c) ? "b" : "w"); key.style.left = (keyX(c) - 23) + "px"; key.style.top = keyY(c) + "px"; key.dataset.c = c;
   const rail = document.createElement("div"); rail.className = "rail"; key.appendChild(rail); railEls.push(rail);
-  ROWK.forEach(k => {
-    if (k === 1 || Math.abs(k) === 2 || Math.abs(k) === 4 || k === 8) { const t = document.createElement("div"); t.className = "tk"; t.style.top = ROWY(k) + "px"; t.style.width = (k === 1 ? 20 : 12) + "px"; t.style.marginLeft = -(k === 1 ? 10 : 6) + "px"; key.appendChild(t); }
-  });
-  ROWK.forEach(k => {
-    const b = document.createElement("button"); b.type = "button"; b.className = "kn" + (k === 1 ? " root" : ""); b.style.top = ROWY(k) + "px"; b.dataset.c = c; b.dataset.k = k;
-    b.onclick = () => padClick(c, k); key.appendChild(b); kn[c + ":" + k] = b;
+  RV[2].forEach((_, ri) => { const t = document.createElement("div"); t.className = "tk"; t.style.top = ROWY(ri) + "px"; key.appendChild(t); tks[c + ":" + ri] = t; });
+  RV[2].forEach((_, ri) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "kn"; b.style.top = ROWY(ri) + "px"; b.dataset.c = c;
+    b.onclick = () => padClick(c, ri); key.appendChild(b); kn[c + ":" + ri] = b;
   });
   const mh = document.createElement("button"); mh.type = "button"; mh.className = "kn on mh"; mh.dataset.c = c; key.appendChild(mh); mhs.push(mh); dragHandle(mh, c, key);
   const lb = document.createElement("span"); lb.className = "lb"; lb.textContent = NAMES[c]; key.appendChild(lb);
@@ -233,17 +232,19 @@ for (let c = 0; c < 12; c++) {
 }
 function paint() {
   document.body.classList.toggle("v3", S.view === 3); document.body.classList.toggle("v4", S.view === 4);
+  rls.forEach(([l, ri]) => { const k = S.view < 3 ? RV[S.view][ri] : 0; l.textContent = !k ? "" : k > 1 ? "×" + k : k === 1 ? "key" : "÷" + (-k); });
   for (let c = 0; c < 12; c++) {
-    ROWK.forEach((k, ri) => {
-      const b = kn[c + ":" + k];
+    RV[2].forEach((_, ri) => {
+      const b = kn[c + ":" + ri], t = tks[c + ":" + ri];
       if (S.view >= 3) {
         const cd = S.view === 3 ? cands(c)[ri] : null, on = !!cd && cd === chosen(c);
-        b.style.visibility = S.view === 3 ? "" : "hidden"; b.classList.toggle("off", !cd); b.classList.toggle("on", on); b.classList.remove("xen"); b.setAttribute("aria-pressed", String(on)); b.textContent = cd ? cd.lab : "";
-        b.title = cd ? "Ratio " + cd.lab + " (" + Math.round(1200 * Math.log2(cd.v)) + "¢)" : ""; return;
+        b.style.visibility = S.view === 3 ? "" : "hidden"; b.classList.remove("root", "xen"); b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); b.textContent = cd ? cd.lab : ""; delete b.dataset.k;
+        b.title = cd ? "Ratio " + cd.lab + " (" + Math.round(1200 * Math.log2(cd.v)) + "¢)" : ""; t.style.display = "none"; return;
       }
-      const p = pitchOf(c, k), dev = (p - Math.round(p)) * 100, on = S.sel[c].includes(k);
-      b.style.visibility = ""; b.classList.toggle("off", !vis(k)); b.classList.toggle("on", on && vis(k)); b.classList.toggle("xen", Math.abs(dev) > 25); b.setAttribute("aria-pressed", String(on)); b.textContent = on ? nameOf(p) : "";
+      const k = RV[S.view][ri], p = pitchOf(c, k), dev = (p - Math.round(p)) * 100, on = S.sel[c].includes(k);
+      b.dataset.k = k; b.style.visibility = ""; b.classList.toggle("root", k === 1); b.classList.toggle("on", on); b.classList.toggle("xen", Math.abs(dev) > 25); b.setAttribute("aria-pressed", String(on)); b.textContent = on ? nameOf(p) : "";
       b.title = (k > 1 ? "Harmonic " + k : k === 1 ? "The key" : "Undertone " + (-k)) + " of " + NAMES[c] + " → " + nameOf(p) + (Math.abs(dev) >= 1 ? " " + (dev > 0 ? "+" : "−") + Math.abs(Math.round(dev)) + "¢" : "");
+      const big = k === 1, tick = big || Math.abs(k) === 2 || Math.abs(k) === 4 || Math.abs(k) === 8; t.style.display = tick ? "" : "none"; t.style.width = (big ? 20 : 12) + "px"; t.style.marginLeft = -(big ? 10 : 6) + "px";
     });
     mhs[c].style.top = mhY(S.man[c]) + "px"; mhs[c].textContent = S.man[c] ? (S.man[c] > 0 ? "+" : "−") + Math.abs(S.man[c]) + "¢" : "0";
     const n = S.view === 3 ? +(chosen(c) && !chosen(c).center) : S.view === 4 ? +(S.man[c] !== 0) : S.sel[c].filter(vis).length; railEls[c].classList.toggle("on", n > 0); keyEls[c].classList.toggle("has", n > 0);
@@ -251,10 +252,10 @@ function paint() {
   syncBtns();
   $("#bUndo").disabled = !hist.length; $("#bRedo").disabled = !fut.length; $("#bHold").setAttribute("aria-pressed", String(S.hold));
 }
-function padClick(c, k) {
-  if (S.view === 3) { const cd = cands(c)[ROWK.indexOf(k)]; if (!cd) return; S.micro[c] = cd.lab; paint(); save(); audio(); voice(48 + 12 * Math.log2(cd.v) + 12 * S.oct, .7, 1, 700); readout(c); return; }
+function padClick(c, ri) {
+  if (S.view === 3) { const cd = cands(c)[ri]; if (!cd) return; S.micro[c] = cd.lab; paint(); save(); audio(); voice(48 + 12 * Math.log2(cd.v) + 12 * S.oct, .7, 1, 700); readout(c); return; }
   if (S.view === 4) return;
-  toggle(c, k);
+  toggle(c, RV[S.view][ri]);
 }
 function toggle(c, k) {
   if (!vis(k)) return;
