@@ -21,7 +21,7 @@
 
   /* the window, as on the Microtonal tuner page */
   #wrap { position:relative; margin:0 auto; }
-  #winf { position:absolute; left:0; top:0; width:756px; height:600px; transform-origin:0 0; border:1px solid #2c3d4a; border-radius:12px; overflow:hidden; background:#0d141b; box-shadow:0 14px 40px rgba(0,0,0,.5); }
+  #winf { position:absolute; left:0; top:0; width:756px; height:780px; transform-origin:0 0; border:1px solid #2c3d4a; border-radius:12px; overflow:hidden; background:#0d141b; box-shadow:0 14px 40px rgba(0,0,0,.5); }
   #winf .dbar { height:34px; display:flex; align-items:center; gap:10px; padding:0 14px; background:linear-gradient(#1b2731,#111a22); border-bottom:1px solid #1f2e3b; }
   #winf .ddot { width:10px; height:10px; border-radius:50%; background:#6fd3ff; box-shadow:0 0 8px #6fd3ff99; }
   #winf .dtitle { font:700 13px Arial; color:#dbe9f5; letter-spacing:.04em; } #winf .dsub { font:500 12px Arial; color:#6f879b; }
@@ -29,7 +29,7 @@
   #winf .dlogo { margin-left:6px; font:300 17px "Helvetica Neue",Inter,Arial,sans-serif; letter-spacing:.06em; color:#dbe9f5; } #winf .dlogo b { font-weight:800; color:#6fd3ff; }
 
   /* the wooden module */
-  #mod { position:absolute; left:16px; top:50px; width:724px; height:534px; overflow:hidden; border:1px solid #9a7048; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.45); user-select:none; -webkit-user-select:none; touch-action:manipulation;
+  #mod { position:absolute; left:16px; top:50px; width:724px; height:712px; overflow:hidden; border:1px solid #9a7048; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.45); user-select:none; -webkit-user-select:none; touch-action:manipulation;
     background-color:#573821;
     background-image:radial-gradient(ellipse 190px 23px at 14% 9%, rgba(205,151,91,.32), transparent 78%), radial-gradient(ellipse 280px 15px at 81% 24%, rgba(15,6,2,.43), transparent 82%), radial-gradient(ellipse 230px 25px at 45% 42%, rgba(163,105,57,.23), transparent 76%), radial-gradient(ellipse 310px 18px at 67% 69%, rgba(15,6,2,.34), transparent 83%), radial-gradient(ellipse 210px 21px at 22% 88%, rgba(229,176,116,.18), transparent 80%), linear-gradient(135deg,#76502f,#573821 52%,#302016);
     background-blend-mode:screen,multiply,soft-light,multiply,screen,normal; }
@@ -64,10 +64,10 @@
   .mode-toggle[aria-pressed="true"] { background:linear-gradient(135deg,#d9b17b,#c5965e 55%,#b7844f); box-shadow:inset 0 2px 4px rgba(82,48,20,.24), 0 1px 0 rgba(255,241,204,.45); }
 
   /* the key bed: light honey wood, the black keys above and the white keys below, each with its own column of knobs */
-  #dock { left:14px; top:62px; width:696px; height:368px; border:1px solid #a87948; border-radius:8px; overflow:hidden; touch-action:none; background:linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e); box-shadow:inset 0 2px 8px rgba(76,43,17,.22); }
+  #dock { left:14px; top:62px; width:696px; height:544px; border:1px solid #a87948; border-radius:8px; overflow:hidden; touch-action:none; background:linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e); box-shadow:inset 0 2px 8px rgba(76,43,17,.22); }
   #dock::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.13; mix-blend-mode:multiply; filter:url(#organicWoodNoise); background:rgba(91,53,22,.34); }
   #dock > * { position:absolute; z-index:1; }
-  .rl { left:4px; width:24px; font:700 8.5px/1 Arial; color:#7a5230; text-align:left; margin-top:-4px; }
+  .rl.r { left:auto; right:4px; text-align:right; color:#5a3a22; } .rl { left:4px; width:24px; font:700 8.5px/1 Arial; color:#7a5230; text-align:left; margin-top:-4px; }
   .key { width:46px; height:352px; border-radius:9px; cursor:pointer; touch-action:none; }
   .key.w { background:linear-gradient(100deg,#f5e4c4,#d7b987 48%,#f1dfbd); border:1px solid #a27a4d; box-shadow:0 2px 3px rgba(35,18,6,.45),inset 0 0 0 1px rgba(255,255,255,.22); }
   .key.b { background:linear-gradient(100deg,#5b3923,#2b1b12 45%,#68452a); border:1px solid #1e120b; box-shadow:0 3px 6px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,226,183,.15); }
@@ -81,17 +81,18 @@
   .rail.on { box-shadow:inset 0 0 0 1px #f0d19b,inset 0 2px 4px rgba(0,0,0,.45),0 0 7px rgba(240,209,155,.6); }
   .tk { position:absolute; left:50%; height:2px; margin-top:-1px; border-radius:2px; background:linear-gradient(90deg,#f5d7a3,#fff0cd,#c79a60); box-shadow:0 0 2px rgba(255,224,174,.45); opacity:.9; pointer-events:none; }
   .key.b .tk { opacity:.8; }
-  .kn { position:absolute; left:50%; width:22px; height:22px; margin:-11px 0 0 -11px; padding:0; border-radius:50%; border:1px solid #704821; cursor:pointer; touch-action:manipulation;
-    background-color:#b9854d; background-image:repeating-linear-gradient(3deg,rgba(64,34,11,.20) 0 1px,transparent 1px 4px,rgba(255,231,188,.22) 4px 5px,transparent 5px 9px),linear-gradient(135deg,#f0ce91 0%,#c18a4e 44%,#8a592e 78%,#d6a66a 100%);
-    box-shadow:0 3px 5px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,241,204,.7),inset 0 -2px 2px rgba(70,38,13,.32);
-    color:#3a2210; font:700 8px/1 Arial; text-shadow:0 1px 0 rgba(255,235,200,.55); display:flex; align-items:center; justify-content:center; transform:scale(.86); filter:brightness(.88) saturate(.9); transition:transform .08s, filter .08s; }
-  .kn:hover { filter:none; }
-  .kn.on { filter:none; transform:scale(1.08); border-color:#f0d19b; box-shadow:0 3px 6px rgba(0,0,0,.55),0 0 0 2px #fff0cd,0 0 9px 2px rgba(255,226,160,.85),inset 0 1px 0 rgba(255,241,204,.7); }
+  /* every position is an empty socket: black on the white keys, white on the black keys. The wooden blocks go in the sockets. */
+  .kn { position:absolute; left:50%; width:22px; height:22px; margin:-11px 0 0 -11px; padding:0; border-radius:50%; cursor:pointer; touch-action:manipulation; color:transparent; font:700 8px/1 Arial; display:flex; align-items:center; justify-content:center; transition:transform .08s; }
+  .key.w .kn { border:1px solid #000; background:radial-gradient(circle at 50% 35%, #1b100a, #060302 70%); box-shadow:inset 0 2px 4px rgba(0,0,0,.9), 0 1px 0 rgba(255,246,222,.55); }
+  .key.b .kn { border:1px solid #b9976a; background:radial-gradient(circle at 50% 35%, #fffaf0, #e6d2ac 75%); box-shadow:inset 0 2px 4px rgba(90,55,25,.55), 0 1px 0 rgba(255,226,183,.2); }
   .kn.root { width:26px; height:26px; margin:-13px 0 0 -13px; }
-  .kn.xen { color:#7a2a10; }
+  .key .kn:not(.on):hover::before { content:""; position:absolute; inset:2px; border-radius:50%; background:linear-gradient(135deg,#f0ce91,#c18a4e 55%,#8a592e); opacity:.55; }
+  .key .kn.on { color:#3a2210; text-shadow:0 1px 0 rgba(255,235,200,.55); transform:scale(1.04); border:1px solid #704821;
+    background-color:#b9854d; background-image:repeating-linear-gradient(3deg,rgba(64,34,11,.20) 0 1px,transparent 1px 4px,rgba(255,231,188,.22) 4px 5px,transparent 5px 9px),linear-gradient(135deg,#f0ce91 0%,#c18a4e 44%,#8a592e 78%,#d6a66a 100%);
+    box-shadow:0 3px 5px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,241,204,.7), inset 0 -2px 2px rgba(70,38,13,.32), 0 0 0 2px rgba(255,240,205,.55), 0 0 8px 1px rgba(255,226,160,.6); }
+  .key .kn.on.xen { color:#7a2a10; }
   .kn:focus-visible { outline:2px solid #fff; outline-offset:2px; }
-
-  .bot { left:14px; width:696px; display:flex; gap:10px; height:34px; } #bot1 { top:442px; } #bot2 { top:486px; }
+  .bot { left:14px; width:696px; display:flex; gap:10px; height:34px; } #bot1 { top:618px; } #bot2 { top:662px; }
   .tbtn { flex:1 1 0; min-width:0; height:34px; padding:0 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:8px; border:1px solid #28180e; cursor:pointer; color:#f0d6ad; font:700 12px Arial; letter-spacing:.02em; text-shadow:0 1px 2px rgba(0,0,0,.55); touch-action:manipulation;
     background-color:#573821; background-image:repeating-linear-gradient(3deg,rgba(35,17,7,.22) 0 1px,transparent 1px 4px,rgba(236,190,130,.12) 4px 5px,transparent 5px 11px),linear-gradient(135deg,#8a603a,#5a3822 58%,#3b2518);
     box-shadow:0 2px 0 #211309,inset 0 1px 0 rgba(255,226,183,.25),inset 0 -1px 0 rgba(25,12,5,.45); }
@@ -125,14 +126,14 @@
     </div>
   </div>
 </div>
-<p class="hint">Each key has a column of wooden knobs: harmonics above the key, undertones below. Turn knobs on, then press the bottom of the key (or use a MIDI keyboard, or the keys A W S E D F T G Y H U J).</p>
+<p class="hint">Each key has a column of wooden knobs: harmonics above the key, undertones below. Place the wooden blocks in the sockets, then press the bottom of the key (or use a MIDI keyboard, or the keys A W S E D F T G Y H U J).</p>
 <p class="sitefoot">&copy; 2026 Rex Audio. <a href="licence.html">Licence and copyright</a></p>
 <script>
 const $ = s => document.querySelector(s);
 const NAMES = ["C", "D♭", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"], BLACK = new Set([1, 3, 6, 8, 10]);
 const ROWK = [8, 7, 6, 5, 4, 3, 2, 1, -2, -3, -4, -5, -6, -7];   // ×n harmonics, the key itself, ÷n undertones
-const GUT = 28, PITCH = (696 - GUT - 8) / 12, KEYH = 352, ROWY = k => 24 + ROWK.indexOf(k) * 22;
-const keyX = c => GUT + (c + .5) * PITCH, keyY = () => 8;
+const GUT = 28, PITCH = (696 - 2 * GUT - 8) / 12, KEYH = 352, ROWY = k => 24 + ROWK.indexOf(k) * 22;
+const keyX = c => GUT + (c + .5) * PITCH, keyY = c => BLACK.has(c) ? 8 : 184;   // the black keys sit half way up, like a keyboard
 const blank = () => Array.from({ length: 12 }, () => []);
 const S = { sel: blank(), oct: 0, pure: true, fund: true, hold: false, pre: 0 };
 try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-v2")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => ROWK.includes(k))); S.oct = o.oct | 0; S.pure = o.pure !== false; S.fund = o.fund !== false; } } catch (e) {}
@@ -148,10 +149,10 @@ const nameOf = p => NAMES[((Math.round(p) % 12) + 12) % 12];
 
 // ---- the wooden keys and their columns ----
 const dock = $("#dock"), kn = {}, keyEls = [], railEls = [];
-const gutter = y0 => ROWK.forEach(k => { const l = document.createElement("div"); l.className = "rl"; l.style.top = (y0 + ROWY(k)) + "px"; l.textContent = k > 1 ? "×" + k : k === 1 ? "key" : "÷" + (-k); dock.appendChild(l); });
-gutter(8);
+const gutter = (y0, r) => ROWK.forEach(k => { const l = document.createElement("div"); l.className = "rl" + (r ? " r" : ""); l.style.top = (y0 + ROWY(k)) + "px"; l.textContent = k > 1 ? "×" + k : k === 1 ? "key" : "÷" + (-k); dock.appendChild(l); });
+gutter(184); gutter(8, true);
 for (let c = 0; c < 12; c++) {
-  const key = document.createElement("div"); key.className = "key " + (BLACK.has(c) ? "b" : "w"); key.style.left = (keyX(c) - 23) + "px"; key.style.top = keyY() + "px"; key.dataset.c = c;
+  const key = document.createElement("div"); key.className = "key " + (BLACK.has(c) ? "b" : "w"); key.style.left = (keyX(c) - 23) + "px"; key.style.top = keyY(c) + "px"; key.dataset.c = c;
   const rail = document.createElement("div"); rail.className = "rail"; key.appendChild(rail); railEls.push(rail);
   ROWK.forEach(k => {
     if (k === 1 || Math.abs(k) === 2 || Math.abs(k) === 4 || k === 8) { const t = document.createElement("div"); t.className = "tk"; t.style.top = ROWY(k) + "px"; t.style.width = (k === 1 ? 20 : 12) + "px"; t.style.marginLeft = -(k === 1 ? 10 : 6) + "px"; key.appendChild(t); }
@@ -167,7 +168,7 @@ function paint() {
   for (let c = 0; c < 12; c++) {
     ROWK.forEach(k => {
       const b = kn[c + ":" + k], p = pitchOf(c, k), dev = (p - Math.round(p)) * 100, on = S.sel[c].includes(k);
-      b.classList.toggle("on", on); b.classList.toggle("xen", Math.abs(dev) > 25); b.setAttribute("aria-pressed", String(on)); b.textContent = nameOf(p);
+      b.classList.toggle("on", on); b.classList.toggle("xen", Math.abs(dev) > 25); b.setAttribute("aria-pressed", String(on)); b.textContent = on ? nameOf(p) : "";
       b.title = (k > 1 ? "Harmonic " + k : k === 1 ? "The key" : "Undertone " + (-k)) + " of " + NAMES[c] + " → " + nameOf(p) + (Math.abs(dev) >= 1 ? " " + (dev > 0 ? "+" : "−") + Math.abs(Math.round(dev)) + "¢" : "");
     });
     railEls[c].classList.toggle("on", S.sel[c].length > 0); keyEls[c].classList.toggle("has", S.sel[c].length > 0);
@@ -270,7 +271,7 @@ if (navigator.requestMIDIAccess) document.addEventListener("pointerdown", () => 
 }, { once: true });
 
 // ---- scale the window to the screen, like the microtonal tuner ----
-function fit() { const w = Math.min(document.documentElement.clientWidth, 960), s = w / 756; $("#winf").style.transform = "scale(" + s + ")"; const wr = $("#wrap"); wr.style.width = w + "px"; wr.style.height = (600 * s) + "px"; }
+function fit() { const w = Math.min(document.documentElement.clientWidth, 960), s = w / 756; $("#winf").style.transform = "scale(" + s + ")"; const wr = $("#wrap"); wr.style.width = w + "px"; wr.style.height = (780 * s) + "px"; }
 addEventListener("resize", fit); fit(); paint();
 </script>
 <script src="nav.js"></script>
