@@ -240,7 +240,8 @@ const PANELS = [
   ["Olive", "#59634a", "#46503a", "#68735a", "#566048", "#2b3322", "#373f2d", "#222a19"],
   ["Brick", "#7a4640", "#63362f", "#8a5a52", "#744640", "#3a1c18", "#4d2a25", "#2d1612"],
   ["Sand", "#cdc2a8", "#b8ad92", "#dad0b8", "#c6bba1", "#7e7458", "#5b523c", "#463d29"],
-  ["Keyboard dark", "#0d141b", "#0d141b", "#0d141b", "#0d141b", "#1f2e3b", "#16222d", "#6f879b"]
+  ["Keyboard dark", "#0d141b", "#0d141b", "#0d141b", "#0d141b", "#1f2e3b", "#16222d", "#6f879b"],
+  ["Keyboard mid", "#1c2a38", "#17232f", "#26384a", "#1e2e3d", "#2f4558", "#223344", "#9fb4c6"]
 ];
 try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-pads-v1")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => Number.isInteger(k) && k >= -14 && k <= 14 && k !== 0 && k !== -1)); S.pure = o.pure !== false; if (o.view >= 0 && o.view < 5) S.view = o.view; if (Array.isArray(o.micro) && o.micro.length === 12) S.micro = o.micro; if (Array.isArray(o.man) && o.man.length === 12) S.man = o.man.map(x => Math.max(-50, Math.min(50, +x || 0))); if (o.panel >= 0 && o.panel < PANELS.length) S.panel = o.panel; } } catch (e) {}
 const save = () => { try { localStorage.setItem("rex-harmonic-tuner-pads-v1", JSON.stringify({ sel: S.sel, oct: S.oct, pure: S.pure, fund: S.fund, view: S.view, micro: S.micro, man: S.man, panel: S.panel })); } catch (e) {} };
