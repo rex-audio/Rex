@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A wooden harmonic tuner: each key of the keyboard has a column of wooden knobs for its overtones and undertones.">
+<title>Harmonic tuner | Rex Audio</title>
+<style>
+  :root { --bg:#070b0f; --line:#1f2e3b; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--bg); color:#dbe9f5; font-family:"Helvetica Neue", Inter, Arial, sans-serif; }
+  body { padding:24px 0 32px; overflow-x:hidden; -webkit-tap-highlight-color:transparent; }
+  .top { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 16px; max-width:760px; margin:0 auto 14px; padding:0 16px; font-family:Arial, Helvetica, sans-serif; }
+  .top .brand { font-size:22px; font-weight:700; letter-spacing:-.03em; color:#dbe9f5; text-decoration:none; }
+  .top nav { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:13px; }
+  .top nav a { color:#8ea4b6; text-decoration:none; border-bottom:1px solid transparent; }
+  .top nav a:hover, .top nav a[aria-current] { color:#dbe9f5; border-bottom-color:#dbe9f5; }
+  .sitefoot { margin:18px auto 0; padding:0 16px; text-align:center; font:12px Arial, sans-serif; color:#4f6a7c; }
+  .sitefoot a { color:inherit; }
+
+  #wrap { position:relative; margin:0 auto; }
+  #mod { position:absolute; left:0; top:0; width:756px; height:664px; transform-origin:0 0; overflow:hidden; user-select:none; -webkit-user-select:none; touch-action:manipulation;
+    border:1px solid #9a7048; border-radius:12px; box-shadow:0 14px 40px rgba(0,0,0,.5);
+    background-color:#573821;
+    background-image:radial-gradient(ellipse 190px 23px at 14% 9%, rgba(205,151,91,.32), transparent 78%), radial-gradient(ellipse 280px 15px at 81% 24%, rgba(15,6,2,.43), transparent 82%), radial-gradient(ellipse 230px 25px at 45% 42%, rgba(163,105,57,.23), transparent 76%), radial-gradient(ellipse 310px 18px at 67% 69%, rgba(15,6,2,.34), transparent 83%), radial-gradient(ellipse 210px 21px at 22% 88%, rgba(229,176,116,.18), transparent 80%), linear-gradient(135deg,#76502f,#573821 52%,#302016);
+    background-blend-mode:screen,multiply,soft-light,multiply,screen,normal; }
+  #mod::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.34; mix-blend-mode:multiply; filter:url(#organicWoodNoise); background:rgba(75,39,14,.46); }
+  #mod > * { position:absolute; z-index:1; }
+
+  .plank { display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid #a87948; border-radius:6px; font:700 14px Arial,sans-serif; letter-spacing:.16em; text-transform:uppercase; color:#573821;
+    background:linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e); box-shadow:0 2px 0 #8a603a, inset 0 1px 0 rgba(255,241,204,.7); }
+  .dark { color:#f0d6ad; border-color:#9a7048; letter-spacing:.06em; text-transform:lowercase; font-weight:300; font-size:22px; text-shadow:0 1px 2px rgba(0,0,0,.55);
+    background-color:#573821; background-image:radial-gradient(ellipse 120px 14px at 20% 30%, rgba(205,151,91,.32), transparent 78%), radial-gradient(ellipse 140px 12px at 80% 70%, rgba(15,6,2,.43), transparent 82%), linear-gradient(135deg,#76502f,#573821 52%,#302016);
+    box-shadow:0 2px 0 #1d1108, inset 0 1px 0 rgba(255,225,170,.25); }
+  .dark b { font-weight:800; color:#e9b878; }
+  #pL { left:14px; top:12px; width:158px; height:34px; } #pT { left:186px; top:12px; width:384px; height:34px; } #pR { left:584px; top:12px; width:158px; height:34px; }
+
+  #tops { left:16px; top:56px; width:724px; display:flex; gap:6px; }
+  .tbtn { flex:1 1 0; height:28px; padding:0 5px; border-radius:6px; border:1px solid #28180e; cursor:pointer; color:#f0d6ad; font:700 11px Arial; letter-spacing:.02em; text-shadow:0 1px 2px rgba(0,0,0,.55); touch-action:manipulation;
+    background-color:#573821; background-image:repeating-linear-gradient(3deg,rgba(35,17,7,.22) 0 1px,transparent 1px 4px,rgba(236,190,130,.12) 4px 5px,transparent 5px 11px),linear-gradient(135deg,#8a603a,#5a3822 58%,#3b2518);
+    box-shadow:0 2px 0 #211309, inset 0 1px 0 rgba(255,226,183,.25), inset 0 -1px 0 rgba(25,12,5,.45); }
+  .tbtn:hover { color:#fff0d5; border-color:#c0925c; } .tbtn:active { filter:brightness(1.12); transform:translateY(1px); }
+  .tbtn[aria-pressed="true"] { color:#fff3d9; border-color:#e9b878; box-shadow:0 0 8px rgba(240,209,155,.45), 0 2px 0 #211309; }
+  #read { left:16px; top:92px; width:724px; height:20px; text-align:center; font:700 12px/20px Arial; letter-spacing:.06em; color:#f0d6ad; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  #dock { left:16px; top:118px; width:724px; height:530px; border:1px solid #a87948; border-radius:8px; overflow:hidden; box-shadow:inset 0 2px 8px rgba(76,43,17,.35);
+    background:linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e); }
+  #dock::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.13; mix-blend-mode:multiply; filter:url(#organicWoodNoise); background:rgba(91,53,22,.34); }
+  #dock > * { position:absolute; z-index:1; }
+  .rl { left:6px; width:34px; text-align:left; font:700 10px/1 Arial; color:#7a5230; height:12px; margin-top:-6px; }
+  .col { top:0; width:54px; height:100%; }
+  .rail { position:absolute; left:50%; margin-left:-6px; width:12px; top:12px; height:446px; border-radius:6px;
+    background-color:#68472d; background-image:repeating-linear-gradient(2deg,rgba(40,20,7,.22) 0 1px,transparent 1px 4px,rgba(245,205,148,.16) 4px 5px,transparent 5px 9px),linear-gradient(90deg,#3f291a,#9a7048 35%,#5c3a22 70%,#3c2517);
+    box-shadow:inset 0 0 0 1px #b18758, inset 0 2px 4px rgba(0,0,0,.45), 0 0 0 1px rgba(51,30,14,.65); }
+  .rail.on { box-shadow:inset 0 0 0 1px #f0d19b, inset 0 2px 4px rgba(0,0,0,.45), 0 0 8px rgba(240,209,155,.55); }
+  .kn { position:absolute; left:50%; width:30px; height:30px; margin:-15px 0 0 -15px; padding:0; border-radius:50%; border:1px solid #704821; cursor:pointer; touch-action:manipulation;
+    background-color:#b9854d; background-image:repeating-linear-gradient(3deg,rgba(64,34,11,.20) 0 1px,transparent 1px 4px,rgba(255,231,188,.22) 4px 5px,transparent 5px 9px),linear-gradient(135deg,#f0ce91 0%,#c18a4e 44%,#8a592e 78%,#d6a66a 100%);
+    box-shadow:0 3px 5px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,241,204,.7), inset 0 -2px 2px rgba(70,38,13,.32);
+    color:#3a2210; font:700 10px/1 Arial; text-shadow:0 1px 0 rgba(255,235,200,.55); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+    opacity:.5; transform:scale(.8); transition:transform .08s, opacity .08s; }
+  .kn small { font:700 7px/1 Arial; opacity:.75; }
+  .kn:hover { opacity:.8; }
+  .kn.on { opacity:1; transform:scale(1.04); border-color:#f0d19b; box-shadow:0 3px 6px rgba(0,0,0,.55), 0 0 0 2px #fff0cd, 0 0 10px 2px rgba(255,226,160,.8), inset 0 1px 0 rgba(255,241,204,.7); }
+  .kn.u { background-image:repeating-linear-gradient(3deg,rgba(20,10,4,.28) 0 1px,transparent 1px 4px,rgba(200,150,100,.1) 4px 5px,transparent 5px 9px),linear-gradient(135deg,#a07148 0%,#74492a 44%,#4a2c17 78%,#8a5b35 100%); color:#f8e2b8; text-shadow:0 1px 1px rgba(0,0,0,.6); }
+  .kn.root { width:34px; height:34px; margin:-17px 0 0 -17px; }
+  .kn.xen small::after { content:"•"; margin-left:1px; }
+  .kn:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+  .mid { left:44px; right:12px; height:1px; margin-top:0; background:rgba(87,56,33,.35); }
+
+  .key { position:absolute; top:474px; width:44px; height:42px; margin-left:-22px; border-radius:7px; cursor:pointer; touch-action:none; }
+  .key.w { background:linear-gradient(100deg,#f5e4c4,#d7b987 48%,#f1dfbd); border:1px solid #a27a4d; box-shadow:0 2px 3px rgba(35,18,6,.45), inset 0 0 0 1px rgba(255,255,255,.22); }
+  .key.b { background:linear-gradient(100deg,#5b3923,#2b1b12 45%,#68452a); border:1px solid #1e120b; box-shadow:0 3px 6px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,226,183,.15); }
+  .key .lb { position:absolute; left:0; right:0; bottom:4px; text-align:center; font:700 11px Arial; pointer-events:none; } .key.w .lb { color:#654323; } .key.b .lb { color:#f0d6ad; }
+  .key.has::after { content:""; position:absolute; left:50%; top:5px; width:6px; height:6px; margin-left:-3px; border-radius:50%; background:#e9b878; box-shadow:0 0 4px #e9b878; }
+  .key.down { filter:brightness(.9); transform:translateY(1px); box-shadow:0 0 0 2px #fff0cd, 0 0 12px rgba(255,226,160,.8); }
+  .hint { text-align:center; margin:14px auto 0; font:11px Arial; color:#6f879b; padding:0 16px; max-width:640px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="index.html">Rex Audio</a>
+  <nav aria-label="Main"></nav>
+</header>
+<svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
+  <filter id="organicWoodNoise" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018 0.11" numOctaves="3" seed="27" stitchTiles="stitch" result="grain"/>
+    <feColorMatrix in="grain" type="saturate" values="0" result="mono"/>
+    <feComponentTransfer in="mono"><feFuncR type="gamma" amplitude="1.5" exponent="1.8" offset="-0.2"/><feFuncG type="gamma" amplitude="1.5" exponent="1.8" offset="-0.2"/><feFuncB type="gamma" amplitude="1.5" exponent="1.8" offset="-0.2"/></feComponentTransfer>
+  </filter>
+</svg>
+<div id="wrap">
+  <div id="mod" aria-label="Harmonic tuner">
+    <div class="plank dark" id="pL">rex<b>audio</b></div>
+    <div class="plank" id="pT">Harmonic tuner</div>
+    <div class="plank dark" id="pR" style="font-size:11px;letter-spacing:.08em;white-space:nowrap">overtones &amp; undertones</div>
+    <div id="tops">
+      <button class="tbtn" id="bOctDn" type="button">Oct ▼</button>
+      <button class="tbtn" id="bOctUp" type="button">Oct ▲</button>
+      <button class="tbtn" id="bTune" type="button" aria-pressed="true">Pure tuning</button>
+      <button class="tbtn" id="bFund" type="button" aria-pressed="true">Undertone sounds</button>
+      <button class="tbtn" id="bHear" type="button">▶ Hear chord</button>
+      <button class="tbtn" id="bStop" type="button">Silence</button>
+      <button class="tbtn" id="bClear" type="button">Clear</button>
+    </div>
+    <div id="read"></div>
+    <div id="dock"></div>
+  </div>
+</div>
+<p class="hint">Each key has a column of wooden knobs: harmonics above the key, undertones below. Turn knobs on, then play the key under the column.</p>
+<p class="sitefoot">&copy; 2026 Rex Audio. <a href="licence.html">Licence and copyright</a></p>
+<script>
+const $ = s => document.querySelector(s);
+const NAMES = ["C", "D♭", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"], BLACK = new Set([1, 3, 6, 8, 10]);
+const ROWK = [8, 7, 6, 5, 4, 3, 2, 1, -2, -3, -4, -5, -6, -7];   // ×n harmonics, the key itself, ÷n undertones
+const PITCH = 54, X0 = 52, CX = c => X0 + PITCH / 2 + c * PITCH, RY = k => 12 + 16 + ROWK.indexOf(k) * 32;
+const S = { sel: Array.from({ length: 12 }, () => []), oct: 0, pure: true, fund: true };   // sel[c]: the knob values (k) picked in column c
+try { const o = JSON.parse(localStorage.getItem("rex-harmonic-tuner-v1")); if (o) { if (Array.isArray(o.sel) && o.sel.length === 12) S.sel = o.sel.map(a => a.filter(k => ROWK.includes(k))); S.oct = o.oct | 0; S.pure = o.pure !== false; S.fund = o.fund !== false; } } catch (e) {}
+const save = () => { try { localStorage.setItem("rex-harmonic-tuner-v1", JSON.stringify(S)); } catch (e) {} };
+
+// ---- the pitch of a knob: harmonic k of the key's lowest picked undertone, or the undertone itself ----
+const under = c => { const us = S.sel[c].filter(k => k <= -2).map(k => -k); return us.length ? Math.min(...us) : 1; };
+const pitchOf = (c, k) => 60 + c + (k >= 1 ? 12 * Math.log2(k) - 12 * Math.log2(under(c)) : -12 * Math.log2(-k));
+const nameOf = p => NAMES[((Math.round(p) % 12) + 12) % 12];
+
+// ---- the wooden columns ----
+const dock = $("#dock"), kn = {}, keyEls = [], railEls = [];
+ROWK.forEach(k => { const l = document.createElement("div"); l.className = "rl"; l.style.top = RY(k) + "px"; l.textContent = k > 1 ? "×" + k : k === 1 ? "key" : "÷" + (-k); dock.appendChild(l); });
+for (let c = 0; c < 12; c++) {
+  const col = document.createElement("div"); col.className = "col"; col.style.left = (CX(c) - PITCH / 2) + "px";
+  const rail = document.createElement("div"); rail.className = "rail"; col.appendChild(rail); railEls.push(rail);
+  ROWK.forEach(k => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "kn" + (k <= -2 ? " u" : "") + (k === 1 ? " root" : ""); b.style.top = RY(k) + "px";
+    b.innerHTML = "<span></span><small></small>"; b.dataset.c = c; b.dataset.k = k;
+    b.onclick = () => toggle(c, k); col.appendChild(b); kn[c + ":" + k] = b;
+  });
+  dock.appendChild(col);
+  const key = document.createElement("div"); key.className = "key " + (BLACK.has(c) ? "b" : "w"); key.style.left = CX(c) + "px"; key.dataset.c = c; key.innerHTML = `<span class="lb">${NAMES[c]}</span>`;
+  dock.appendChild(key); keyEls.push(key);
+}
+function paint() {
+  for (let c = 0; c < 12; c++) {
+    ROWK.forEach(k => {
+      const b = kn[c + ":" + k], p = pitchOf(c, k), dev = (p - Math.round(p)) * 100, on = S.sel[c].includes(k);
+      b.classList.toggle("on", on); b.classList.toggle("xen", Math.abs(dev) > 25); b.setAttribute("aria-pressed", String(on));
+      b.firstChild.textContent = nameOf(p); b.lastChild.textContent = k > 1 ? "×" + k : k === 1 ? "" : "÷" + (-k);
+      b.title = (k > 1 ? "Harmonic " + k : k === 1 ? "The key" : "Undertone " + (-k)) + " of " + NAMES[c] + " → " + nameOf(p) + (Math.abs(dev) >= 1 ? " " + (dev > 0 ? "+" : "−") + Math.abs(Math.round(dev)) + "¢" : "");
+    });
+    railEls[c].classList.toggle("on", S.sel[c].length > 0); keyEls[c].classList.toggle("has", S.sel[c].length > 0);
+  }
+  $("#bTune").setAttribute("aria-pressed", String(S.pure)); $("#bTune").textContent = S.pure ? "Pure tuning" : "12-TET";
+  $("#bFund").setAttribute("aria-pressed", String(S.fund));
+}
+function toggle(c, k) {
+  const a = S.sel[c], i = a.indexOf(k); if (i >= 0) a.splice(i, 1); else { a.push(k); a.sort((x, y) => y - x); }
+  paint(); save(); readout(c);
+  if (i < 0) blip(c, k);
+}
+function readout(c) { const ks = S.sel[c]; $("#read").textContent = ks.length ? NAMES[c] + ": " + ks.map(k => nameOf(pitchOf(c, k)) + (k > 1 ? " ×" + k : k === 1 ? "" : " ÷" + (-k))).join("  ") : ""; }
+
+// ---- the sound: a mellow electric-piano voice that holds until the key lets go ----
+let ctx = null, bus, comp; const live = new Set();
+function audio() { if (ctx) { ctx.resume(); return; } ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" }); bus = ctx.createGain(); bus.gain.value = .7; comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 3; bus.connect(comp); comp.connect(ctx.destination); }
+function voice(midi, vel, n, gate) {
+  const t = ctx.currentTime, f = 440 * Math.pow(2, (midi - 69) / 12);
+  const car = ctx.createOscillator(), mod = ctx.createOscillator(), bell = ctx.createOscillator(), mg = ctx.createGain(), bg = ctx.createGain(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+  car.frequency.value = f; mod.frequency.value = f; bell.frequency.value = f * 14;
+  mg.gain.setValueAtTime(f * (1.1 + vel * 1.5), t); mg.gain.setTargetAtTime(f * .1, t, .3);
+  bg.gain.setValueAtTime(.05 * vel, t); bg.gain.setTargetAtTime(0, t, .025);
+  mod.connect(mg); mg.connect(car.frequency); car.connect(g); bell.connect(bg); bg.connect(g);
+  lp.type = "lowpass"; lp.frequency.value = 5200; g.connect(lp); lp.connect(bus);
+  const peak = .24 * vel * Math.min(1, 1.8 / Math.sqrt(n));
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + .004); g.gain.setTargetAtTime(peak * .35, t + .005, .6);
+  const all = [car, mod, bell]; all.forEach(o => o.start(t));
+  const h = { stop(after) { const u = ctx.currentTime; g.gain.cancelScheduledValues(u); g.gain.setTargetAtTime(0, u, .08); all.forEach(o => { try { o.stop(u + .5); } catch (e) {} }); live.delete(h); } };
+  live.add(h); if (gate) setTimeout(() => h.stop(), gate); return h;
+}
+// the notes of a column, as midi pitches: undertones stay low as the bass; the key alone if nothing is picked
+function notesOf(c, ks) {
+  ks = ks && ks.length ? ks : [1];
+  const out = ks.filter(k => k !== -1 && (S.fund || k >= 1)).map(k => {
+    let p = pitchOf(c, k) - 12; if (k <= -2) { while (p < 31) p += 12; }
+    p += 12 * S.oct; while (p < 24) p += 12;
+    return S.pure ? p : Math.round(p);
+  });
+  return out.length ? out : [pitchOf(c, 1) - 12 + 12 * S.oct];
+}
+function blip(c, k) { audio(); voice(notesOf(c, [k])[0], .7, 1, 700); }
+const held = new Map();
+function down(id, c, vel) {
+  audio(); up(id); const ps = notesOf(c, S.sel[c]); held.set(id, { c, vs: ps.map(p => voice(p, vel, ps.length)) });
+  keyEls[c].classList.add("down"); readout(c);
+}
+function up(id) { const h = held.get(id); if (!h) return; held.delete(id); h.vs.forEach(v => v.stop()); if (![...held.values()].some(x => x.c === h.c)) keyEls[h.c].classList.remove("down"); }
+dock.addEventListener("pointerdown", e => { const k = e.target.closest(".key"); if (!k) return; e.preventDefault(); try { k.setPointerCapture(e.pointerId); } catch (x) {} down("p" + e.pointerId, +k.dataset.c, .8); });
+["pointerup", "pointercancel"].forEach(ev => dock.addEventListener(ev, e => up("p" + e.pointerId)));
+
+// ---- the controls ----
+$("#bOctUp").onclick = () => { S.oct = Math.min(3, S.oct + 1); save(); };
+$("#bOctDn").onclick = () => { S.oct = Math.max(-3, S.oct - 1); save(); };
+$("#bTune").onclick = () => { S.pure = !S.pure; paint(); save(); };
+$("#bFund").onclick = () => { S.fund = !S.fund; paint(); save(); };
+$("#bClear").onclick = () => { S.sel = Array.from({ length: 12 }, () => []); $("#read").textContent = ""; paint(); save(); };
+$("#bStop").onclick = () => { [...live].forEach(v => v.stop()); held.clear(); keyEls.forEach(k => k.classList.remove("down")); };
+$("#bHear").onclick = () => {
+  audio(); const all = [].concat(...S.sel.map((ks, c) => ks.length ? notesOf(c, ks) : []));
+  const seen = []; all.forEach(p => { if (!seen.some(q => Math.abs(q - p) < .25)) seen.push(p); }); seen.sort((a, b) => a - b);
+  seen.forEach(p => voice(p, .8, seen.length, 2400));
+};
+
+// ---- MIDI keyboard: each key plays its own column ----
+if (navigator.requestMIDIAccess) document.addEventListener("pointerdown", () => {
+  if (window.__midi) return; window.__midi = true;
+  navigator.requestMIDIAccess().then(acc => { const bind = () => acc.inputs.forEach(i => { i.onmidimessage = e => { const [st, a, b] = e.data, cmd = st & 0xf0; if (cmd === 0x90 && b > 0) down("m" + a, a % 12, Math.pow(b / 127, .8)); else if (cmd === 0x80 || (cmd === 0x90 && b === 0)) up("m" + a); }; }); acc.onstatechange = bind; bind(); }).catch(() => {});
+}, { once: true });
+
+// ---- scale the module to the window, like the microtonal tuner ----
+function fit() { const w = Math.min(document.documentElement.clientWidth, 960), s = w / 756; $("#mod").style.transform = "scale(" + s + ")"; const wr = $("#wrap"); wr.style.width = w + "px"; wr.style.height = (664 * s) + "px"; }
+addEventListener("resize", fit); fit(); paint();
+</script>
+<script src="nav.js"></script>
+</body>
+</html>
