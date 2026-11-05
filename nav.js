@@ -2,7 +2,6 @@
 (function () {
   var LINKS = [
     ["shapes.html", "Shapes"],
-    ["chordseq.html", "ChordSeq"],
     ["music-theory-tools.html", "Theory"],
     ["drums.html", "Drums"],
     ["colours.html", "Colours"],
@@ -14,6 +13,7 @@
     "harmonic-grid.html": "music-theory-tools.html",
     "harmonic-circle.html": "music-theory-tools.html",
     "harmonics.html": "music-theory-tools.html",
+    "chordseq.html": "music-theory-tools.html",
     "tunings.html": "music-theory-tools.html"
   };
   var nav = document.querySelector('.top nav[aria-label="Main"]');
