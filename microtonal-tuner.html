@@ -1,0 +1,2081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A wooden slider-key instrument: slide each key to make your own microtonal tunings and scales, and play them.">
+<title>Microtonal tuner | Rex Audio</title>
+<style>
+  :root {
+    --bg:#070b0f; --win:#0d141b; --line:#1f2e3b; --acc:#6fd3ff; --muted:#6f879b;
+    --scr:#04080c; --scrb:#1f3140; --lab:#ffffff; --val:#ffffff;
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--bg); color:#dbe9f5; font-family:"Helvetica Neue", Inter, Arial, sans-serif; }
+  body { padding:24px 0 32px; overflow-x:hidden; -webkit-tap-highlight-color:transparent; }
+  #wrap { position:relative; margin:0 auto; }
+  #mod { position:absolute; left:0; top:0; width:724px; height:466px; transform-origin:0 0; background:var(--win); border:1px solid var(--line); border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.45); user-select:none; -webkit-user-select:none; }
+  #mod > * { position:absolute; }
+  .hint { text-align:center; margin:14px auto 0; font:11px Arial; color:#4f6a7c; letter-spacing:.02em; padding:0 16px; }
+  .hint b { color:#6f879b; font-weight:700; }
+  .intro { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(4,8,12,.82); }
+  .intro[hidden], .step[hidden] { display:none; }
+  .card { width:100%; max-width:440px; padding:22px 20px; text-align:center; border:1px solid #2c3d4a; border-radius:12px; background:#0d141b; box-shadow:0 12px 40px rgba(0,0,0,.6); }
+  .q { margin:0 0 16px; font:700 15px/1.4 Arial, sans-serif; color:#dbe9f5; }
+  .opts { display:flex; flex-direction:column; gap:10px; }
+  @media (min-width:520px) { .opts { flex-direction:row; } }
+  .opts button { flex:1; min-height:56px; padding:8px 12px; border-radius:10px; border:1px solid #05080b; background:linear-gradient(#3b464f,#222a31); color:#a9b9c5; font:700 14px Arial, sans-serif; cursor:pointer; box-shadow:0 2px 0 #05080b, inset 0 1px 0 rgba(255,255,255,.12); }
+  .opts button:hover, .opts button:active { color:var(--acc); }
+
+  .rot { display:none; color:#7fd8ff; } @media (orientation:portrait) and (max-width:700px) { .rot { display:block; } }
+
+  /* screen bars */
+  .ks { display:flex; align-items:center; height:28px; border:1px solid var(--scrb); border-radius:6px; background:var(--scr); box-shadow:inset 0 0 8px rgba(0,0,0,.8); overflow:hidden; font-family:Arial, sans-serif; }
+  .karr { flex:none; width:22px; height:100%; padding:0; border:0; background:none; color:#ffffff; cursor:pointer; display:flex; align-items:center; justify-content:center; touch-action:manipulation; }
+  .karr svg { width:10px; height:12px; } .karr polygon { fill:currentColor; stroke:currentColor; stroke-width:2.5; stroke-linejoin:round; }
+  .karr:hover { color:#8aa3b6; } .karr:active { color:var(--acc); }
+  .kmid { flex:1; min-width:0; display:flex; gap:6px; justify-content:center; align-items:baseline; overflow:hidden; }
+  .kmid small { flex:none; font:700 7px Arial; letter-spacing:.14em; text-transform:uppercase; color:var(--lab); }
+  .kmid b { font:700 11px Arial; color:var(--val); text-shadow:0 0 6px #59b8f066; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  #tops { top:12px; left:184px; width:410px; display:flex; justify-content:space-between; align-items:center; gap:4px; }
+  /* Button row shares the exact left and right edges of the keyboard bed below. */
+  #tops { left:186px; width:352px; right:auto; box-sizing:border-box; padding:0; margin:0; }
+  .tbtn { height:28px; min-width:0; flex:1 1 0; padding:0 5px; border-radius:6px; border:1px solid #05080b; background:linear-gradient(#3b464f, #222a31); color:#a9b9c5; font:700 9px Arial; letter-spacing:.02em; cursor:pointer; box-shadow:0 2px 0 #05080b, inset 0 1px 0 rgba(255,255,255,.12); touch-action:manipulation; }
+  #barHold, #barEdit, #barSl { display:none; }
+  .cb .mn { display:block; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cb.sel { outline:1px solid rgba(111,211,255,.55); outline-offset:-3px; }
+  .tbtn:active { transform:translateY(1px); color:var(--acc); } .tbtn:disabled { opacity:.4; cursor:default; transform:none; } #bUndo:disabled { opacity:1; }
+  #barHold { width:96px; } #barEdit { width:166px; } #barSl { width:152px; }
+  .ks.lit { border-color:#2a86b0; box-shadow:inset 0 0 8px rgba(0,0,0,.8), 0 0 8px rgba(111,211,255,.35); }
+  .pc { position:relative; min-width:0; min-height:0; } .pc .cb { width:100%; height:100%; }
+  .px { display:none; position:absolute; top:3px; right:3px; width:18px; height:18px; padding:0; border:0; border-radius:50%; background:rgba(0,0,0,.4); color:#cfe6f2; font:700 13px/18px Arial; text-align:center; cursor:pointer; z-index:3; }
+  .px::before { content:""; position:absolute; inset:-5px; } .px:hover { background:#8a3434; color:#fff; } .pc.full .px { display:block; } .pc .cb.on ~ .px { color:#04141c; }
+  /* Left screens match the Undo button's warm wood finish and raised wooden edge. */
+  #lscr { left:14px; top:62px; width:156px; height:400px; display:grid; grid-template-rows:repeat(4, 1fr); gap:10px; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+  #lscr .ks, #rscr .ks { height:auto; border:1px solid #28180e; border-radius:6px; color:#f0d6ad; background-color:#573821; background-image:repeating-linear-gradient(3deg,rgba(35,17,7,.22) 0 1px,transparent 1px 4px,rgba(236,190,130,.12) 4px 5px,transparent 5px 11px),linear-gradient(135deg,#8a603a,#5a3822 58%,#3b2518); box-shadow:0 2px 0 #211309,inset 0 1px 0 rgba(255,226,183,.25),inset 0 -1px 0 rgba(25,12,5,.45); text-shadow:0 1px 2px rgba(0,0,0,.55); }
+  #lscr .kmid, #rscr .kmid { flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  #lscr .kmid small, #rscr .kmid small, #lscr .kmid b, #rscr .kmid b { color:#f0d6ad; text-shadow:0 1px 2px rgba(0,0,0,.55); }
+  #lscr .karr, #rscr .karr { color:#f0d6ad; }
+  #lscr .karr:hover, #rscr .karr:hover { color:#fff0d5; }
+  #lscr .ks:active, #rscr .ks:active { filter:brightness(1.12); }
+  #lscr .kmid b, #rscr .kmid b { max-width:100%; }
+  /* Right mode screens styled like the wooden Hold button. */
+  #rscr { left:554px; top:62px; width:156px; height:400px; display:grid; grid-template-rows:repeat(4, 1fr); gap:10px; gap:16px; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+  #rscr .mode-toggle { width:100%; min-width:0; border:1px solid #a87948; border-radius:6px; background:linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e); color:#573821; box-shadow:0 2px 0 #8a603a,inset 0 1px 0 rgba(255,241,204,.7); font:700 10px Arial,sans-serif; letter-spacing:.02em; cursor:pointer; padding:4px; }
+  #rscr .mode-toggle.active { border-color:#8a603a; background:linear-gradient(135deg,#d9b17b,#c5965e 55%,#b7844f); color:#422817; box-shadow:inset 0 2px 4px rgba(82,48,20,.24), 0 1px 0 rgba(255,241,204,.45); }
+  #rscr .mode-toggle.dim-active { filter:brightness(.84); box-shadow:inset 0 1px 0 rgba(255,241,204,.45); }
+  #rscr .mode-toggle:active { transform:translateY(1px); box-shadow:0 1px 0 #8a603a,inset 0 1px 0 rgba(255,241,204,.55); }
+
+  /* keyboard */
+  #dock { left:184px; top:62px; width:410px; height:400px; border:1px solid #8e9aa4; border-radius:8px; background:linear-gradient(#d3dae0, #bcc5cd); box-shadow:inset 0 2px 8px rgba(0,0,0,.35); overflow:hidden; touch-action:none; }
+  .wk, .bk { position:absolute; border-radius:9px; cursor:pointer; touch-action:none; transition:background .06s; }
+  /* Keep the white keys in their own lanes; black keys intentionally sit above them like a real keyboard. */
+  .wk { z-index:1; } .bk { z-index:2; }
+  .wk { top:106px; height:104px; border:1px solid #aab3ba; background:linear-gradient(#fff, #e3e7ea); box-shadow:0 2px 3px rgba(0,0,0,.3); }
+  .bk { top:8px; height:92px; border:1px solid #000; background:linear-gradient(#303036, #08080a); box-shadow:0 3px 6px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.14); }
+  .wk .lb, .bk .lb { position:absolute; left:0; right:0; bottom:4px; text-align:center; font:700 11px Arial; pointer-events:none; white-space:nowrap; }
+  .wk .lb { color:#5a5a52; }
+  .bk .lb { color:#f0d6ad; font-size:10px; text-shadow:0 1px 2px #000; }
+  /* Out-of-scale/chord keys fade by transparency only: preserve their original colour and shading. */
+  .wk.out, .bk.out { filter:none; opacity:.28; }
+  .wk.out .lb, .bk.out .lb { opacity:.72; }
+  .fd { position:absolute; left:50%; width:22px; margin-left:-11px; touch-action:none; cursor:ns-resize; }
+  .wk .fd { top:8px; height:72px; } .bk .fd { top:8px; bottom:8px; }
+  .fd::before { content:""; position:absolute; left:50%; width:6px; margin-left:-3px; top:6px; bottom:6px; border-radius:3px; background:#1a232b; box-shadow:inset 0 0 0 1px #6c7a86, inset 0 2px 4px #000; }
+  .fd .fc { position:absolute; left:2px; right:2px; top:50%; height:1px; background:#6c8aa0; opacity:.6; pointer-events:none; }
+  .fd .fth { position:absolute; left:50%; width:24px; height:24px; margin-left:-12px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #9db0bf, #4a5a67 55%, #202b34); border:1px solid #05080b; box-shadow:0 3px 5px rgba(0,0,0,.6); pointer-events:none; }
+  .fd .fth::after { content:""; position:absolute; left:50%; top:50%; width:5px; height:5px; margin:-2.5px 0 0 -2.5px; border-radius:50%; background:#d8e4ec; }
+  .fd.fix { opacity:.4; cursor:default; }
+  .fd.drag .fth { border-color:var(--acc); } .fd.drag .fth::after { background:var(--acc); box-shadow:0 0 5px var(--acc); }
+
+  /* wheel column */
+  #whl { left:610px; top:62px; width:44px; height:400px; display:flex; flex-direction:column; align-items:center; justify-content:space-between; }
+  .pad { width:50px; height:30px; padding:0; border-radius:6px; border:1px solid #05080b; background:linear-gradient(#3b464f, #222a31); color:#a9b9c5; font:700 11px Arial; cursor:pointer; box-shadow:0 2px 0 #05080b, 0 3px 5px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.14); touch-action:manipulation; }
+  .pad:active { transform:translateY(1px); box-shadow:0 1px 0 #05080b, inset 0 1px 0 rgba(255,255,255,.1); color:var(--acc); }
+  .pad:disabled { opacity:.45; cursor:default; }
+  .wcc { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  #wheel { width:34px; height:113px; border:1px solid #6f879b; border-radius:8px; background:repeating-linear-gradient(#2e4152 0 3px, #101921 3px 7px); background-size:100% 7px; box-shadow:0 3px 8px rgba(0,0,0,.5), inset 0 0 14px rgba(0,0,0,.7); cursor:ns-resize; touch-action:none; }
+  #wheel.drag { border-color:var(--acc); }
+  .wcc span { font:500 10px Arial; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+
+  /* chord pads */
+  #pads { left:516px; top:62px; width:138px; height:220px; display:none; display:flex; flex-direction:column; gap:8px; padding:8px; border:1px solid #2c3d4a; border-radius:10px; background:linear-gradient(#0f1820, #0a1117); box-shadow:inset 0 1px 0 rgba(255,255,255,.05); }
+  #pads .ks { flex:none; height:24px; }
+  #pads .karr { width:18px; }
+  #pmodeWrap { position:relative; flex:none; }
+  #pmode { flex:1; min-width:0; width:100%; height:100%; padding:0 18px 0 8px; border:0; border-radius:6px; background:transparent; color:var(--val); font:700 10px Arial; text-shadow:0 0 6px #59b8f066; -webkit-appearance:none; appearance:none; cursor:pointer; outline:none; }
+  #pmode:focus-visible { box-shadow:0 0 0 1px var(--acc); }
+  #pmode option { background:#0d141b; color:#dbe9f5; }
+  #pmodeWrap::after { content:""; position:absolute; right:7px; top:50%; width:5px; height:5px; margin-top:-4px; border-right:2px solid #4a6a82; border-bottom:2px solid #4a6a82; transform:rotate(45deg); pointer-events:none; }
+  .cg { flex:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:8px; min-height:0; }
+  .cb { position:relative; min-width:0; padding:0 2px; border:1px solid #05080b; border-radius:8px; background:linear-gradient(#3b464f, #222a31); color:#a9b9c5; font:700 14px Arial; cursor:pointer; box-shadow:0 2px 3px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.1); touch-action:none; overflow:hidden; }
+  .cb small { display:block; font:700 7.5px Arial; letter-spacing:.04em; opacity:.7; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cb.empty { background:linear-gradient(#232c33, #182026); color:#4f6a7c; font-size:18px; font-weight:400; border-style:dashed; border-color:#2c3d4a; box-shadow:none; }
+  #lscr.over { box-shadow:0 0 0 2px var(--acc), 0 0 14px rgba(111,211,255,.6); }
+  .cb.over { box-shadow:0 0 0 2px var(--acc), 0 0 14px rgba(111,211,255,.6); }
+  .cb.on { background:linear-gradient(#5fc4ee, #2a86b0); color:#04141c; box-shadow:0 0 10px rgba(111,211,255,.55); }
+  .cb.cur { box-shadow:0 0 0 2px var(--acc); }
+  .cb.clr { background:#5a2a2a; color:#ffb4b4; }
+  .cb.flash { box-shadow:0 0 0 2px #ffb86f; }
+  #play { flex:none; width:100%; height:30px; font-size:11px; letter-spacing:.08em; }
+  #play.on { background:linear-gradient(#5fc4ee, #2a86b0); color:#04141c; }
+
+  #ghost { position:fixed; z-index:50; pointer-events:none; padding:4px 9px; border-radius:6px; background:#5fc4ee; color:#04141c; font:700 12px Arial; box-shadow:0 4px 14px rgba(0,0,0,.5); transform:translate(-50%, -130%); display:none; }
+
+  /* Optional taller keyboard and warm wood finish */
+  #mod.tall { height:466px; }
+  #mod.tall #lscr, #mod.tall #rscr, #mod.tall #dock, #mod.tall #whl { height:400px; }
+  #whl { display:none !important; }
+  #whl .wcc { display:none; }
+  #pads { display:none !important; }
+  /* Key positions/heights are set by the external geometry controls. */
+  #dock .wk { top:0; height:184px; }
+  #dock .bk { top:0; height:184px; }
+  #dock .wk .fd { height:152px; }
+  #dock .bk .fd { top:8px; bottom:8px; }
+  #mod.tall .cg { min-height:0; }
+  /* Inner key bed: light honey wood, clearly distinct from the darker outer frame. */
+  #dock.wood {
+    position:absolute;
+    background:#d9b17b;
+    background-image:linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e);
+    border-color:#a87948;
+    box-shadow:inset 0 2px 8px rgba(76,43,17,.22);
+  }
+  /* Irregular turbulence gives the wood a less tiled, more naturally chaotic grain. */
+  #mod::before {
+    content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
+    opacity:.34; mix-blend-mode:multiply; filter:url(#organicWoodNoise);
+    background:rgba(75,39,14,.46);
+  }
+  #mod > * { z-index:1; }
+  #mod { overflow:hidden; }   /* the grain filter would otherwise bleed outside the module */
+  #dock.wood::before {
+    content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
+    opacity:.13; mix-blend-mode:multiply; filter:url(#organicWoodNoise);
+    background:rgba(91,53,22,.34);
+  }
+  #dock.wood > * { z-index:1; }
+  /* Give Listen the same restrained organic grain as the honey-wood keybed. */
+  #tops .listenTop { position:relative; isolation:isolate; overflow:hidden; }
+  #tops .listenTop::before {
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
+    opacity:.16; mix-blend-mode:multiply; filter:url(#organicWoodNoise);
+    background:rgba(91,53,22,.34);
+  }
+  #dock.wood .wk { background:linear-gradient(100deg,#f5e4c4,#d7b987 48%,#f1dfbd); border-color:#a27a4d; box-shadow:0 2px 3px rgba(35,18,6,.45),inset 0 0 0 1px rgba(255,255,255,.22); }
+  #dock.wood .wk .lb { color:#654323; }
+  #dock.wood .bk { background:linear-gradient(100deg,#5b3923,#2b1b12 45%,#68452a); border-color:#1e120b; box-shadow:0 3px 6px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,226,183,.15); }
+  /* Black keys keep the original dark wood appearance in every state; no blue highlight. */
+  #dock.wood .bk {
+    background:linear-gradient(100deg,#5b3923,#2b1b12 45%,#68452a);
+    border-color:#1e120b;
+    box-shadow:0 3px 6px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,226,183,.15);
+  }
+
+
+  /* Wooden vertical slider controls: wood-grain channels and matching wooden knobs. */
+  #dock .fd::before {
+    background-color:#68472d;
+    background-image:repeating-linear-gradient(2deg,rgba(40,20,7,.22) 0 1px,transparent 1px 4px,rgba(245,205,148,.16) 4px 5px,transparent 5px 9px),linear-gradient(90deg,#3f291a,#9a7048 35%,#5c3a22 70%,#3c2517);
+    box-shadow:inset 0 0 0 1px #b18758,inset 0 2px 4px rgba(0,0,0,.45),0 0 0 1px rgba(51,30,14,.65);
+  }
+  #dock .fd .fc {
+    height:2px; border-radius:2px; opacity:.95;
+    background:linear-gradient(90deg,#f5d7a3,#fff0cd,#c79a60);
+    box-shadow:0 0 2px rgba(255,224,174,.45);
+  }
+  #dock .fd .fth {
+    border-radius:50%;
+    border:1px solid #704821;
+    background-color:#b9854d;
+    background-image:repeating-linear-gradient(3deg,rgba(64,34,11,.20) 0 1px,transparent 1px 4px,rgba(255,231,188,.22) 4px 5px,transparent 5px 9px),linear-gradient(135deg,#f0ce91 0%,#c18a4e 44%,#8a592e 78%,#d6a66a 100%);
+    box-shadow:0 3px 5px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,241,204,.7),inset 0 -2px 2px rgba(70,38,13,.32);
+  }
+  #dock .fd .fth::after {
+    width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;
+    background:#f8e5bc;box-shadow:0 0 1px rgba(255,255,255,.8);
+  }
+  #dock .fd.drag .fth { border-color:#f0d19b; }
+
+  /* Outer frame/back panel: darker brown wood, as in the reference screenshot. */
+  #mod {
+    background-color:#573821;
+    background-image:
+      radial-gradient(ellipse 190px 23px at 14% 9%, rgba(205,151,91,.32), transparent 78%),
+      radial-gradient(ellipse 280px 15px at 81% 24%, rgba(15,6,2,.43), transparent 82%),
+      radial-gradient(ellipse 230px 25px at 45% 42%, rgba(163,105,57,.23), transparent 76%),
+      radial-gradient(ellipse 310px 18px at 67% 69%, rgba(15,6,2,.34), transparent 83%),
+      radial-gradient(ellipse 210px 21px at 22% 88%, rgba(229,176,116,.18), transparent 80%),
+      linear-gradient(135deg,#76502f,#573821 52%,#302016);
+    background-blend-mode:screen,multiply,soft-light,multiply,screen,normal;
+    border-color:#9a7048;
+  }
+  #dock {
+    background:linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e);
+    border-color:#a87948;
+  }
+
+  /* Warm wood finish for the top controls and the external geometry sliders. */
+  .tbtn {
+    color:#f0d6ad;
+    border-color:#28180e;
+    background-color:#573821;
+    background-image:repeating-linear-gradient(3deg,rgba(35,17,7,.22) 0 1px,transparent 1px 4px,rgba(236,190,130,.12) 4px 5px,transparent 5px 11px),linear-gradient(135deg,#8a603a,#5a3822 58%,#3b2518);
+    box-shadow:0 2px 0 #211309,inset 0 1px 0 rgba(255,226,183,.25),inset 0 -1px 0 rgba(25,12,5,.45);
+    text-shadow:0 1px 2px rgba(0,0,0,.55);
+  }
+  .tbtn:hover { color:#fff0d5; border-color:#c0925c; }
+  .tbtn:active { color:#fff3d9; filter:brightness(1.12); }
+  #bUndo:disabled { opacity:1; }
+  #sliderTools { width:min(640px,calc(100% - 24px)); margin:18px auto 0; padding:12px 16px; border:1px solid #8e6945; border-radius:10px; color:#f0d6ad; background-color:#382318; background-image:repeating-linear-gradient(2deg,rgba(25,12,5,.12) 0 1px,transparent 1px 5px),linear-gradient(135deg,#67472e,#3e281b 58%,#2b1b12); box-shadow:0 8px 20px rgba(0,0,0,.35); font:12px Arial,sans-serif; }
+  #sliderTools .slider-tool-row { display:grid; grid-template-columns:150px minmax(80px,1fr) 54px 62px; gap:10px; align-items:center; }
+  #sliderTools label { color:#f0d6ad; font-weight:700; }
+  #sliderTools input[type=range] { width:100%; accent-color:#d4a36a; }
+  #sliderTools output { text-align:right; color:#ffe4bd; font:700 12px monospace; }
+  #sliderTools button { border:1px solid #29180d; border-radius:6px; padding:7px 8px; color:#f8dfb8; font-weight:700; cursor:pointer; background:linear-gradient(135deg,#8a603a,#4a2e1b); }
+  #sliderCopyStatus { margin-top:7px; color:#d3b58e; min-height:1em; }
+  @media (max-width:480px) { #sliderTools { padding:10px 12px; } #sliderTools .slider-tool-row { grid-template-columns:1fr 1.3fr 48px 58px; gap:6px; } }
+#sliderTools .kt-row { display:grid; grid-template-columns:150px minmax(80px,1fr) 104px 62px; gap:10px; align-items:center; margin:10px 0 0; }
+  #sliderTools .kt-row label { color:#f0d6ad; font-weight:700; } #sliderTools .kt-row input[type=range] { width:100%; accent-color:#d4a36a; } #sliderTools .kt-val { text-align:right; color:#ffe4bd; font:700 12px monospace; }
+  #sliderTools .kt-copy { border:1px solid #29180d; border-radius:6px; padding:7px 8px; color:#f8dfb8; font-weight:700; cursor:pointer; background:linear-gradient(#8a603a,#573821); }
+  @media (max-width:480px) { #sliderTools .kt-row, #sliderTools .slider-tool-row { grid-template-columns:78px minmax(60px,1fr) 62px 50px; gap:6px; font-size:12px; } #sliderTools .kt-copy { grid-column:auto; } #sliderTools .kt-copy, #sliderTools button { padding:6px 4px; font-size:11px; } #sliderTools .kt-val, #sliderTools output { font-size:10px; } }
+  #keyTools { display:none;
+    width:min(640px,calc(100% - 24px)); margin:20px auto 0; padding:16px;
+    border:1px solid #8e6945; border-radius:12px; color:#f0d6ad;
+    background-color:#382318;
+    background-image:repeating-linear-gradient(2deg,rgba(25,12,5,.18) 0 1px,transparent 1px 5px,rgba(236,190,130,.08) 5px 6px,transparent 6px 13px),linear-gradient(135deg,#67472e,#3e281b 58%,#2b1b12);
+    box-shadow:0 8px 20px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,226,183,.12);
+    font:12px Arial,sans-serif;
+  }
+  #keyTools h2 { margin:0 0 12px; font-size:14px; letter-spacing:.06em; color:#ffe0b2; }
+  .kt-row { display:grid; grid-template-columns:105px minmax(70px,1fr) 58px 62px; gap:10px; align-items:center; margin:12px 0; }
+  .kt-row label { color:#f0d6ad; }
+  .kt-val { color:#ffe4bd; font:700 12px monospace; text-align:right; }
+  .kt-row input[type=range] {
+    appearance:none; -webkit-appearance:none; width:100%; height:18px; margin:0; cursor:pointer; background:transparent;
+  }
+  .kt-row input[type=range]::-webkit-slider-runnable-track {
+    height:8px; border:1px solid #24150c; border-radius:5px;
+    background:repeating-linear-gradient(2deg,rgba(25,12,5,.22) 0 1px,transparent 1px 4px),linear-gradient(#8b5b32,#4b2d1a);
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.6),0 1px 0 rgba(255,220,175,.15);
+  }
+  .kt-row input[type=range]::-moz-range-track {
+    height:8px; border:1px solid #24150c; border-radius:5px;
+    background:repeating-linear-gradient(2deg,rgba(25,12,5,.22) 0 1px,transparent 1px 4px),linear-gradient(#8b5b32,#4b2d1a);
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.6);
+  }
+  .kt-row input[type=range]::-webkit-slider-thumb {
+    appearance:none; -webkit-appearance:none; width:18px; height:18px; margin-top:-6px; border-radius:5px;
+    border:1px solid #28170c; background:repeating-linear-gradient(3deg,rgba(35,17,7,.18) 0 1px,transparent 1px 4px),linear-gradient(135deg,#d4a36a,#8b5b32 60%,#59371f);
+    box-shadow:0 2px 3px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,230,190,.45);
+  }
+  .kt-row input[type=range]::-moz-range-thumb {
+    width:16px; height:16px; border-radius:5px; border:1px solid #28170c;
+    background:repeating-linear-gradient(3deg,rgba(35,17,7,.18) 0 1px,transparent 1px 4px),linear-gradient(135deg,#d4a36a,#8b5b32 60%,#59371f);
+    box-shadow:0 2px 3px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,230,190,.45);
+  }
+  .kt-copy, #copyAllKeys {
+    border:1px solid #29180d; border-radius:6px; padding:7px 8px; color:#f8dfb8; font-weight:700; cursor:pointer;
+    background:repeating-linear-gradient(3deg,rgba(35,17,7,.15) 0 1px,transparent 1px 4px),linear-gradient(135deg,#8a603a,#4a2e1b);
+    box-shadow:0 2px 0 #211309,inset 0 1px 0 rgba(255,226,183,.2);
+  }
+  .kt-copy:active, #copyAllKeys:active { transform:translateY(1px); }
+  #keyToolsFoot { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; }
+  #copyStatus { color:#d3b58e; line-height:1.4; }
+  @media (max-width:480px) {
+    #keyTools { padding:12px; }
+    .kt-row { grid-template-columns:90px minmax(50px,1fr) 50px; gap:7px; }
+    .kt-copy { grid-column:3; }
+    #keyToolsFoot { align-items:stretch; flex-direction:column; }
+  }
+
+</style>
+
+<style id="unified-screen-wood-fix">
+/* Unified pitch-manual screen finish: light honey wood with subtle keybed-style grain. */
+#lscr .ks, #rscr .ks, #rscr .mode-toggle {
+  box-sizing:border-box;
+  border:1px solid #b98c5b !important;
+  border-radius:6px;
+  color:#573821 !important;
+  background-color:#dfbd8a !important;
+  background-image:
+    repeating-linear-gradient(2deg, rgba(88,53,25,.035) 0 1px, transparent 1px 5px, rgba(255,239,204,.055) 5px 6px, transparent 6px 12px),
+    linear-gradient(135deg, #f0d8ad 0%, #e5c596 38%, #d8b783 72%, #e8c99a 100%) !important;
+  box-shadow:0 2px 0 #a57b4d, inset 0 1px 0 rgba(255,247,222,.72), inset 0 -1px 0 rgba(110,68,32,.10) !important;
+  text-shadow:none;
+}
+#lscr .kmid small, #rscr .kmid small, #lscr .kmid b, #rscr .kmid b, #lscr .karr, #rscr .karr { color:#573821 !important; text-shadow:none !important; }
+#lscr .karr:hover, #rscr .karr:hover { color:#754b2b !important; }
+#rscr .mode-toggle { font:700 10px Arial,sans-serif; letter-spacing:.02em; cursor:pointer; padding:4px; }
+/* Selection is shown only with a dark-wood outline; never alter the fill. */
+#rscr .mode-toggle.active, #rscr .mode-toggle.dim-active {
+  border:2px solid #694326 !important;
+  background-color:#dfbd8a !important;
+  background-image:repeating-linear-gradient(2deg, rgba(88,53,25,.035) 0 1px, transparent 1px 5px, rgba(255,239,204,.055) 5px 6px, transparent 6px 12px), linear-gradient(135deg, #f0d8ad 0%, #e5c596 38%, #d8b783 72%, #e8c99a 100%) !important;
+  color:#573821 !important;
+  filter:none !important;
+  box-shadow:0 2px 0 #a57b4d, inset 0 1px 0 rgba(255,247,222,.72), inset 0 -1px 0 rgba(110,68,32,.10) !important;
+}
+#rscr .mode-toggle:active { transform:translateY(1px); }
+/* Match the actual organic grain overlay used on the wooden keybed, not just striped gradients. */
+#lscr .ks, #rscr .ks, #rscr .mode-toggle {
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+}
+#lscr .ks::before, #rscr .ks::before, #rscr .mode-toggle::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  z-index:-1;
+  opacity:.13;
+  mix-blend-mode:multiply;
+  filter:url(#organicWoodNoise);
+  background:rgba(91,53,22,.34);
+}
+/* Keep the selected screen's fill unchanged; selection is only a darker wood border. */
+#rscr .mode-toggle.active, #rscr .mode-toggle.dim-active {
+  border:2px solid #694326 !important;
+  background-color:#dfbd8a !important;
+}
+/* Remove old blue/glowing selected-screen treatment. */
+.ks.lit { border-color:#b98c5b; box-shadow:inset 0 1px 0 rgba(255,247,222,.72), 0 2px 0 #a57b4d; }
+
+/* Click the currently selected right-hand screen repeatedly to preview four wooden-theme highlight treatments. */
+#rscr .mode-toggle .mode-label { position:relative; display:inline-block; z-index:1; padding:2px 4px; border:1px solid transparent; border-radius:3px; }
+#rscr .mode-toggle.active.border-style-0, #rscr .mode-toggle.dim-active.border-style-0 { border:2px solid #4b2b18 !important; box-shadow:0 0 0 1px #d5a36a, 0 2px 0 #8a603a !important; }
+#rscr .mode-toggle.active.border-style-1, #rscr .mode-toggle.dim-active.border-style-1 { border:2px solid #f4c65e !important; box-shadow:0 0 0 1px #805322, 0 2px 0 #8a603a !important; }
+#rscr .mode-toggle.active.border-style-2, #rscr .mode-toggle.dim-active.border-style-2 { border:2px solid #286d68 !important; box-shadow:0 0 0 1px #b2d6b0, 0 2px 0 #8a603a !important; }
+#rscr .mode-toggle.active.border-style-3 .mode-label, #rscr .mode-toggle.dim-active.border-style-3 .mode-label { border:1.5px solid currentColor; box-shadow:0 0 0 1px rgba(255,245,215,.55); padding:2px 5px; }
+#rscr .mode-toggle.active.border-style-3, #rscr .mode-toggle.dim-active.border-style-3 { border:1px solid #b98c5b !important; }
+</style>
+
+<style id="final-selected-text-box-and-module-edge-fix">
+/* Keep the selected screen fill unchanged; show selection with a neat box around its label. */
+#rscr .mode-toggle.active, #rscr .mode-toggle.dim-active {
+  border:1px solid #1f2e3b !important;
+  background-color:#dfbd8a !important;
+  filter:none !important;
+  box-shadow:0 2px 0 #a57b4d, inset 0 1px 0 rgba(255,247,222,.72) !important;
+}
+#rscr .mode-toggle.active .mode-label, #rscr .mode-toggle.dim-active .mode-label {
+  border:1.5px solid currentColor !important;
+  border-radius:3px;
+  padding:2px 5px;
+  box-shadow:0 0 0 1px rgba(255,245,215,.45);
+}
+/* Keep the screen borders their existing colour; match the right-side inset to the left-side inset. */
+#rscr { right:14px; }
+/* The tonic/C key is not visually dimmed or highlighted by default. */
+#dock .fd.fix { opacity:1 !important; }
+</style>
+<style id="key-scale">
+/* Everything inside a key (slider track, handle, label) scales with --ks = key width / 32. */
+#dock { --ks:1; }
+#dock .fd { width:calc(22px * var(--ks)); margin-left:calc(-11px * var(--ks)); }
+#dock .fd::before { width:calc(6px * var(--ks)); margin-left:calc(-3px * var(--ks)); }
+#dock .fd .fth { width:calc(24px * var(--ks)); height:calc(24px * var(--ks)); margin-left:calc(-12px * var(--ks)); }
+#dock .fd .fth::after { width:calc(5px * var(--ks)); height:calc(5px * var(--ks)); margin:calc(-2.5px * var(--ks)) 0 0 calc(-2.5px * var(--ks)); }
+#dock .wk .lb { font-size:calc(11px * var(--ks)); } #dock .bk .lb { font-size:calc(10px * var(--ks)); }
+</style>
+<style id="mset-arrows">
+#rscr .mode-toggle { position:relative; }
+#rscr .mset-arr { position:absolute; top:50%; width:14px; height:14px; margin-top:-7px; cursor:pointer; color:#573821; display:block; }
+#rscr .mset-arr svg { width:100%; height:100%; display:block; }
+#rscr .mset-arr polygon { fill:currentColor; }
+#rscr .mset-l { left:4px; } #rscr .mset-r { right:4px; }
+</style>
+<style id="bigger-screen-text">
+/* bigger text on the six screens */
+#lscr .kmid small, #rscr .kmid small { font-size:10px !important; letter-spacing:.1em; }
+#lscr .kmid b, #rscr .kmid b { font-size:15px !important; }
+#rscr .mode-toggle { font-size:14px !important; }
+#rscr .mode-toggle .mode-label { font-size:14px; }
+#rscr .mset-arr { width:16px !important; height:16px !important; margin-top:-8px !important; }
+</style>
+<style id="top-buttons-size">
+/* top buttons: taller, bigger text, wider gaps; same flex proportions (Listen slightly wider) */
+#tops { gap:16px !important; top:8px; height:38px; align-items:stretch; }
+#tops .tbtn { height:38px !important; font-size:13px !important; border-radius:8px; }
+</style>
+<style id="mtitle-panel">
+/* wooden title panel in the space the top buttons used to take */
+#mtitle { position:absolute; left:14px; right:14px; top:8px; height:38px; display:flex; align-items:center; justify-content:center; box-sizing:border-box; z-index:1;
+  border:1px solid #b98c5b; border-radius:8px; color:#573821; font:700 15px Arial,sans-serif; letter-spacing:.14em; text-transform:uppercase; user-select:none;
+  background-color:#dfbd8a;
+  background-image:repeating-linear-gradient(2deg, rgba(88,53,25,.035) 0 1px, transparent 1px 5px, rgba(255,239,204,.055) 5px 6px, transparent 6px 12px), linear-gradient(135deg, #f0d8ad 0%, #e5c596 38%, #d8b783 72%, #e8c99a 100%);
+  box-shadow:0 2px 0 #8a603a, inset 0 1px 0 rgba(255,241,204,.7); }
+</style>
+<style id="top-side-panels">
+/* top-left and top-right panels: same light wood and edge as the centre title panel */
+.tpanel { position:absolute; top:8px; width:156px; height:38px; box-sizing:border-box; z-index:1; border-radius:8px; }
+#tpL { left:14px; }
+#tpR { right:14px; }
+#mtitle, .tpanel { border:1px solid #b98c5b; color:#573821; background-color:#dfbd8a;
+  background-image:repeating-linear-gradient(2deg, rgba(88,53,25,.035) 0 1px, transparent 1px 5px, rgba(255,239,204,.055) 5px 6px, transparent 6px 12px), linear-gradient(135deg, #f0d8ad 0%, #e5c596 38%, #d8b783 72%, #e8c99a 100%);
+  box-shadow:0 2px 0 #8a603a, inset 0 1px 0 rgba(255,241,204,.7); }
+#mtitle { left:186px !important; right:186px !important; }   /* the central title panel now lines up with the keyboard */
+</style>
+<style id="corner-output-buttons">
+.tpanel { font:700 14px Arial,sans-serif; color:#573821; padding:0; cursor:pointer; text-align:center; touch-action:manipulation; }
+.tpanel .mode-label { position:relative; display:inline-block; padding:2px 5px; border:1.5px solid transparent; border-radius:3px; }
+.tpanel.active { border-color:#1f2e3b; box-shadow:0 2px 0 #a57b4d, inset 0 1px 0 rgba(255,247,222,.72); }
+.tpanel.active .mode-label { border-color:currentColor; box-shadow:0 0 0 1px rgba(255,245,215,.45); }
+.tpanel:active { transform:translateY(1px); }
+.tpanel.brand { display:flex; align-items:center; justify-content:center; cursor:default; font-family:"Helvetica Neue", Inter, Arial, sans-serif; font-weight:300; font-size:22px; letter-spacing:.06em; text-transform:lowercase; color:#573821; }
+.tpanel.brand b { font-weight:800; color:#8a4b1f; }
+.tpanel.brand:active { transform:none; }
+/* the logo panel is cut from the same dark wood as the back panel */
+.tpanel.brand { overflow:hidden; border-color:#9a7048; color:#f0d6ad; background-color:#573821;
+  background-image:radial-gradient(ellipse 120px 14px at 20% 30%, rgba(205,151,91,.32), transparent 78%), radial-gradient(ellipse 140px 12px at 80% 70%, rgba(15,6,2,.43), transparent 82%), linear-gradient(135deg,#76502f,#573821 52%,#302016);
+  background-blend-mode:screen,multiply,normal; box-shadow:0 2px 0 #1d1108, inset 0 1px 0 rgba(255,225,170,.25); }
+.tpanel.brand::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.34; mix-blend-mode:multiply; filter:url(#organicWoodNoise); background:rgba(75,39,14,.46); }
+.tpanel.brand span, .tpanel.brand b { position:relative; z-index:1; text-shadow:0 1px 2px rgba(0,0,0,.55); }
+.tpanel.brand b { color:#e9b878; }
+#sliderTools, #keyTools, p.hint { display:none !important; }
+p.hint.rot { display:none !important; }
+
+#lscr .ks, #rscr .ks, #rscr .mode-toggle { position:relative; }
+#wrap { position:relative; }
+#winf { position:absolute; left:0; top:0; width:756px; box-sizing:border-box; transform-origin:0 0; border:1px solid #2c3d4a; border-radius:12px; overflow:hidden; background:#0d141b; box-shadow:0 14px 40px rgba(0,0,0,.5); }
+#winf .dbar { height:34px; display:flex; align-items:center; gap:10px; padding:0 14px; background:linear-gradient(#1b2731,#111a22); border-bottom:1px solid #1f2e3b; }
+#winf .ddot { width:10px; height:10px; border-radius:50%; background:#6fd3ff; box-shadow:0 0 8px #6fd3ff99; }
+#winf .dtitle { font:700 13px Arial; color:#dbe9f5; letter-spacing:.04em; } #winf .dsub { font:500 12px Arial; color:#6f879b; }
+#winf .dst { margin-left:auto; font:600 11px Arial; color:#6f879b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+#winf .dbtn { flex:none; height:24px; padding:0 12px; border:1px solid #05080b; border-radius:6px; background:linear-gradient(#3b464f,#222a31); color:#a9b9c5; font:700 11px Arial; cursor:pointer; box-shadow:0 2px 0 #05080b, inset 0 1px 0 rgba(255,255,255,.12); }
+#winf .dbtn[aria-pressed="true"] { color:#6fd3ff; border-color:#6fd3ff; box-shadow:0 0 8px #6fd3ff55, 0 2px 0 #05080b; }
+#winf .dbtn:active { color:#6fd3ff; }
+#winf .dlogo { margin-left:6px; font:300 17px "Helvetica Neue",Inter,Arial,sans-serif; letter-spacing:.06em; color:#dbe9f5; } #winf .dlogo b { font-weight:800; color:#6fd3ff; }
+#desk { position:absolute; left:16px; top:50px; width:440px; display:flex; flex-direction:column; gap:14px; }
+.dsec { border:1px solid #1f2e3b; border-radius:10px; background:#0a1117; padding:14px 16px; }
+.dsec.grow { flex:1; min-height:0; overflow:hidden; }
+.dsec h3 { margin:0 0 10px; font:500 10px Arial; letter-spacing:.14em; text-transform:uppercase; color:#6f879b; }
+#desk .dv { font:600 13px/1.4 Arial; color:#a9b9c5; min-width:0; }
+#desk .dnote { margin:10px 0 0; font:500 12px/1.45 Arial; color:#6f879b; }
+#desk .drow { display:flex; gap:10px; margin-bottom:10px; }
+#desk .dseg { display:flex; border:1px solid #05080b; border-radius:8px; overflow:hidden; width:100%; }
+#desk .dseg button { flex:1; }
+#desk .dseg button, #desk .dbtn { height:38px; padding:0 18px; border:0; background:linear-gradient(#3b464f,#222a31); color:#a9b9c5; font:700 13px Arial; cursor:pointer; box-shadow:inset 0 1px 0 rgba(255,255,255,.12); }
+#desk .dbtn { flex:1; border:1px solid #05080b; border-radius:8px; box-shadow:0 2px 0 #05080b, inset 0 1px 0 rgba(255,255,255,.12); }
+#desk .dseg button[aria-pressed="true"], #desk .dbtn[aria-pressed="true"] { color:#6fd3ff; background:linear-gradient(#233545,#16222d); box-shadow:0 0 8px #6fd3ff44 inset; }
+#desk button:active { color:#6fd3ff; }
+#desk .dmap { display:flex; flex-wrap:wrap; gap:8px; }
+#desk .dmap span { padding:4px 12px; border-radius:999px; border:1px solid #2c3d4a; background:#111a22; color:#dbe9f5; font:600 12px Arial; }
+#desk .dmap em { font:500 12px Arial; color:#6f879b; font-style:normal; }
+.ccbadge { position:absolute; top:5px; right:7px; padding:1px 6px; border-radius:999px; background:#3a2314; color:#f8dfb8; font:700 10px Arial; letter-spacing:.04em; z-index:3; pointer-events:none; }
+.cc-pend { outline:3px solid #f4c65e !important; outline-offset:-3px; animation:ccp 1s ease-in-out infinite; }
+.cc-pick { cursor:crosshair; }
+@keyframes ccp { 50% { outline-color:#a07a2a; } }
+
+/* rexaudio: "audio" in the lighter wood with its grain; output panel styled like the logo panel (no grain on the text) */
+.tpanel.brand b { color:transparent; background-color:#dfbd8a; background-image:repeating-linear-gradient(2deg, rgba(88,53,25,.12) 0 1px, transparent 1px 5px, rgba(255,239,204,.2) 5px 6px, transparent 6px 12px), linear-gradient(135deg,#f0d8ad 0%,#e5c596 38%,#d8b783 72%,#e8c99a 100%); -webkit-background-clip:text; background-clip:text; text-shadow:none; }
+.tpanel.brand span { color:#f0d6ad; }
+#tpL { position:absolute; overflow:hidden; border-color:#9a7048; color:#f0d6ad; background-color:#573821;
+  background-image:radial-gradient(ellipse 120px 14px at 20% 30%, rgba(205,151,91,.32), transparent 78%), radial-gradient(ellipse 140px 12px at 80% 70%, rgba(15,6,2,.43), transparent 82%), linear-gradient(135deg,#76502f,#573821 52%,#302016);
+  background-blend-mode:screen,multiply,normal; box-shadow:0 2px 0 #1d1108, inset 0 1px 0 rgba(255,225,170,.25); }
+#tpL::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.34; mix-blend-mode:multiply; filter:url(#organicWoodNoise); background:rgba(75,39,14,.46); }
+#tpL .mode-label { z-index:1; color:#f0d6ad; text-shadow:0 1px 2px rgba(0,0,0,.55); }
+#tpL.active { border-color:#c79a62; box-shadow:0 2px 0 #1d1108, inset 0 1px 0 rgba(255,225,170,.25); }
+#tpL.active .mode-label { border-color:#e9b878; box-shadow:none; }
+#rscr .mset-name { display:block; margin-top:3px; font:600 11px Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase; opacity:.75; }
+</style>
+<style>
+/* site header: the same menu as every other page, from nav.js */
+.top { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 16px; max-width:760px; margin:0 auto 14px; padding:0 16px; font-family:Arial, Helvetica, sans-serif; }
+.top .brand { font-size:22px; font-weight:700; letter-spacing:-.03em; color:#dbe9f5; text-decoration:none; }
+.top nav { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:13px; }
+.top nav a { color:#8ea4b6; text-decoration:none; border-bottom:1px solid transparent; }
+.top nav a:hover, .top nav a[aria-current] { color:#dbe9f5; border-bottom-color:#dbe9f5; }
+.sitefoot { margin:18px auto 0; padding:0 16px; text-align:center; font:12px Arial, sans-serif; color:#4f6a7c; }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="index.html">Rex Audio</a>
+  <nav aria-label="Main">
+    <a href="shapes.html">Shapes</a>
+    <a href="music-theory-tools.html" aria-current="page">Theory</a>
+    <a href="drums.html">Drums</a>
+    <a href="colours.html">Colours</a>
+    <a href="loops.html">Loops</a>
+    <a href="shapes.html#support">Support</a>
+  </nav>
+</header>
+<svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
+  <filter id="organicWoodNoise" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018 0.11" numOctaves="3" seed="27" stitchTiles="stitch" result="grain"/>
+    <feColorMatrix in="grain" type="saturate" values="0" result="mono"/>
+    <feComponentTransfer in="mono"><feFuncR type="gamma" amplitude="1.5" exponent="1.8" offset="-0.2"/><feFuncG type="gamma" amplitude="1.5" exponent="1.8" offset="-0.2"/><feFuncB type="gamma" amplitude="1.5" exponent="1.8" offset="-0.2"/></feComponentTransfer>
+  </filter>
+</svg>
+<div id="wrap">
+  <div id="winf" aria-label="Microtonal Tools window">
+    <div class="dbar"><span class="ddot"></span><span class="dtitle">Microtonal Tools</span><span class="dsub">Microtonal tuner</span><span class="dst" id="kStatus"></span><button type="button" class="dbtn" id="kAssign" aria-pressed="false">Assign</button><button type="button" class="dbtn" id="kClear">Clear</button><span class="dlogo">rex<b>audio</b></span></div>
+    <div id="stubs" hidden><div id="dMidi"></div><div id="dMap"></div></div>
+
+  </div>
+  <div id="mod" class="tall">
+    <button type="button" class="tpanel" id="tpL"><span class="mode-label">Audio out</span></button>
+    <div id="mtitle">Microtonal tuner</div>
+    <div class="tpanel brand" id="tpR" aria-label="rexaudio"><span>rex</span><b>audio</b></div>
+    <div id="tops"></div>
+    <div id="lscr"></div>
+    <div id="dock"></div>
+    <div id="rscr"></div>
+    <div id="whl">
+      <button type="button" class="pad" id="octUp" aria-label="Octave up">Oct ▲</button>
+      <div class="wcc" aria-hidden="true"><div id="wheel" role="slider" tabindex="0" aria-label="Mod wheel"></div><span>Mod</span></div>
+      <button type="button" class="pad" id="octDn" aria-label="Octave down">Oct ▼</button>
+    </div>
+    <div id="pads">
+      <div class="cg" id="cg"></div>
+      <button type="button" class="pad" id="play">▶&nbsp; Play</button>
+    </div>
+  </div>
+</div>
+<section id="sliderTools" hidden aria-label="Slider track length control">
+  <div class="slider-tool-row"><label for="trackLength">Slider track length</label><input id="trackLength" type="range" min="100" max="220" step="1" value="204"><output id="trackLengthVal">204 px</output><button id="copyTrackLength" type="button">Copy</button></div>
+  <div class="kt-row"><label for="keyWidth">Key width (all)</label><input id="keyWidth" type="range" min="20" max="43" step="1" value="32"><output class="kt-val" id="keyWidthVal">32 px</output><button class="kt-copy" type="button" data-copy="keyWidth">Copy</button></div>
+  <div class="kt-row"><label for="keyGap">Key gap (from centre)</label><input id="keyGap" type="range" min="0" max="24" step="1" value="16"><output class="kt-val" id="keyGapVal">16 px</output><button class="kt-copy" type="button" data-copy="keyGap">Copy</button></div>
+  <div id="sliderCopyStatus" aria-live="polite">Key width scales the whole key (track, handle, label). Gap spreads the keys out from the centre of the key section.</div>
+</section>
+<section id="keyTools" hidden aria-label="Keyboard geometry controls">
+  <h2>Keyboard geometry</h2>
+  <div class="kt-row"><label for="keyHeight">Key height</label><input id="keyHeight" type="range" min="100" max="250" step="1" value="250"><output class="kt-val" id="keyHeightVal">250 px</output><button class="kt-copy" type="button" data-copy="keyHeight">Copy</button></div>
+  <div id="keyToolsFoot"><span id="copyStatus" aria-live="polite">Adjust the keys, then copy individual values or all three.</span><button id="copyAllKeys" type="button">Copy all 3 values</button></div>
+</section>
+<p class="hint rot">Turn your phone sideways for bigger keys.</p>
+<p class="sitefoot">&copy; 2026 Rex Audio. All rights reserved.<br>Rex Audio retains all rights to its designs: web apps, digital plugins and hardware.</p>
+<div id="ghost"></div>
+<div class="intro" id="intro" hidden>
+  <div class="card">
+    <div class="step" id="step1">
+      <p class="q">What would you like to explore?</p>
+      <div class="opts"><button type="button" data-a="tune">Tunings &amp; scales</button><button type="button" data-a="chords">Microtonal chords</button></div>
+    </div>
+    <div class="step" id="step2" hidden>
+      <p class="q">Would you like to use existing tunings and scales, or make custom microtonal tunings and scales?</p>
+      <div class="opts"><button type="button" data-b="existing">Use existing</button><button type="button" data-b="custom">Make custom</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const el = (tag, cls, parent) => { const e = document.createElement(tag); if (cls) e.className = cls; if (parent) parent.appendChild(e); return e; };
+const SHARP = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"], FLAT = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+const keyName = k => SHARP[k].length > 1 ? SHARP[k] + "/" + FLAT[k] : SHARP[k];
+const ratioC = (n, d) => 1200 * Math.log2(n / d);
+const fifths = f => [0,7,2,-3,4,-1,6,1,8,3,-2,5].map(k => ((k * f) % 1200 + 1200) % 1200);
+
+// ---------- tuning systems: 12 steps above the key note ----------
+const TUNINGS = [
+  ["12-TET", [0,100,200,300,400,500,600,700,800,900,1000,1100]],
+  ["5-Limit JI", [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[45,32],[3,2],[8,5],[5,3],[9,5],[15,8]]],
+  ["5-Limit JI (16/9)", [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[45,32],[3,2],[8,5],[5,3],[16,9],[15,8]]],
+  ["7-Limit JI", [[1,1],[16,15],[9,8],[6,5],[5,4],[4,3],[7,5],[3,2],[8,5],[5,3],[7,4],[15,8]]],
+  ["Pythagorean", [[1,1],[256,243],[9,8],[32,27],[81,64],[4,3],[729,512],[3,2],[128,81],[27,16],[16,9],[243,128]]],
+  ["Harmonic series", [[1,1],[17,16],[9,8],[19,16],[5,4],[21,16],[11,8],[3,2],[13,8],[27,16],[7,4],[15,8]]],
+  ["1/4-comma meantone", fifths(1200 * Math.log2(5) / 4)],
+  ["1/3-comma meantone", fifths(694.786)],
+  ["Werckmeister III", [0, 90.225, 192.180, 294.135, 390.225, 498.045, 588.270, 696.090, 792.180, 888.270, 996.090, 1092.180]],
+  ["Kirnberger III", [0, 90.225, 193.157, 294.135, 386.314, 498.045, 590.224, 696.578, 792.180, 889.735, 996.090, 1088.269]],
+  ["Vallotti", [0, 94.135, 196.090, 298.045, 392.180, 501.955, 592.180, 698.045, 796.090, 894.135, 1000.000, 1090.225]]
+];
+// Tuning morph: one slider walks Just -> 12 TET -> Vallotti -> Kirnberger III -> Werckmeister III -> 1/4 meantone -> Pythagorean, blending the 12 note values between neighbours
+const TM_LIST = [1, 0, 10, 9, 8, 6, 4], TM_NAMES = ["Just", "12 TET", "Vallotti", "Kirnb. III", "Werck. III", "\u00bc meantone", "Pythag."];
+const TM_I = TUNINGS.length; TUNINGS.push(["Morph", TUNINGS[1][1]]);
+function tmCents(tm) {
+  const t = Math.max(0, Math.min(1, tm)) * (TM_LIST.length - 1), k = Math.min(TM_LIST.length - 2, Math.floor(t)), f = t - k, A = tuningSteps(TM_LIST[k]), B = tuningSteps(TM_LIST[k + 1]);
+  return A.map((a, d) => a.c + (B[d].c - a.c) * f);
+}
+const stepOf = (st, d) => Array.isArray(st) ? { c: ratioC(st[0], st[1]), lab: st[0] + "/" + st[1] } : { c: st, lab: Math.abs(st - 100 * d) < 0.01 ? "ET" : st.toFixed(1) + "¢" };
+const tuningSteps = i => TUNINGS[i][1].map(stepOf);
+
+// ---------- slider candidates for each semitone ----------
+// Microtones: just ratios up to odd-limit 31 (plus 12-TET). Harmonics: harmonic n/2^k and undertone 2^k/n for odd n up to 63.
+const MIC = Array.from({ length: 12 }, () => []), HAR = Array.from({ length: 12 }, () => []);
+const addTo = (L, c, lab) => { const d = Math.round(c / 100); if (d < 1 || d > 11) return; if (L[d].some(x => Math.abs(x.c - c) < 0.02)) return; L[d].push({ c, lab }); };
+(() => {
+  const gcd = (a, b) => b ? gcd(b, a % b) : a, odd = n => { while (n % 2 === 0) n /= 2; return n; };
+  for (let d = 1; d <= 128; d++) for (let n = d + 1; n < 2 * d && n <= 256; n++) if (gcd(n, d) === 1 && Math.max(odd(n), odd(d)) <= 31) addTo(MIC, ratioC(n, d), n + "/" + d);
+  TUNINGS.forEach(t => t[1].forEach((st, d) => { if (Array.isArray(st)) addTo(MIC, ratioC(st[0], st[1]), st[0] + "/" + st[1]); }));
+  for (let d = 1; d <= 11; d++) addTo(MIC, 100 * d, "ET");
+  for (let n = 3; n <= 63; n += 2) {
+    const k = Math.floor(Math.log2(n)), p = 2 ** k, q = 2 ** Math.ceil(Math.log2(n));
+    addTo(HAR, ratioC(n, p), n + "/" + p + " · H" + n);
+    addTo(HAR, ratioC(q, n), q + "/" + n + " · U" + n);
+  }
+  MIC.forEach(l => l.sort((a, b) => a.c - b.c)); HAR.forEach(l => l.sort((a, b) => a.c - b.c));
+})();
+
+const SCALES = [["Chromatic", null], ["Major", [0,2,4,5,7,9,11]], ["Minor", [0,2,3,5,7,8,10]], ["Major pent.", [0,2,4,7,9]], ["Minor pent.", [0,3,5,7,10]], ["Dorian", [0,2,3,5,7,9,10]], ["Harm. minor", [0,2,3,5,7,8,11]], ["Whole tone", [0,2,4,6,8,10]]];
+// chords: [name, steps within a 7-note scale, semitones otherwise]
+const CHORDS = [["Off"], ["Triad", [0,2,4], [0,4,7]], ["7th", [0,2,4,6], [0,4,7,10]], ["9th", [0,2,4,6,8], [0,4,7,10,14]], ["Sus2", [0,1,4], [0,2,7]], ["Sus4", [0,3,4], [0,5,7]], ["Power", [0,4], [0,7]], ["Harmonics", null, null], ["Smart"], ["Lab"]];
+const HCH = [[1, 0], [5 / 4, 4], [3 / 2, 7], [7 / 4, 10]];   // harmonics 4:5:6:7
+const ARPS = ["Off", "Up", "Down", "Up/Down", "Random", "As played"];
+// synth: [name, osc1, osc2, gain1, gain2, filter x, sustain, release-ish decay, attack]
+const SYNTHS = [["Saw", "sawtooth", "square", .55, .22, 9, .22, .55, .006], ["Pad", "triangle", "sawtooth", .5, .14, 3, .6, 1.4, .18], ["Pluck", "sawtooth", "square", .6, .2, 12, .03, .16, .004], ["Organ", "sine", "square", .5, .12, 5, .7, 4, .01]];
+const EDITS = ["Tuning systems", "Scales", "Chords", "Synth"];
+const ANCH = [["Off", null], ["C major", 0], ["A minor", 9]];   // anchor: lay the keys out as if in C (white keys = C major) or A (white keys = A minor); the sound still follows the chosen key
+const LBASE = () => ANCH[S.anchor][1] === null ? S.key : ANCH[S.anchor][1];
+
+// ---------- state ----------
+const NH = () => ({ prog: [false, false, false, false], key: [false, false, false, false], custom: [false, false, false, false], tun: [false, false, false, false], scale: [false, false, false, false], arp: [false, false, false, false] });
+const LS = "rexaudio.tuner.v1";
+var KBH = 0;
+const S = { out: "audio", pos: Array(12).fill(.5), anchor: 0, mset: 0, rng: 0, chk: 0, dis: .5, key: 0, tun: 1, lastTun: 1, deg: tuningSteps(1), scale: 0, chord: 0, arp: 0, edit: 0, sl: 0, synth: 0, oct: 0, vol: Array(24).fill(0), pads: [null, null, null, null], pmode: "prog", kcKeys: null, cc: [], hid: NH(), sel: null, seqv: { tun: null, scale: null, arp: null } };
+let HOLD = false; const latched = new Map();
+try {
+  const o = JSON.parse(localStorage.getItem(LS) || "null");
+  if (o && Array.isArray(o.deg) && o.deg.length === 12) {
+    ["key","tun","lastTun","scale","chord","arp","edit","sl","synth","oct","anchor","mset","knob","cxv","qual","ord","spr","nts","tm","mac","happy"].forEach(k => { if (typeof o[k] === "number" && isFinite(o[k])) S[k] = o[k]; });
+    if (typeof o.out === "string") S.out = o.out === "mpe" ? "mpe" : "audio";
+    if (typeof o.focus === "string") S.focus = o.focus; if (typeof o.source === "string") S.source = o.source;
+    S.deg = o.deg.map((x, d) => x && isFinite(x.c) ? { c: +x.c, lab: String(x.lab || "") } : { c: 100 * d, lab: "ET" });
+    if (Array.isArray(o.pos) && o.pos.length === 12) S.pos = o.pos.map(p => Math.max(0, Math.min(1, +p || .5)));
+    else S.pos = S.deg.map((st, d) => { if (!d) return .5; const own = tuningSteps(baseTun())[d].c; if (Math.abs(st.c - own) < .01) return .5; const [lo, hi] = range2(d); return Math.max(0, Math.min(1, (st.c - lo) / (hi - lo))); });
+    if (Array.isArray(o.vol) && o.vol.length === 24) S.vol = o.vol.map(v => Math.max(0, Math.min(1, +v || 0)));
+    if (["prog", "key", "custom", "tun", "scale", "arp"].includes(o.pmode)) S.pmode = o.pmode;
+    if (Array.isArray(o.kcKeys) && o.kcKeys.length === 4 && o.kcKeys.every(x => Number.isInteger(x) && x >= 0 && x < 12)) S.kcKeys = o.kcKeys;
+    if (o.hid) ["prog", "key", "custom", "tun", "scale", "arp"].forEach(k => { if (Array.isArray(o.hid[k]) && o.hid[k].length === 4) S.hid[k] = o.hid[k].map(Boolean); });
+    if (o.seqv) [["tun", TUNINGS.length], ["scale", SCALES.length], ["arp", ARPS.length]].forEach(([k, n]) => { const a = o.seqv[k]; if (Array.isArray(a) && a.length === 4 && a.every(x => Number.isInteger(x) && x >= 0 && x < n)) S.seqv[k] = a; });
+    if (Array.isArray(o.cc)) o.cc.slice(0, 24).forEach(c => { if (c && typeof c.n === "string" && Array.isArray(c.s) && c.s.length && c.s.every(Number.isFinite)) S.cc.push({ n: c.n.slice(0, 12), s: c.s, c: Array.isArray(c.c) && c.c.length === c.s.length && c.c.every(Number.isFinite) ? c.c : c.s.map(x => x * 100) }); });
+    if (Array.isArray(o.pads) && o.pads.length === 4) S.pads = o.pads.map(p => p && Array.isArray(p.notes) && p.notes.length ? p : null);
+  }
+} catch (e) {}
+S.cc.forEach(c => CHORDS.push([c.n, null, c.s, true, c.c]));   // saved custom chord shapes (semitones above the played root)
+const clampI = (v, n) => ((Math.round(v) % n) + n) % n;
+S.key = clampI(S.key, 12); S.scale = clampI(S.scale, SCALES.length); S.chord = clampI(S.chord, CHORDS.length); S.arp = clampI(S.arp, ARPS.length);
+S.mset = clampI(S.mset, 26); S.mset = [1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 24, 25].reduce((b, x) => Math.abs(x - S.mset) < Math.abs(b - S.mset) ? x : b, 1); S.edit = 0; S.sl = 0; S.sel = null; if (!S.chord) S.chord = 1; S.arp = 0; S.vol = Array(24).fill(0);   // S.vol now holds each key's chord position (0 = no added note)
+ if (S.knob == null || S.knob > 1 || S.knob < 0) S.knob = .5; S.dis = S.knob; S.ext = 0; S.anchor = clampI(S.anchor, 3);   // no Edit / Sliders screens here: the wheel steps tunings and pitch sliders are gone S.synth = clampI(S.synth, SYNTHS.length); S.oct = Math.max(-3, Math.min(3, Math.round(S.oct)));
+if (S.tun >= TUNINGS.length || S.tun < -1) S.tun = 0; S.lastTun = clampI(S.lastTun, TUNINGS.length); S.tun = TM_I; S.lastTun = TM_I; S.deg[0] = { c: 0, lab: "1/1" }; if (S.tun < 0) setTuning(S.lastTun);   // without sliders a tuning is always a named one
+let saveT = 0; const flush = () => { clearTimeout(saveT); try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {} }; addEventListener("pagehide", flush); document.addEventListener("visibilitychange", () => { if (document.hidden) { flush(); allOff(); } });
+const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {} }, 250); };
+
+const tuneName = () => { const t = Math.max(0, Math.min(1, S.tm || 0)) * (TM_LIST.length - 1), k = Math.min(TM_LIST.length - 2, Math.floor(t)), f = t - k; return f < .03 ? TM_NAMES[k] : f > .97 ? TM_NAMES[k + 1] : TM_NAMES[k] + " +" + Math.round(f * 100) + "%"; };
+const BASE = () => 48 + 12 * S.oct;
+const noteName = m => SHARP[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
+const JUST5 = 1;   // TUNINGS index of 5-Limit JI: the played root notes always sound in it
+let HAPPY = true;
+let RIGHT = "subtle";   // what the dissonant end of the Consonance knob does: "subtle" microtones, "smart" chords, or the "extreme" original
+// microtone depth: how much of the generated deviation from the tuning's own values is heard. Chorus-like on the left, fuller in the middle; the right end is held back unless "extreme"
+function devK() {
+  const d = S.dis, k = .12 + .55 * Math.pow(Math.min(1, d / .6), 1.5);
+  if (d <= .6 || RIGHT === "extreme") return (RIGHT === "extreme" && d > .6 ? k + (d - .6) * 1.5 : k) + (S.ext || 0) * .3;
+  return k + (d - .6) * .25 + (S.ext || 0) * .3;
+}
+const scaledDeg = () => { let own; try { own = tuningSteps(baseTun()); } catch (e) { return S.deg; } const k = devK(); return S.deg.map((x, d) => d === 0 || !own[d] ? x : Object.assign({}, x, { c: own[d].c + (x.c - own[d].c) * k })); };
+const cfgNow = () => ({ key: S.key, deg: scaledDeg(), scale: S.scale, chord: S.chord || 1, rootDeg: tuningSteps(S.tun < 0 ? S.lastTun : S.tun) })
+function freqOf(m, cfg) { const d = ((m - cfg.key) % 12 + 12) % 12; return 440 * 2 ** ((m - d - 69) / 12) * 2 ** (cfg.deg[d].c / 1200); }
+// Chords: one knob (S.chk, 0..1) adds one extra note to every played key and walks it through four zones, always built from the played (microtonal) root:
+// 1 beats (root + f/n, so it beats at f/n Hz, n from 256 down to 9 incl. Fibonacci), 2 the other microtones of the current set and Range,
+// 3 just ratios of 1 to 12 semitones, 4 the harmonic series 2 to 16. Position 0 = no added note.
+const JUST12 = [[16, 15], [9, 8], [6, 5], [5, 4], [4, 3], [45, 32], [3, 2], [8, 5], [5, 3], [9, 5], [15, 8], [2, 1]];
+const BEATN = [256, 192, 144, 128, 96, 89, 64, 55, 48, 34, 32, 24, 21, 16, 13, 12, 11, 10, 9], HARMN = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+function chordPartner(m, cfg, p) {
+  if (!(p > .001)) return null;
+  const q = Math.min(.9999, p) * 4, z = Math.floor(q), u = q - z, f0 = freqOf(m, cfg), d = ((m - cfg.key) % 12 + 12) % 12;
+  if (z === 0) { const n = BEATN[Math.floor(u * BEATN.length)]; return { f: f0 * (1 + 1 / n), lab: "beat f/" + n + " (" + (f0 / n).toFixed(1) + " Hz)" }; }
+  if (z === 1) {
+    const L = setCands(S.mset, d).filter(x => !x.center).sort((a, b) => a.c - b.c); if (!L.length) return null;
+    const c = L[Math.floor(u * L.length)], off = c.c - cfg.deg[d].c;
+    return { f: 440 * 2 ** ((m - d - 69) / 12) * 2 ** (c.c / 1200), lab: "set " + (off >= 0 ? "+" : "") + off.toFixed(1) + "\u00a2" };
+  }
+  if (z === 2) { const i = Math.floor(u * 12), j = JUST12[i]; return { f: f0 * j[0] / j[1], lab: j[0] + "/" + j[1] + " (" + (i + 1) + " st)" }; }
+  const n = HARMN[Math.floor(u * HARMN.length)]; return { f: f0 * n, lab: "harmonic " + n };
+}
+// ---------- chord generator engines ----------
+const SMART_I = CHORDS.findIndex(c => c[0] === "Smart"), LAB_I = CHORDS.findIndex(c => c[0] === "Lab");
+try { if (!localStorage.getItem(LS)) S.chord = LAB_I; } catch (e) {}
+// Smart chords: the shape follows the current scale and the Consonance knob: power chords -> diatonic triads -> sevenths -> ninths ->
+// half-diminished / dominant flat-nine -> diminished, with Phrygian colour (flat nine on the tonic, a major seventh on the flat two)
+function smartShape(m, cfg) {
+  const dis = S.dis, sc = SCALES[cfg.scale][1], seven = sc && sc.length === 7 ? sc : [0, 2, 4, 5, 7, 9, 11], rel = ((m - cfg.key) % 12 + 12) % 12, j = seven.indexOf(rel);
+  const at = k => { const t = j + k; return seven[t % 7] + 12 * Math.floor(t / 7) - rel; };
+  const tri = j >= 0 ? [0, at(2), at(4)] : [0, 4, 7], sev = j >= 0 ? tri.concat([at(6)]) : [0, 4, 7, 10], nin = j >= 0 ? sev.concat([at(8)]) : [0, 4, 7, 10, 14];
+  if (dis < .15) return [0, 7];
+  if (dis < .4) return tri;
+  if (dis < .6) return sev;
+  if (dis < .75) return nin;
+  if (dis < .9) return tri[1] === 3 ? [0, 3, 6, 10] : [0, 4, 7, 10, 13];
+  if (rel === 0) return [0, 3, 7, 13];
+  if (rel === 1) return [0, 4, 7, 11];
+  return [0, 3, 6, 9];
+}
+// Smart roots for Auto play (roots only): tonic, subdominant and dominant lead; more consonance-distance brings in the 2nd, 6th, 7th, the Phrygian flat two and the tritone
+let lastRootSemi = -1;
+function smartRoot() {
+  const dis = S.dis, sc = SCALES[S.scale][1], seven = sc && sc.length === 7 ? sc : [0, 2, 4, 5, 7, 9, 11], base = [4, 1, 2, 3, 3, 2, 1], pool = [];
+  seven.forEach((s, i) => pool.push([s, (base[i] || 1) * (i === 0 || i === 3 || i === 4 ? 1 - dis * .5 : 1 + dis * 2)]));
+  pool.push([1, dis * dis * 6]); pool.push([6, dis * dis * 3]);
+  const P = pool.filter(x => x[1] > .01 && x[0] !== lastRootSemi), tot = P.reduce((a, x) => a + x[1], 0); let r = Math.random() * tot;
+  for (const x of P) { r -= x[1]; if (r <= 0) { lastRootSemi = x[0]; return x[0]; } }
+  lastRootSemi = P[0][0]; return P[0][0];
+}
+// Generated microtones for Auto play (roots only): the knob sets how many degrees move and how far
+function genMicrotones() {
+  const dis = S.dis, spread = .06 + dis * .3, prob = .25 + .6 * dis;
+  for (let d = 1; d <= 11; d++) setPitchPos(d, Math.random() < prob ? Math.max(0, Math.min(1, .5 + (Math.random() < .5 ? -1 : 1) * (.06 + Math.random() * spread))) : .5);
+}
+// Lab: the webchord ratio engine (harmonic chords, spaced whole numbers, undertone mirror, stretch, shift, sidebands, inversion), with the microtone layer added on top
+const LAB_JUST = [1 / 1, 16 / 15, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 45 / 32, 3 / 2, 8 / 5, 5 / 3, 9 / 5, 15 / 8];
+const labSemi2Just = semi => LAB_JUST[semi % 12] * 2 ** Math.floor(semi / 12);
+const LAB_TYPES = { "Major": [0, 4, 7], "Minor": [0, 3, 7], "Diminished": [0, 3, 6], "Augmented": [0, 4, 8], "Sus2": [0, 2, 7], "Sus4": [0, 5, 7], "Power": [0, 7], "Major 7": [0, 4, 7, 11], "Minor 7": [0, 3, 7, 10], "Dominant 7": [0, 4, 7, 10], "Diminished 7": [0, 3, 6, 9], "Half-Diminished 7": [0, 3, 6, 10], "Major 9": [0, 4, 7, 11, 14], "Minor 9": [0, 3, 7, 10, 14], "Dominant 9": [0, 4, 7, 10, 14], "Major 11": [0, 4, 7, 11, 14, 17], "Minor 11": [0, 3, 7, 10, 14, 17], "Dominant 11": [0, 4, 7, 10, 14, 17], "Major 13": [0, 4, 7, 11, 14, 17, 21], "Minor 13": [0, 3, 7, 10, 14, 17, 21], "Dominant 13": [0, 4, 7, 10, 14, 17, 21] };
+const labHarm = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => (a + i) / a);
+const LAB_RATIO = { "Harmonics 1-3": labHarm(1, 3), "Harmonics 1-4": labHarm(1, 4), "Harmonics 1-5": labHarm(1, 5), "Harmonics 1-6": labHarm(1, 6), "Harmonics 1-8": labHarm(1, 8), "Harmonics 1-12": labHarm(1, 12), "Harmonics 4:5:6:7": labHarm(4, 7) };
+const LAB_NAMES = Object.keys(LAB_TYPES).concat(Object.keys(LAB_RATIO), ["Harmonics spaced", "Undertones spaced"]);
+const LAB_MORPH = ["Major", "Major 9", "Minor 9", "Major 7", "Minor 7", "Minor"];   // the Consonance knob walks through these, bright to dark
+const LAB = { par7: true, diat: true, cmorph: true, cshape: false, type: "Minor", start: 1, gap: 1, growth: 1, count: 2, stretch: 1, shift: 0, inversion: 0, transrat: 1, offset: 0, og: true, up: false, low: false };
+const labRootHarm = r => { for (let n = 1; n <= 480; n++) if (r.every(x => Math.abs(n * x - Math.round(n * x)) < 1e-6)) return n; return 8; };
+const qualV = () => S.qual == null ? 1 : S.qual;
+const labType = () => LAB.cmorph && LAB_TYPES[LAB.type] ? LAB_MORPH[Math.min(5, Math.floor(qualV() * 6))] : LAB.type;
+// Diatonic Lab chords: the chord type picks which scale degrees are stacked (triad, 7th, 9th, sus...), the Scale picks the actual notes, so D gets D minor in C major
+const LAB_STEP = [0, 1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 6];
+function diatonicSemis(m, cfg, type, arr) {
+  if (!arr && LAB.par7 && LAB.cmorph && (type === "Major 9" || type === "Minor 9" || type === "Major 7" || type === "Minor 7")) return null;
+  const sc = SCALES[cfg.scale][1], base = arr || LAB_TYPES[type]; if (!LAB.diat || !base || !sc || sc.length !== 7) return null;
+  const rel = ((m - cfg.key) % 12 + 12) % 12, j = sc.indexOf(rel); if (j < 0) return null;   // a root outside the scale stays parallel
+  return base.map(st => { const t = j + LAB_STEP[st % 12] + 7 * Math.floor(st / 12); return sc[t % 7] + 12 * Math.floor(t / 7) - rel; });
+}
+function labCents(semis) {
+  const P = Object.assign({}, LAB, { type: labType() }), up = LAB.cshape ? Math.max(0, S.dis - .5) * 2 * (RIGHT === "extreme" ? 1 : .4) : 0;   // above the middle the knob also stretches and shifts the ratios (gently, so it stays musical)
+  P.stretch = LAB.stretch + up * .15;
+  const under = P.type === "Undertones spaced", spaced = P.type === "Harmonics spaced" || under;
+  let r = spaced ? spacedNums(P.start, P.gap, P.growth, P.count).map((x, _, a) => x / a[0]) : LAB_RATIO[P.type] ? LAB_RATIO[P.type].slice() : (semis || LAB_TYPES[P.type]).map(labSemi2Just);
+  const rh = labRootHarm(r); P.shift = LAB.shift + up * rh * .015;
+  if (!under) r = r.map(x => x * P.transrat);
+  const mn = Math.min(...r), nm = mn * P.stretch; r = r.map(x => x * P.stretch - Math.abs(nm - mn));   // stretch
+  r = r.map(x => (x * rh + P.shift) / (rh + P.shift));                                                 // shift
+  if (under) { const f = r.map(x => 1 / x), lo = Math.min(...f); r = f.map(x => x / lo).sort((a, b) => a - b).map(x => x * P.transrat); }
+  const res = P.og ? r.slice() : []; for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) { if (P.up) res.push(r[i] + r[j]); if (P.low) { const df = Math.abs(r[i] - r[j]); if (df > .001) res.push(df); } }
+  let c = [...new Set(res)].map(x => 1200 * Math.log2(x)).filter(Number.isFinite).sort((a, b) => a - b);
+  for (let i = 0; i < Math.abs(P.inversion); i++) { if (P.inversion > 0) c[0] += 1200; else c[c.length - 1] -= 1200; c.sort((a, b) => a - b); }
+  return c.map(x => x + 100 * P.offset);
+}
+const labDev = (cfg, d) => cfg.deg[d].c - tuningSteps(baseTun())[d].c;   // the microtone layer: how far the sliders, set, Range and Consonance have moved this degree from the tuning's own value
+function labNotes(m, cfg, rootF) {
+  const out = [{ f: rootF, m, r: true }];
+  for (const c0 of labCents(diatonicSemis(m, cfg, labType()))) {
+    if (Math.abs(c0) < 1) continue; const mt = m + Math.round(c0 / 100), d = ((mt - cfg.key) % 12 + 12) % 12, f = rootF * 2 ** ((c0 + labDev(cfg, d)) / 1200);
+    if (f > 20 && f < 15000) out.push({ f, m: mt, c0, dm: d, rm: m });
+  }
+  return out;
+}
+function chordBase(m, cfg) {   // the root (the played key) is tuned by cfg.rootDeg (Just 5); every other chord tone by cfg.deg, so the sliders, set, Range and Consonance shape the generated tones
+  let ch = CHORDS[cfg.chord] || CHORDS[0]; const rc = cfg.rootDeg ? { key: cfg.key, deg: cfg.rootDeg } : cfg, rootF = freqOf(m, rc);
+  if (ch[0] === "Off") return [{ f: rootF, m, r: true }];
+  if (ch[0] === "Lab" && RIGHT === "smart" && S.dis > .62) ch = ["Smart"];   // dissonant end: smart diminished / Phrygian chord shapes instead of bending the Lab chord
+  if (ch[0] === "Lab") return labNotes(m, cfg, rootF);
+  if (ch[0] === "Smart") ch = ["Smart", null, smartShape(m, cfg)];
+  if (ch[0] === "Harmonics") { return HCH.map(([r, s], j) => ({ f: rootF * r, m: m + s, r: j === 0 })); }
+  if (ch[3]) { return ch[4].map((c, j) => ({ f: rootF * 2 ** (c / 1200), m: m + ch[2][j], r: j === 0 })); }   // custom chord: exact stored cents above the played root
+  const sc = SCALES[cfg.scale][1], rel = ((m - cfg.key) % 12 + 12) % 12;
+  let ms;
+  if (ch[0] !== "Smart" && sc && sc.length === 7 && sc.includes(rel)) { const j = sc.indexOf(rel); ms = ch[1].map(o => { const t = j + o; return m - rel + sc[t % 7] + 12 * Math.floor(t / 7); }); }
+  else ms = ch[2].map(i => m + i);
+  return ms.map((n, j) => ({ f: j === 0 ? rootF : freqOf(n, cfg), m: n, r: j === 0 }));
+}
+
+// Complexity slider: one smooth path through neighbouring voicings. Each step fades one voice in or out, so it never jumps.
+//  0-.2  thin -> full chord (fifth first)   .2-.45  inversions (the lowest voices rise an octave one at a time)
+//  .45-.7  in-key extensions (7th, 9th, 13th)   .7-1  mild in-key clusters (a scale step above the top voices)
+const cxClamp = x => Math.max(0, Math.min(1, x));
+function complexNotes(m, cfg, B0) {
+  const cx = S.cxv || 0; if (cx < .005) return B0; const c = .2 + .8 * cx, B = B0.slice().sort((a, b) => a.f - b.f), root = B.find(n => n.r) || B[0], others = B.filter(n => n !== root);
+  if (!others.length) return B;
+  const sc = SCALES[cfg.scale][1], seven = sc && sc.length === 7 ? sc : [0, 2, 4, 5, 7, 9, 11], rel = ((m - cfg.key) % 12 + 12) % 12, j = seven.indexOf(rel);
+  const at = k => j >= 0 ? seven[(j + k) % 7] + 12 * Math.floor((j + k) / 7) - rel : [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21][k];
+  const V = B.map(n => Object.assign({}, n, { g: 1 })), vr = V[B.indexOf(root)], vo = others.map(n => V[B.indexOf(n)]);
+  const cents = n => 1200 * Math.log2(n.f / root.f);
+  const prio = vo.slice().sort((a, b) => Math.abs(cents(a) - 702) - Math.abs(cents(b) - 702)), w = .2 / prio.length;
+  prio.forEach((n, i) => { n.g = cxClamp((c - i * w) / w); });                                       // thin -> full
+  const out = V.slice(), inv = Math.min(2, V.length - 1), u = cxClamp((c - .2) / .25) * inv;           // inversions
+  for (let k = 0; k < inv; k++) {
+    const t = cxClamp(u - k), v = V[k]; if (t <= 0) continue;
+    out.push(Object.assign({}, v, { f: v.f * 2, m: v.m + 12, c0: v.c0 != null ? v.c0 + 1200 : undefined, g: v.g * t })); v.g *= 1 - t;
+  }
+  const have = B.map(n => n.m), ue = (c - .45) / .25 * 3;                                                // extensions
+  [at(6), at(8), at(12)].forEach((st, i) => {
+    const t = cxClamp(ue - i); if (t <= 0 || have.some(h => ((h - m - st) % 12 + 12) % 12 === 0)) return;
+    out.push({ f: freqOf(m + st, cfg), m: m + st, g: .7 * t });
+  });
+  const top = B.slice(-2).reverse(), uc = cxClamp((c - .7) / .3) * 2;                                    // clusters
+  top.forEach((v, i) => {
+    const t = cxClamp(uc - i); if (t <= 0) return; let d = 1; while (d < 4 && !seven.includes(((v.m + d - cfg.key) % 12 + 12) % 12)) d++;
+    out.push({ f: freqOf(v.m + d, cfg), m: v.m + d, g: .5 * t });
+  });
+  return out.filter(n => n.g > .02).map(n => { if (n.g >= .999) delete n.g; return n; });
+}
+const cxName = () => { const c = S.cxv || 0; return c < .005 ? "off" : c < .31 ? "inversions" : c < .62 ? "extensions" : "clusters"; };
+// ---- Happy left (an option, on by default): the leftmost part of the Macro fades from the plain major triad into brighter, happier major voicings, smoothly: the 6th, 9th, maj7 and 13th fade in one after another,
+// the bass leans through first and second inversion and returns to root position at the far end, and soft harmonics 4-5-6 shimmer on top. Upper notes get lower velocities so it stays warm rather than glassy.
+function hzl() { return .26; }   // where the plain major triad sits on the Macro
+function happyZ() { return HAPPY && S.mac != null && S.mac < hzl() ? 1 - S.mac / hzl() : 0; }
+const smooth = x => { x = cxClamp(x); return x * x * (3 - 2 * x); };
+function happyLayer(m, cfg, notes) {
+  const z = happyZ(); if (z <= 0) return notes;
+  const out = notes.map(n => Object.assign({}, n)), gOf = n => n.g == null ? 1 : n.g, rootF = freqOf(m, cfg.rootDeg ? { key: cfg.key, deg: cfg.rootDeg } : cfg), have = out.map(n => n.m);
+  [[9, .04, .45, .55], [14, .25, .65, .45], [11, .5, .85, .38], [21, .72, 1, .3]].forEach(([st0, a0, a1, gmax]) => {   // 6th, 9th, maj7, 13th in pure ratio (the scale's own notes when Lab follows the scale)
+    const dm = diatonicSemis(m, cfg, null, [st0]), st = dm ? dm[0] : st0, t = smooth((z - a0) / (a1 - a0));
+    if (t <= 0 || have.some(h => ((h - m - st) % 12 + 12) % 12 === 0 && st < 12)) return;
+    const r = labSemi2Just(st); out.push({ f: rootF * r, m: m + st, c0: 1200 * Math.log2(r), dm: ((m + st - cfg.key) % 12 + 12) % 12, rm: m, g: gmax * t });
+  });
+  const u = z < .12 ? 0 : z < .4 ? smooth((z - .12) / .28) : z < .66 ? 1 + smooth((z - .4) / .26) : 2 * (1 - smooth((z - .66) / .26)), vs = out.filter(n => gOf(n) >= .5).sort((a, b) => a.f - b.f);   // inversions, smooth
+  for (let k = 0; k < 2 && k < vs.length - 1; k++) { const t = cxClamp(u - k), v = vs[k]; if (t <= 0) continue; out.push(Object.assign({}, v, { f: v.f * 2, m: v.m + 12, c0: v.c0 != null ? v.c0 + 1200 : undefined, g: gOf(v) * t })); v.g = gOf(v) * (1 - t); }
+  const h = .12 * smooth((z - .55) / .45);   // soft harmonic series
+  if (h > .01) [[4, 24], [5, 28], [6, 31]].forEach(([r, st]) => out.push({ f: rootF * r, m: m + st, c0: 1200 * Math.log2(r), dm: 0, rm: m, g: h }));
+  out.forEach(n => { if (n.f > rootF * 1.3) n.g = gOf(n) * (1 - .7 * z * cxClamp(Math.log2(n.f / rootF) / 2)); });   // the higher the note, the softer
+  return out.filter(n => gOf(n) > .02).map(n => { if (n.g != null && n.g >= .999) delete n.g; return n; });
+}
+function macroApply(v) {
+  S.mac = Math.max(0, Math.min(1, Math.round(v * 400) / 400)); S.ext = 0;
+  const m2 = HAPPY ? cxClamp((S.mac - hzl()) / (1 - hzl())) : S.mac;   // with the option on, the rest of the Macro is the same as before, just starting after the happy part
+  S.knob = S.dis = Math.round(m2 * .85 * 400) / 400; S.tm = m2 <= .5 ? 0 : (m2 - .5) * 2;
+  S.tun = TM_I; S.lastTun = TM_I; TUNINGS[TM_I][1] = tmCents(S.tm); MSC.clear(); refreshDeg();
+}
+setMacro = function (v) { macroApply(v); bendTC = .06; render(); bendTC = .01; save(); };
+function chordNotes(m, cfg) { const b = chordBase(m, cfg); return CHORDS[cfg.chord] && CHORDS[cfg.chord][0] === "Off" ? b : happyLayer(m, cfg, complexNotes(m, cfg, b)); }
+
+// ---------- audio ----------
+let ctx = null, master = null, bend = 0, bendRaw = 0, fineC = 0, masterLvl = .3; const live = new Set();
+function ensureAudio() {
+  if (!ctx) {
+    try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return false; }
+    master = ctx.createGain(); master.gain.value = masterLvl;
+    const comp = ctx.createDynamicsCompressor(); master.connect(comp); comp.connect(ctx.destination);
+  }
+  if (ctx.state === "suspended") ctx.resume();
+  return true;
+}
+function startVoice(f, vol) {
+  if (!ensureAudio()) return null;
+  const SD = SYNTHS[S.synth], t = ctx.currentTime;
+  const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g1 = ctx.createGain(), g2 = ctx.createGain(), flt = ctx.createBiquadFilter(), vca = ctx.createGain(), out = ctx.createGain();
+  o1.type = SD[1]; o2.type = SD[2]; o1.frequency.value = f; o2.frequency.value = f; o1.detune.value = bend; o2.detune.value = bend + 4;
+  g1.gain.value = SD[3]; g2.gain.value = SD[4]; flt.type = "lowpass"; flt.Q.value = 2.2;
+  flt.frequency.setValueAtTime(Math.min(7000, f * SD[5]), t); flt.frequency.exponentialRampToValueAtTime(Math.max(600, f * 2.2), t + .7);
+  vca.gain.setValueAtTime(0, t); vca.gain.linearRampToValueAtTime(.8, t + SD[8]); vca.gain.setTargetAtTime(SD[6], t + SD[8], SD[7]);
+  out.gain.value = Math.max(0, Math.min(1.5, vol * 1.25));
+  o1.connect(g1); o2.connect(g2); g1.connect(flt); g2.connect(flt); flt.connect(vca); vca.connect(out); out.connect(master);
+  o1.start(t); o2.start(t);
+  const v = { o1, o2, vca, out, flt }; live.add(v); return v;
+}
+let bendTC = .01;   // note glide time constant: short normally, longer while a Microtones set change retunes held notes
+function setVoiceFreq(v, f) { if (!v) return; const t = ctx.currentTime; v.o1.frequency.setTargetAtTime(f, t, bendTC); v.o2.frequency.setTargetAtTime(f, t, bendTC); }
+function stopVoice(v) {
+  if (!v || v.dead) return; v.dead = true; live.delete(v);
+  const t = ctx.currentTime, g = v.vca.gain;
+  if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t); else g.cancelScheduledValues(t);
+  g.setTargetAtTime(0, t, .12); v.o1.stop(t + 1); v.o2.stop(t + 1);
+  v.o2.onended = () => { try { v.out.disconnect(); } catch (e) {} };
+}
+function setBend(c) { bendRaw = c; c += fineC; bend = c; if (!ctx) return; const t = ctx.currentTime; live.forEach(v => { v.o1.detune.setTargetAtTime(c, t, .01); v.o2.detune.setTargetAtTime(c + 4, t, .01); }); }
+const volFor = m => .8;   // even level; the key sliders now set each key's added chord note
+
+// ---------- notes: direct or through the arpeggiator ----------
+const held = new Map(); let arpT = 0, arpI = 0, arpDir = 1, arpVoice = null; const lit = new Map();
+function light(ms, on) {
+  ms.forEach(m => { const n = (lit.get(m) || 0) + (on ? 1 : -1); if (n > 0) lit.set(m, n); else lit.delete(m); });
+  /* Key presses are audible but deliberately do not highlight the key visually. */
+}
+function noteOn(id, notes, vel) {
+  ensureAudio(); if (held.has(id)) noteOff(id);
+  const h = { notes, arp: S.arp > 0, vel: vel == null ? 1 : vel }; held.set(id, h); light(notes.map(n => n.m), true);
+  if (h.arp) { if (!arpT) { arpI = 0; arpDir = 1; arpTick(); arpT = setInterval(arpTick, 60000 / 120 / 2); } }
+  else notes.forEach(n => { n.v = startVoice(n.f, volFor(n.m) * h.vel * (n.hp != null ? .7 : 1) * (n.g == null ? 1 : n.g)); });
+}
+function noteOff(id) {
+  const h = held.get(id); if (!h) return; held.delete(id); light(h.notes.map(n => n.m), false);
+  if (!h.arp) h.notes.forEach(n => stopVoice(n.v));
+  if (![...held.values()].some(x => x.arp)) { clearInterval(arpT); arpT = 0; stopVoice(arpVoice); arpVoice = null; }
+}
+function arpTick() {
+  const pool = [].concat(...[...held.values()].filter(h => h.arp).map(h => h.notes)); if (!pool.length) return;
+  const up = pool.slice().sort((a, b) => a.f - b.f), mode = ARPS[S.arp];
+  let n;
+  if (mode === "Down") n = up[up.length - 1 - (arpI % up.length)];
+  else if (mode === "Up/Down") { const seq = up.length > 1 ? up.concat(up.slice(1, -1).reverse()) : up; n = seq[arpI % seq.length]; }
+  else if (mode === "Random") n = pool[Math.floor(Math.random() * pool.length)];
+  else if (mode === "As played") n = pool[arpI % pool.length];
+  else n = up[arpI % up.length];
+  arpI++; stopVoice(arpVoice); arpVoice = startVoice(n.f, volFor(n.m));
+  /* Arpeggiator notes do not add visual key highlighting. */
+}
+function allOff() { latched.clear(); [...held.keys()].forEach(noteOff); }
+
+// ---------- undo / redo / reset ----------
+const hist = [], fut = [];
+const snap = () => JSON.stringify({ happy: HAPPY ? 1 : 0, tm: S.tm, mac: S.mac, knob: S.knob, cxv: S.cxv, qual: S.qual, ord: S.ord, spr: S.spr, nts: S.nts, key: S.key, tun: S.tun, lastTun: S.lastTun, deg: S.deg, pos: S.pos, scale: S.scale, chord: S.chord, arp: S.arp, synth: S.synth, sl: S.sl, vol: S.vol, pads: S.pads, hid: S.hid });
+const commit = before => { if (snap() !== before) { hist.push(before); if (hist.length > 100) hist.shift(); fut.length = 0; } };
+const act = fn => { const b = snap(); fn(); commit(b); };
+function restore(str) { Object.assign(S, JSON.parse(str)); allOff(); render(); save(); }
+function undo() { if (!hist.length) return; fut.push(snap()); restore(hist.pop()); }
+function redo() { if (!fut.length) return; hist.push(snap()); restore(fut.pop()); }
+function resetAll() {
+  S.mset = 0;
+  act(() => { allOff(); S.key = 0; S.scale = 0; S.chord = 1; S.arp = 0; S.synth = 0; S.sl = 0; S.vol = Array(24).fill(0); S.pads = [null, null, null, null]; S.pmode = "prog"; S.kcKeys = null; S.hid = NH(); S.sel = null; S.seqv = { tun: null, scale: null, arp: null }; setTuning(1); });
+  seqStop(); render(); save();
+}
+
+// ---------- screen bars ----------
+const ARR = d => '<svg viewBox="0 0 12 14"><polygon points="' + (d < 0 ? "9,2.5 3,7 9,11.5" : "3,2.5 9,7 3,11.5") + '"/></svg>';
+function bar(parent, label, step, id) {
+  const c = el("div", "ks", parent); if (id) c.id = id;
+  const a = el("button", "karr", c); a.type = "button"; a.innerHTML = ARR(-1); a.setAttribute("aria-label", label + " previous");
+  const mid = el("div", "kmid", c); const sm = el("small", "", mid); sm.textContent = label; const b = el("b", "", mid);
+  const z = el("button", "karr", c); z.type = "button"; z.innerHTML = ARR(1); z.setAttribute("aria-label", label + " next");
+  a.onclick = () => { act(() => step(-1)); render(); save(); }; z.onclick = () => { act(() => step(1)); render(); save(); };
+  return { b, sm };
+}
+// move the tuning morph; the played notes glide to the new tuning, and the microtone candidates are rebuilt around it
+function tmApply(v) { S.tm = Math.max(0, Math.min(1, Math.round(v * 400) / 400)); S.tun = TM_I; if (S.lastTun !== TM_I) S.lastTun = TM_I; TUNINGS[TM_I][1] = tmCents(S.tm); MSC.clear(); refreshDeg(); bendTC = .06; render(); bendTC = .01; save(); }
+// Macro: left = just and consonant, the tuning stays Just until the middle, then it goes through 12 TET and the other tunings while the microtone side gets looser
+function setMacro(v) {
+  S.mac = Math.max(0, Math.min(1, Math.round(v * 400) / 400)); S.knob = S.dis = Math.round(S.mac * .85 * 400) / 400; S.ext = 0;
+  S.tm = S.mac <= .5 ? 0 : (S.mac - .5) * 2; S.tun = TM_I; S.lastTun = TM_I; TUNINGS[TM_I][1] = tmCents(S.tm); MSC.clear(); refreshDeg();
+  bendTC = .06; render(); bendTC = .01; save();
+}
+function setTuning(i) { S.tun = clampI(i, TUNINGS.length); S.lastTun = S.tun; S.deg = tuningSteps(S.tun); S.pos = Array(12).fill(.5); }
+const STEP = {
+  key: d => { allOff(); S.key = clampI(S.key + d, 12); },
+  tun: d => { tmApply((S.tm || 0) + d * .04); },
+  scale: d => { S.scale = clampI(S.scale + d, SCALES.length); },
+  anchor: d => { allOff(); S.anchor = clampI(S.anchor + d, 3); },
+  chord: d => { allOff(); S.chord = clampI(S.chord + d, CHORDS.length); },
+  arp: d => { allOff(); S.arp = clampI(S.arp + d, ARPS.length); },
+  synth: d => { S.synth = clampI(S.synth + d, SYNTHS.length); }
+};
+const tops = $("#tops"), lscr = $("#lscr");
+const tb = (label, fn, id) => { const b = el("button", "tbtn", tops); b.type = "button"; b.textContent = label; b.onclick = fn; if (id) b.id = id; return b; };
+const holdTop = tb("Hold", () => { HOLD = !HOLD; if (!HOLD) { latched.forEach((v, m) => noteOff("h" + m)); latched.clear(); } render(); save(); }, "bHoldTop"); tb("Undo", () => undo(), "bUndo"); tb("Reset", () => resetAll(), "bReset");
+const dockEl = $("#dock");
+dockEl.classList.add("wood");
+tb("Oct ▲", () => { allOff(); S.oct = Math.min(3, S.oct + 1); render(); save(); }, "octUpTop");
+tb("Oct ▼", () => { allOff(); S.oct = Math.max(-3, S.oct - 1); render(); save(); }, "octDnTop");
+const listenBtn = tb("▶ Listen", () => {
+  if (listenBtn.textContent.includes("Stop")) { clearTimeout(listenTimer); noteOff("listen"); listenBtn.textContent = "▶ Listen"; return; }
+  ensureAudio(); allOff();
+  const notes = chordNotes(BASE(), cfgNow());
+  noteOn("listen", notes);
+  listenBtn.textContent = "■ Stop";
+  clearTimeout(listenTimer);
+  listenTimer = setTimeout(() => { noteOff("listen"); listenBtn.textContent = "▶ Listen"; }, 1800);
+}, "listenTop");
+let listenTimer = 0;
+// ---------- auto play: a chord on repeat. Each step either leaves the sound as it is, moves one tuning slider, or changes the microtone set; never a slider and a set in the same step ----------
+let DEMO = null; const DEMO_SETS = [0, 1, 2, 3, 4, 5, 6], DEMO_RNG = [4, 5, 6, 7, 8, 9], DEMO_STEP = 2400, DEMO_ROOTS = [0, 5, 7, 2];
+const demoCfg = () => cfgNow();   // plays the Triad
+function demoSetChange(i) {   // a microtone-set change without an undo step (the demo is undone as one step when it starts)
+  S.mset = i; if (S.sl === 0) refreshDeg(); bendTC = .06; render(); bendTC = .01;
+}
+const demoPos = () => { const q = .2 + Math.random() * .22; return Math.random() < .5 ? q : 1 - q; };   // off-centre but moderate: .2 to .42 or .58 to .8
+function demoRangeChange(i) {   // a Range change, also without an undo step
+  S.rng = i; if (S.sl === 0) refreshDeg(); bendTC = .06; render(); bendTC = .01;
+}
+let ROOTSONLY = true;
+function demoStep() {
+  if (!DEMO) return;
+  if (ROOTSONLY) {   // only roots are chosen here; the chord generator makes the chord notes and the microtones
+    genMicrotones(); lastRootSemi = lastRootSemi; const semi = smartRoot();
+    DEMO.n++; noteOff("dm"); noteOn("dm", chordNotes(BASE() + S.key + semi, cfgNow())); render(); return;
+  }
+  if (DEMO.n > 0 && DEMO.n % 2 === 0) { const d = 1 + Math.floor(Math.random() * 11); setPitchPos(d, demoPos()); }   // every 2 chords one random slider moves; the set and Range stay as chosen
+  DEMO.n++;
+  noteOff("dm"); noteOn("dm", chordNotes(BASE() + DEMO_ROOTS[DEMO.n % DEMO_ROOTS.length], demoCfg()));
+  render();
+}
+function startDemo() {
+  ensureAudio(); act(() => { S.sl = 0; });
+  DEMO = { n: 0, timer: null }; DEMO.timer = setInterval(demoStep, DEMO_STEP); demoStep();
+}
+function stopDemo() { if (!DEMO) return; clearInterval(DEMO.timer); DEMO = null; noteOff("dm"); render(); save(); }
+tb("▶ Auto play", () => { if (DEMO) stopDemo(); else startDemo(); render(); }, "bDemo");
+// generator panel inside the module, under the keys: chord choice, Lab controls, Auto play option
+const PK = "rexaudio.chordgen3.panel.v2";
+try { const o = JSON.parse(localStorage.getItem(PK) || "null"); if (o) { Object.assign(LAB, o.lab || {}); if (typeof o.ro === "boolean") ROOTSONLY = o.ro; if (o.right) RIGHT = o.right; } } catch (e) {}
+const savePanel = () => { try { localStorage.setItem(PK, JSON.stringify({ lab: LAB, ro: ROOTSONLY, right: RIGHT })); } catch (e) {} };
+(function () {
+  const mod = $("#mod"), box = document.createElement("div"); box.id = "lab"; setTimeout(() => { box.addEventListener("input", savePanel); box.addEventListener("change", savePanel); }, 0);
+  box.style.cssText = "position:absolute;left:14px;right:14px;top:calc(100% + 8px);height:500px;box-sizing:border-box;padding:8px 12px;border:1px solid #6b4a2a;border-radius:8px;color:#f3e2c4;font:12px Arial,sans-serif;background:rgba(40,24,12,.85);display:grid;grid-template-columns:1fr 1fr;gap:3px 18px;align-content:start;overflow:hidden";
+  const full = el => { el.style.gridColumn = "1 / 3"; return el; };
+  const row = (label, el, wide) => { const l = document.createElement("label"); l.style.cssText = "display:flex;align-items:center;gap:6px;white-space:nowrap"; l.append(label); l.appendChild(el); box.appendChild(wide ? full(l) : l); return l; };
+  const opt = (sel, v, t, on) => { const o = document.createElement("option"); o.value = v; o.textContent = t; if (on) o.selected = true; sel.appendChild(o); };
+  const ch = document.createElement("select"); ch.id = "chSel"; ch.style.cssText = "flex:1"; CHORDS.forEach((c, i) => { if (c[0] !== "Off" && !c[3]) opt(ch, i, c[0], i === S.chord); }); ch.onchange = () => { allOff(); S.chord = +ch.value; save(); };
+
+  { const st = document.createElement("style"); st.textContent = ".bigsl{-webkit-appearance:none;appearance:none;width:100%;height:46px;background:transparent;margin:0;touch-action:none}.bigsl::-webkit-slider-runnable-track{height:18px;border-radius:9px;background:linear-gradient(#1a0c04,#3a2210);box-shadow:inset 0 2px 4px rgba(0,0,0,.7)}.bigsl::-moz-range-track{height:18px;border-radius:9px;background:#2a170a}.bigsl::-webkit-slider-thumb{-webkit-appearance:none;width:46px;height:46px;margin-top:-14px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff0cf,#d9a468 55%,#8b5a2b);border:2px solid #3a2210;box-shadow:0 2px 6px rgba(0,0,0,.7)}.bigsl::-moz-range-thumb{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff0cf,#d9a468 55%,#8b5a2b);border:2px solid #3a2210}";
+    document.head.appendChild(st); }
+  const bigRow = (name, onIn) => { const w = document.createElement("div"); w.style.cssText = "grid-column:1 / 3;margin:2px 0 6px"; const t = document.createElement("div"); t.style.cssText = "display:flex;justify-content:space-between;font-weight:bold;font-size:14px;margin-bottom:2px"; const a = document.createElement("span"); a.textContent = name; const b = document.createElement("span"); t.append(a, b);
+    const i = document.createElement("input"); i.type = "range"; i.min = 0; i.max = 1000; i.step = 1; i.className = "bigsl"; i.oninput = () => onIn(+i.value / 1000); w.append(t, i); box.appendChild(w); return { i, b }; };
+  const bigMac = bigRow("Macro", v => setMacro(v)), bigTun = bigRow("Tuning", v => tmApply(v));
+  window.BIGSL = () => { if (document.activeElement !== bigMac.i) bigMac.i.value = Math.round((S.mac == null ? .5 : S.mac) * 1000); if (document.activeElement !== bigTun.i) bigTun.i.value = Math.round((S.tm || 0) * 1000); bigMac.b.textContent = Math.round((S.mac == null ? .5 : S.mac) * 100) + "%"; bigTun.b.textContent = tuneName(); };
+  window.BIGSL();
+  row("Chord", ch, true);
+  const sel = document.createElement("select"); sel.style.cssText = "flex:1"; LAB_NAMES.forEach(n => opt(sel, n, n, n === LAB.type)); sel.onchange = () => { LAB.type = sel.value; };
+  row("Lab type", sel, true);
+  [["start", "Start", 1, 30], ["gap", "Gap", 1, 6], ["growth", "Growth", 0, 4], ["count", "Notes", 2, 12], ["transrat", "Transpose", 1, 8], ["stretch", "Stretch", 1, 10], ["shift", "Shift", 0, 8], ["inversion", "Inversion", -8, 8], ["offset", "Modal st", -12, 12]].forEach(([k, label, lo, hi]) => {
+    const inp = document.createElement("input"); inp.type = "range"; inp.min = lo; inp.max = hi; inp.step = 1; inp.value = LAB[k]; inp.style.cssText = "flex:1;min-width:0";
+    const v = document.createElement("span"); v.textContent = LAB[k]; v.style.cssText = "width:22px;text-align:right"; inp.oninput = () => { LAB[k] = +inp.value; v.textContent = inp.value; }; const l = row(label, inp); l.appendChild(v);
+  });
+  const cb = (k, label) => { const c = document.createElement("input"); c.type = "checkbox"; c.checked = LAB[k]; c.onchange = () => { LAB[k] = c.checked; }; const l = document.createElement("label"); l.append(c, " " + label); return l; };
+  [["par7", "Macro 7ths and 9ths (major / minor) stay parallel Just chords, not diatonic"], ["diat", "Lab chords follow the Scale (diatonic: D minor in C major); roots outside the scale stay parallel"], ["cmorph", "Consonance morphs the chord: major, maj9, min9, maj7, min7, minor (chord types only)"], ["cshape", "Consonance also drives stretch and shift (above the middle)"]].forEach(([k, label]) => { const l = cb(k, label); l.style.cssText = "grid-column:1 / 3"; box.appendChild(l); });
+  { const c = document.createElement("input"); c.type = "checkbox"; c.checked = HAPPY; c.onchange = () => { HAPPY = c.checked; allOff(); macroApply(S.mac == null ? .5 : S.mac); render(); save(); };
+    const l = document.createElement("label"); l.style.cssText = "grid-column:1 / 3;font-weight:bold"; l.append(c, " Happy left: the left of the Macro fades from the major triad into brighter major voicings (6th, 9th, maj7, 13th, inversions, soft harmonics)"); box.appendChild(l); }
+  const rs = document.createElement("select"); rs.style.cssText = "flex:1"; [["subtle", "Dissonant end: subtle microtones"], ["smart", "Dissonant end: smart chords (diminished, Phrygian)"], ["extreme", "Dissonant end: extreme (original)"]].forEach(([v, t]) => opt(rs, v, t, v === RIGHT)); rs.onchange = () => { allOff(); RIGHT = rs.value; };
+  row("Right of knob", rs, true);
+  const sb = document.createElement("div"); sb.style.cssText = "grid-column:1 / 3;display:flex;gap:14px;margin-top:2px"; sb.append(cb("og", "Original"), cb("up", "Upper sidebands"), cb("low", "Lower sidebands")); box.appendChild(sb);
+  const ro = document.createElement("input"); ro.type = "checkbox"; ro.id = "rootsOnly"; ro.checked = ROOTSONLY; ro.onchange = () => { ROOTSONLY = ro.checked; }; const lr = document.createElement("label"); lr.style.cssText = "grid-column:1 / 3;margin-top:6px;font-weight:bold"; lr.append(ro, " Auto play: roots only (scale-aware roots; the generator makes the chords and the microtones)"); box.appendChild(lr);
+  mod.appendChild(box); mod.style.overflow = "visible";
+})();
+// thumbs up / down for the current microtone set + Range combination, kept in this browser; "Copy" puts the lists on the clipboard
+const RATEKEY = "rexaudio.ratings.chordgen3.v1"; let RATINGS = {};
+try { const o = JSON.parse(localStorage.getItem(RATEKEY) || "{}"); if (o && typeof o === "object") RATINGS = o; } catch (e) {}
+const rateId = () => SPEC[S.mset].short + "|" + PERIOD_NAMES[S.rng];
+const saveRatings = () => { try { localStorage.setItem(RATEKEY, JSON.stringify(RATINGS)); } catch (e) {} };
+function rate(v) { const k = rateId(); if (RATINGS[k] === v) delete RATINGS[k]; else RATINGS[k] = v; saveRatings(); render(); }
+function ratingsText() {
+  const out = [];
+  for (const [v, title] of [[1, "Liked"], [-1, "Disliked"]]) {
+    const by = new Map(); Object.keys(RATINGS).forEach(k => { if (RATINGS[k] !== v) return; const [st, rn] = k.split("|"); if (!by.has(st)) by.set(st, []); by.get(st).push(rn); });
+    const total = [...by.values()].reduce((a, x) => a + x.length, 0);
+    out.push(title + " (" + total + "):");
+    SPEC.forEach(sp => { const L = by.get(sp.short); if (L) out.push("- " + sp.short + ": " + L.sort((a, b) => PERIOD_NAMES.indexOf(a) - PERIOD_NAMES.indexOf(b)).join(", ")); });
+    by.forEach((L, st) => { if (!SPEC.some(sp => sp.short === st)) out.push("- " + st + ": " + L.join(", ")); });
+    out.push("");
+  }
+  return out.join("\n").trim();
+}
+function copyRatings() {
+  const t = ratingsText(), say = ok => { flashTxt = ok ? "Copied ratings" : "Copy failed"; flashT = Date.now() + 1800; render(); setTimeout(render, 1900); };
+  const old = () => { try { const a = document.createElement("textarea"); a.value = t; a.style.position = "fixed"; a.style.opacity = "0"; document.body.appendChild(a); a.select(); const ok = document.execCommand("copy"); a.remove(); return ok; } catch (e) { return false; } };
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(() => say(true), () => say(old())); return; } } catch (e) {}
+  say(old());
+}
+// Random: each press steps the amount 0, 20, 40, 60, 80, 100% and back to 0, and re-rolls the 11 sliders at that amount (0% = all back at the centre)
+const RND_LEVELS = [0, .2, .4, .6, .8, 1]; let rndI = 0;
+function stepRandom() {
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  act(() => {
+    S.mset = pick(LIKED); if (LIKED_RANGES.length) S.rng = pick(LIKED_RANGES);
+    S.scale = Math.floor(Math.random() * SCALES.length);
+    tmApply(Math.random()); S.qual = Math.random(); S.knob = S.dis = Math.round(Math.random() * .6 * 400) / 400; allOff();
+    refreshDeg();
+    for (let d = 1; d <= 11; d++) setPitchPos(d, Math.random());
+  });
+  bendTC = .06; render(); bendTC = .01; save();
+}
+tb("\ud83c\udfb2", () => stepRandom(), "bRand");
+tb("👍", () => rate(1), "bUp"); tb("👎", () => rate(-1), "bDown"); tb("Copy", () => copyRatings(), "bCopyRate");
+listenBtn.style.background = "linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e)";
+listenBtn.style.color = "#573821";
+listenBtn.style.borderColor = "#a87948";
+listenBtn.style.flex = "1.15 1 0";
+listenBtn.style.padding = "0 4px";
+listenBtn.style.boxShadow = "0 2px 0 #8a603a,inset 0 1px 0 rgba(255,241,204,.7)";
+[holdTop].forEach(b => { b.style.background = "linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e)"; b.style.color = "#573821"; b.style.borderColor = "#a87948"; b.style.boxShadow = "0 2px 0 #8a603a,inset 0 1px 0 rgba(255,241,204,.7)"; });
+const B = {
+  hold: bar(tops, "Hold", d => { HOLD = !HOLD; if (!HOLD) { latched.forEach((v, m) => noteOff("h" + m)); latched.clear(); } }, "barHold"),
+  edit: bar(tops, "Edit", d => { S.edit = clampI(S.edit + d, 4); }, "barEdit"),
+  sl: bar(tops, "Sliders", d => { S.sl = clampI(S.sl + d, 2); flashT = 0; }, "barSl"),
+  key: bar(lscr, "Key", STEP.key), anchor: bar(lscr, "Anchor", STEP.anchor), tun: bar(lscr, "Tuning", STEP.tun)
+};
+B.scale = bar(lscr, "Scale", STEP.scale);
+B.mac = bar(lscr, "Macro", d => setMacro((S.mac == null ? .5 : S.mac) + d * .025));
+// drag across the Tuning and Macro tiles; they also get a fill bar like the other knobs
+let TILE_BG = null;
+function dragTile(tile, fn) {
+  const mid = tile.querySelector(".kmid"); tile.style.touchAction = "none"; let drag = false;
+  const move = e => { const r = tile.getBoundingClientRect(); fn((e.clientX - r.left - 34) / (r.width - 68)); };
+  tile.addEventListener("pointerdown", e => { if (e.target.closest && e.target.closest(".karr")) return; drag = true; try { tile.setPointerCapture(e.pointerId); } catch (x) {} move(e); });
+  tile.addEventListener("pointermove", e => { if (drag) move(e); });
+  ["pointerup", "pointercancel"].forEach(n => tile.addEventListener(n, () => { drag = false; }));
+}
+dragTile(B.tun.b.closest(".ks"), v => tmApply(v)); dragTile(B.mac.b.closest(".ks"), v => setMacro(v));
+function tmTrack(tile) {
+  if (tile._trk) return tile._trk; tile.style.position = "relative";
+  const t = document.createElement("div"); t.style.cssText = "position:absolute;left:34px;right:34px;bottom:9px;height:6px;border-radius:3px;background:rgba(20,8,2,.65);pointer-events:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.6)";
+  const f = document.createElement("div"); f.style.cssText = "position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:linear-gradient(#f4d9a6,#c9965a)";
+  const k = document.createElement("div"); k.style.cssText = "position:absolute;top:-5px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff0cf,#d9a468 55%,#8b5a2b);border:1px solid #3a2210;box-shadow:0 1px 3px rgba(0,0,0,.6)";
+  t.append(f, k); tile.appendChild(t); return tile._trk = { f, k };
+}
+function tmPaint() {
+  B.tun.b.style.fontSize = "13px";
+  [[B.tun, S.tm || 0], [B.mac, S.mac == null ? .5 : S.mac]].forEach(([t, v]) => {
+    const tile = t.b.closest(".ks"), q = tmTrack(tile), p = Math.round(v * 1000) / 10; q.f.style.width = p + "%"; q.k.style.left = p + "%";
+  });
+  B.mac.b.textContent = Math.round((S.mac == null ? .5 : S.mac) * 100) + "%";
+}
+const modeNames = ["Microtones", "Complexity", "Range", "Consonance"], SLV = [0, 1, 0, 0], PER_I = 2, VOL_I = 3;
+let selectedBorderStyle = 3; // Selected screens use a text-colour rectangle.
+let volumeSelected = false;
+let selectedBaseMode = 0;
+const modeButtons = modeNames.map((name, i) => {
+  const b = el("button", "mode-toggle", $("#rscr")); b.type = "button";
+  const label = el("span", "mode-label", b); label.textContent = name; b.label = label;
+  if (i === 0 || i === 1 || i === PER_I || i === VOL_I) [-1, 1].forEach(dir => { const a = el("span", "mset-arr " + (dir < 0 ? "mset-l" : "mset-r"), b); a.innerHTML = ARR(dir); a.setAttribute("role", "button"); a.setAttribute("aria-label", i === 0 ? (dir < 0 ? "Previous microtone set" : "Next microtone set") : i === VOL_I ? (dir < 0 ? "More consonant" : "More dissonant") : (dir < 0 ? "Smaller range" : "Larger range"));
+    a.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); if (i === 0) applyMset(likedStep(dir)); else if (i === 1) setQual(qualV() + dir * .1667); else if (i === VOL_I) setDis(S.knob + dir * .025); else applyPeriod(S.rng + dir); }); });
+  b.setAttribute("aria-pressed", "false");
+  b.addEventListener("click", () => {
+    if (i === VOL_I || i === 1) return;   // knobs: drag across the tile
+    if (i === PER_I) { applyPeriod(S.rng + 1); return; }   // Range: a setting, not a slider screen; click steps to the next range
+    if (i !== VOL_I && i === selectedBaseMode && !volumeSelected) return;
+    act(() => {
+      if (i === VOL_I) {   // Chords: toggles on, and the sliders follow it until a Microtones or Pitch button is clicked
+        volumeSelected = !volumeSelected;
+        S.sl = volumeSelected ? 2 : SLV[selectedBaseMode];
+      } else {             // the most recently clicked of Microtones / Pitch takes the sliders back from Volume
+        volumeSelected = false;
+        selectedBaseMode = i;
+        S.sl = SLV[i];
+        flashT = 0;
+      }
+    });
+    render(); save();
+  });
+  return b;
+});
+// Consonance knob: drag across the tile (left = consonant and sparse, middle = the set as it is, right = dissonant, with sidebands added); the arrows nudge it.
+// It reshapes the chosen microtone set at the chosen Range; held notes glide to the new options.
+function setDis(v) { S.knob = Math.max(0, Math.min(1, Math.round(v * 400) / 400)); S.dis = S.knob; S.ext = 0; if (S.sl === 0) refreshDeg(); bendTC = .06; render(); bendTC = .01; save(); }
+function setQual(v) { S.qual = Math.max(0, Math.min(1, Math.round(v * 400) / 400)); allOff(); render(); save(); }
+function setCx(v) { S.cxv = Math.max(0, Math.min(1, Math.round(v * 400) / 400)); render(); save(); }
+(function () { const t = modeButtons[1]; t.style.touchAction = 'none'; let drag = false, sx = 0, mv = false; const move = e => { const r = t.getBoundingClientRect(); setQual((e.clientX - r.left - 26) / (r.width - 52)); };
+  t.addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('.mset-arr')) return; drag = true; sx = e.clientX; mv = false; try { t.setPointerCapture(e.pointerId); } catch (x) {} });
+  t.addEventListener('pointermove', e => { if (drag && (mv || Math.abs(e.clientX - sx) > 6)) { mv = true; move(e); } }); ['pointerup', 'pointercancel'].forEach(n => t.addEventListener(n, () => { drag = false; })); })();
+(function () {
+  const t = modeButtons[VOL_I]; t.style.touchAction = "none"; let drag = false, sx = 0, mv = false;
+  const move = e => { const r = t.getBoundingClientRect(); setDis((e.clientX - r.left - 26) / (r.width - 52)); };
+  t.addEventListener("pointerdown", e => { if (e.target.closest && e.target.closest(".mset-arr")) return; drag = true; sx = e.clientX; mv = false; try { t.setPointerCapture(e.pointerId); } catch (x) {} });
+  t.addEventListener("pointermove", e => { if (drag && (mv || Math.abs(e.clientX - sx) > 6)) { mv = true; move(e); } });
+  ["pointerup", "pointercancel"].forEach(n => t.addEventListener(n, () => { drag = false; }));
+})();
+const padsBox = $("#pads");
+const pmodeWrap = el("div", "ks", padsBox); pmodeWrap.id = "pmodeWrap";
+const pmodeSel = el("select", "", pmodeWrap); pmodeSel.id = "pmode"; pmodeSel.setAttribute("aria-label", "Pad mode");
+[["key", "Key change"], ["prog", "Chord progression"], ["custom", "Custom chords"], ["tun", "Tunings"], ["scale", "Scales"], ["arp", "Arps"]].forEach(([v, t]) => { const o = el("option", "", pmodeSel); o.value = v; o.textContent = t; });
+padsBox.insertBefore(pmodeWrap, padsBox.firstChild);
+function setPMode(m) {
+  if (S.pmode === m && (m !== "key" || S.kcKeys)) return;
+  S.pmode = m; S.sel = null; if (m === "key" && !S.kcKeys) S.kcKeys = [0, 5, 7, 2].map(o => (S.key + o) % 12);
+  render(); save();
+}
+pmodeSel.onchange = () => { if (m_ok(pmodeSel.value)) setPMode(pmodeSel.value); };
+const m_ok = v => ["key", "prog", "custom", "tun", "scale", "arp"].includes(v);
+
+// ---------- keyboard: 12 slider keys (one octave) ----------
+const dock = $("#dock"), keyEls = [];
+const keyGeometry = { height:250, width:32, gap:16 };
+let sliderTrackLength = 225;
+const HS = () => 24 * keyGeometry.width / 32;   // handle size (scales with key width)
+function layoutKeys() {
+  const NATURAL = [0,2,4,5,7,9,11];
+  const pcs = keyEls.map(k => (LBASE() + k.i) % 12);
+  const whiteOffsets = pcs.map((pc, i) => NATURAL.includes(pc) ? i : -1).filter(i => i >= 0);
+  const KW = keyGeometry.width, G0 = keyGeometry.gap;
+  // Dock size is fixed (never changes with the key). Worst case content = 7 white keys + half a key pitch for a black key that
+  // sticks out past the first or last white key (never both). Squeeze the gap if needed so that always fits.
+  const dockW = 352, pad = 12;   // fixed: 7 keys + 6 default gaps + margins
+  const lead = !NATURAL.includes(pcs[0]), tail = !NATURAL.includes(pcs[11]), over = lead || tail, avail = dockW - 2 * pad;
+  // No overhang (e.g. starting on C): the original layout. A black key sticking out past the first/last white key: squeeze to fit.
+  const G = Math.max(0, Math.min(G0, over ? (avail - 7.5 * KW) / 6.5 : (avail - 7 * KW) / 6)), P = KW + G;
+  dock.style.width = dockW + "px";
+  dock.style.left = "186px"; dock.style.setProperty("--ks", (KW / 32).toFixed(4)); $("#keyGapVal").textContent = Math.round(G) + " px" + (G < G0 - .5 ? " (max)" : "");
+  // top buttons span the full module, from the outer edge of the left screens to the outer edge of the right screens
+  $("#tops").style.left = "14px";
+  $("#tops").style.width = ((parseFloat(getComputedStyle(mod).width) || 724) - 28) + "px";
+  const content = 7 * KW + 6 * G + (over ? P / 2 : 0);
+  const x0 = (dockW - content) / 2 + (lead ? P / 2 : 0);
+  const topBlack = 12, whiteTop = 24 + keyGeometry.height;
+  const dockH = whiteTop + keyGeometry.height + 12;
+  dock.style.height = dockH + "px";
+  $("#lscr").style.height = dockH + "px";
+  $("#rscr").style.left = ((parseFloat(getComputedStyle(mod).width) || 724) - 14 - 156) + "px";
+  $("#rscr").style.height = dockH + "px";
+  // top buttons now sit at the bottom: same 16px gap under the keyboard, then the module edge
+  $("#tops").style.top = (62 + dockH + 16) + "px";
+  const kbTop = 62 + dockH + 16 + 38;
+  $("#mod").style.height = (kbTop + 14) + "px";
+  keyEls.forEach(k => {
+    const pc = (LBASE() + k.i) % 12;
+    const white = NATURAL.includes(pc);
+    k.el.classList.toggle("wk", white); k.el.classList.toggle("bk", !white);
+    let x;
+    if (white) x = x0 + whiteOffsets.indexOf(k.i) * P;
+    else x = x0 + (whiteOffsets.filter(o => o < k.i).length - 1) * P + KW + G / 2 - KW / 2;   // centred over the gap after the previous white key (or before the first)
+    k.el.style.left = x + "px";
+    k.el.style.width = KW + "px";
+    k.el.style.height = keyGeometry.height + "px";
+    k.el.style.top = (white ? whiteTop : topBlack) + "px";
+    if (k.fd) { k.fd.style.top = "4px"; k.fd.style.bottom = "auto"; k.fd.style.height = Math.min(sliderTrackLength, Math.max(30, keyGeometry.height - 20)) + "px"; }
+  });
+  fit();
+}
+(() => {
+  const W = [0,2,4,5,7,9,11];
+  for (let i = 0; i < 12; i++) {
+    const pc = (S.key + i) % 12, white = [0,2,4,5,7,9,11].includes(pc), k = el("div", white ? "wk" : "bk", dock);
+    const fd = el("div", "fd", k); fd.setAttribute("role", "slider"); fd.tabIndex = 0; el("span", "fc", fd); const th = el("span", "fth", fd);
+    const lb = el("span", "lb", k);
+    keyEls.push({ el: k, fd, th, lb, i, get pc() { return (S.key + i) % 12; }, get m() { return BASE() + S.key + i; } });
+  }
+})();
+const degOf = m => ((m - S.key) % 12 + 12) % 12;
+const isPitch = () => S.sl !== 2;
+// ---------- Microtones: five sets (Microtones 1-5). Each slider offers up to 10 per set, simplest first, inside the span between its two
+// neighbours' starting tunings in the chosen tuning. Sets: 1 ratios, 2 math constants, 3 sidebands of tuning degrees, 4 sidebands of sets, 5 harmonics of all ----------
+const KONST = [["π", Math.PI], ["e", Math.E], ["φ", (1 + Math.sqrt(5)) / 2], ["√2", Math.SQRT2], ["√3", Math.sqrt(3)], ["ln2", Math.LN2], ["γ", .5772156649], ["√5", Math.sqrt(5)], ["ln3", Math.log(3)], ["∛2", Math.cbrt(2)], ["ζ3", 1.2020569032], ["G", .9159655942], ["ln10", Math.LN10]];
+const oct1 = v => ((1200 * Math.log2(v)) % 1200 + 1200) % 1200;   // octave-normalised cents of a frequency ratio
+const gcdM = (a, b) => b ? gcdM(b, a % b) : a;
+const oddM = q => { while (q % 2 === 0) q /= 2; return q; };
+const baseTun = () => S.tun >= 0 ? S.tun : S.lastTun;
+function range2(d) { const st = tuningSteps(baseTun()), lo = d >= 1 ? st[d - 1].c : 0, hi = d <= 10 ? st[d + 1].c : 1200; return hi - lo > 1 ? [lo, hi] : [100 * d - 50, 100 * d + 50]; }
+// a ratio that is part of the harmonic series folded into one octave: odd/2^k or 2^k/odd (3/2, 5/4, 7/4, 16/15 ...)
+const harmForm = (n, d) => { const g = gcdM(n, d); n /= g; d /= g; const p2 = x => (x & (x - 1)) === 0; return (n % 2 === 1 && p2(d)) || (d % 2 === 1 && p2(n)); };
+let BASEP = null;
+function basePools() {   // tuning-independent pools
+  if (BASEP) return BASEP;
+  const A = [], C = [], H = [], T = [];
+  for (let d = 1; d <= 128; d++) for (let n = d + 1; n < 2 * d; n++) if (gcdM(n, d) === 1 && Math.max(oddM(n), oddM(d)) <= 31 && !harmForm(n, d)) A.push({ v: n / d, c: 1200 * Math.log2(n / d), lab: n + "/" + d, cx: n * d });
+  for (let d = 1; d <= 512; d++) for (let n = d + 1; n < 2 * d; n++) if (gcdM(n, d) === 1 && Math.max(oddM(n), oddM(d)) <= 127 && Math.max(oddM(n), oddM(d)) > 31 && !harmForm(n, d)) A.push({ v: n / d, c: 1200 * Math.log2(n / d), lab: n + "/" + d, cx: 20000 + n * d });   // finer ratios, used only to fill gaps
+  // the other tuning systems: every named tuning's own degrees, then 19 / 22 / 31 / 53-EDO steps
+  TUNINGS.forEach(t => t[1].forEach((st, d) => { if (d && !(Array.isArray(st) && harmForm(st[0], st[1]))) { const c = Array.isArray(st) ? ratioC(st[0], st[1]) : st; T.push({ c, v: Math.pow(2, c / 1200), lab: Array.isArray(st) ? st[0] + "/" + st[1] : t[0] + " " + d, cx: 40 + d }); } }));
+  [19, 22, 31, 53].forEach(e => { for (let i = 1; i < e; i++) T.push({ c: 1200 * i / e, v: Math.pow(2, i / e), lab: e + "-EDO " + i, cx: 300 + e * 3 + i }); });
+  // harmonics n/2^k and undertones 2^k/n, odd n up to 255, reduced into one octave
+  for (let n = 3; n <= 255; n += 2) {
+    const p = 2 ** Math.floor(Math.log2(n)), q = 2 ** Math.ceil(Math.log2(n));
+    H.push({ v: n / p, c: 1200 * Math.log2(n / p), lab: n + "/" + p + " · H" + n, cx: n });
+    H.push({ v: q / n, c: 1200 * Math.log2(q / n), lab: q + "/" + n + " · U" + n, cx: n + .5 });
+  }
+  KONST.forEach(([nm, K]) => { for (let h = 1; h <= 16; h++) for (let s2 = 1; s2 <= 16; s2++) if (gcdM(h, s2) === 1) { const v = K * h / s2; C.push({ v, c: oct1(v), lab: nm + " " + h + "/" + s2, cx: 1000 + h * s2 }); } });
+  for (let i = 0; i < KONST.length; i++) for (let j = i + 1; j < KONST.length; j++) {
+    const [na, a] = KONST[i], [nb, b] = KONST[j];
+    [["+", a + b], ["\u2212", Math.abs(a - b)]].forEach(([op, v]) => { for (let h = 1; h <= 3; h++) C.push({ v: v * h, c: oct1(v * h), lab: h + "\u00d7(" + na + op + nb + ")", cx: 1500 + h }); });
+  }
+  const so = L => L.sort((x, y) => x.cx - y.cx || x.c - y.c);
+  BASEP = { A: so(A).concat(so(T)), H: so(H), C: so(C), Asmall: A.filter(x => x.cx <= 60) };
+  return BASEP;
+}
+const TPOOL = new Map();
+function sidebandPool(bt) {   // sidebands a \u00b1 k\u00b7b of the tuning's degrees (carrier a, modulator b) and of its degrees with simple ratios, k = 1..3
+  if (TPOOL.has(bt)) return TPOOL.get(bt);
+  const B = basePools(), r = tuningSteps(bt).map(st => Math.pow(2, st.c / 1200)), P = [];
+  for (let j = 0; j < 12; j++) for (let m = 0; m < 12; m++) for (let k = 1; k <= 4; k++) {
+    const kk = k > 1 ? k + "\u00d7" : "", sm = r[j] + k * r[m], df = Math.abs(r[j] - k * r[m]);
+    P.push({ v: sm, c: oct1(sm), lab: "\u03a3 " + j + "+" + kk + m, cx: k * 100 + j + m });
+    if (df > 1e-6) P.push({ v: df, c: oct1(df), lab: "\u0394 " + j + "\u2212" + kk + m, cx: k * 100 + 50 + j + m });
+  }
+  for (let j = 0; j < 12; j++) B.Asmall.forEach(a => { const sm = r[j] + a.v, df = Math.abs(r[j] - a.v); P.push({ v: sm, c: oct1(sm), lab: "\u03a3 " + j + "+" + a.lab, cx: 400 + a.cx }); if (df > 1e-6) P.push({ v: df, c: oct1(df), lab: "\u0394 " + j + "\u2212" + a.lab, cx: 401 + a.cx }); });
+  B.Asmall.forEach(a => B.Asmall.forEach(b => { if (a.cx > b.cx) return; const sm = a.v + b.v, df = Math.abs(a.v - b.v); P.push({ v: sm, c: oct1(sm), lab: a.lab + " \u03a3 " + b.lab, cx: 600 + a.cx + b.cx }); if (df > 1e-6) P.push({ v: df, c: oct1(df), lab: a.lab + " \u0394 " + b.lab, cx: 601 + a.cx + b.cx }); }));
+  P.sort((x, y) => x.cx - y.cx || x.c - y.c); TPOOL.set(bt, P); return P;
+}
+const SBC = new Map();
+function sbPools(bt) {   // sidebands of the tuning's tones only (carrier a, modulator b, k = 1..2), plus snapped and harmonic versions
+  if (SBC.has(bt)) return SBC.get(bt);
+  const r = tuningSteps(bt).map(st => Math.pow(2, st.c / 1200)), plain = [], snap = [], harm = [];
+  const cents = v => 1200 * Math.log2(v);
+  const add = (L, v, lab, cx) => { if (v > 1e-6 && isFinite(v)) L.push({ v, c: oct1(cents(v)) , lab, cx }); };
+  for (let k = 1; k <= 4; k++) for (let j = 0; j < 12; j++) for (let m = 0; m < 12; m++) {
+    const sm = r[j] + k * r[m], df = r[j] - k * r[m];
+    add(plain, sm, "\u03a3 " + j + "+" + (k > 1 ? k + "\u00d7" : "") + m, k * 100 + j + m);
+    if (df > 1e-6) add(plain, df, "\u0394 " + j + "\u2212" + (k > 1 ? k + "\u00d7" : "") + m, k * 100 + 50 + j + m);
+  }
+  plain.sort((x, y) => x.cx - y.cx || x.c - y.c);
+  // snapped: each sideband moved to the nearest 48-EDO step (quarter-quarter tones, 25 cents)
+  plain.forEach(x => { const c48 = Math.round(x.c / 25) * 25; snap.push({ v: Math.pow(2, c48 / 1200), c: c48, lab: x.lab + " \u2248 48", cx: x.cx }); });
+  for (let i = 1; i < 48; i++) snap.push({ v: Math.pow(2, 25 * i / 1200), c: 25 * i, lab: "48-EDO step " + i, cx: 90000 + i });   // the whole 48-step grid, after the sidebands, so the set can fill its gaps
+  // harmonics of the plain sidebands, n = 2..4, reduced into the octave
+  plain.forEach(x => { for (let n = 2; n <= 4; n++) add(harm, x.v * n, n + "\u00d7(" + x.lab + ")", x.cx * 10 + n); });
+  harm.sort((x, y) => x.cx - y.cx || x.c - y.c);
+  const res = { plain, snap, harm }; SBC.set(bt, res); return res;
+}
+const POOLC = new Map();
+function poolFor(set, bt) {
+  const B = basePools();
+  if (set === 0) return B.A;
+  if (set === 1) return B.H.filter(x => x.cx <= 15.5);
+  if (set === 2) return B.H;
+  if (set === 3) return sbPools(bt).snap;
+  if (set === 4) return sbPools(bt).plain;
+  if (set === 5) return sbPools(bt).harm;
+  if (set === 6) return sidebandPool(bt);
+  return B.C;
+}
+
+// ---------- microtone sets: each set has a candidate list (absolute cents) and a range around the tuning's own value ----------
+const RNB = (bt, d) => range2(d);                                   // the neighbour span (as before)
+const RR = R => (bt, d) => { const o = tuningSteps(bt)[d].c; return [o - R, o + R]; };   // a fixed range either side of the tuning's own value
+const rel = gen => (bt, d) => { const o = tuningSteps(bt)[d].c; return gen(bt, d).map(x => ({ c: o + x.x, lab: x.lab, cx: x.cx || 0 })); };
+const offSemi = k => () => { const L = [], g = 100 / k; for (let j = 1; j * g <= 50 + 1e-9; j++) for (const sg of [1, -1]) L.push({ x: sg * j * g, lab: (sg > 0 ? "+" : "−") + (j * g).toFixed(1) + "¢", cx: j }); return L; };
+const offEDO = E => () => { const L = []; for (let j = 1; j * 1200 / E <= 600 + 1e-9; j++) for (const sg of [1, -1]) L.push({ x: sg * j * 1200 / E, lab: (sg > 0 ? "+" : "−") + j + "/" + E, cx: j }); return L; };
+const offHarm = () => { const L = []; for (let n = 2; n <= 16; n++) { const x = 1200 * Math.log2(n); L.push({ x, lab: "×" + n, cx: n }); L.push({ x: -x, lab: "÷" + n, cx: n }); } return L; };
+const offHarmOdd = () => { const L = []; for (let n = 3; n <= 31; n += 2) { const x = 1200 * Math.log2(n); L.push({ x, lab: "×" + n, cx: n }); L.push({ x: -x, lab: "÷" + n, cx: n }); } return L; };
+const sbAll = (bt, d) => sbGen(bt, d, [1], 4800);
+const offUnder = () => { const L = [], seen = new Set(); for (let k = 1; k <= 8; k++) for (let n = 2; n <= 8; n++) { if (k === n) continue; const x = 1200 * Math.log2(k / n); if (Math.abs(x) > 2400 || seen.has(Math.round(x * 100))) continue; seen.add(Math.round(x * 100)); L.push({ x, lab: k + "/" + n, cx: k * n }); } return L; };
+// sidebands with modulators from low octaves (the degree or its ÷2, ÷4, ÷8), kept when the sideband lands within 8¢ of a just chord tone
+const CHORD_TONES = [9/8, 6/5, 5/4, 4/3, 3/2, 8/5, 5/3, 7/4, 2, 8/9, 5/6, 4/5, 3/4, 2/3, 5/8, 3/5, 4/7, 1/2].map(r => 1200 * Math.log2(r));
+const sbChord = (bt, d) => sbGen(bt, d, [1, 2, 4, 8], 600).filter(x => CHORD_TONES.some(t => Math.abs(x.x - t) <= 8));
+// sidebands of a carrier (the degree itself) with a modulator (any tuning degree, or its undertone), k = 1..3, ratio to the carrier, unreduced
+const sbGen = (bt, d, divs, maxX) => {
+  const st = tuningSteps(bt), r = st.map(x => Math.pow(2, x.c / 1200)), rd = r[d], L = [], seen = new Set();
+  for (let m = 0; m < 12; m++) for (let k = 1; k <= 3; k++) for (let div of divs) for (const sg of [1, -1]) {
+    const ratio = 1 + sg * k * (r[m] / div) / rd;   // div = 1: modulator is the tuning degree; div = n: modulator is its undertone r/n
+    if (!(ratio > 0)) continue; const x = 1200 * Math.log2(ratio); if (Math.abs(x) > maxX || Math.abs(x) < .5) continue;
+    const q = Math.round(x * 100); if (seen.has(q)) continue; seen.add(q); L.push({ x, lab: (sg > 0 ? "+" : "−") + "SB " + m + "·" + k, cx: k * 100 + m });
+  }
+  return L;
+};
+const sbOct = (bt, d) => sbGen(bt, d, [1], 1200);
+const usbOct = (bt, d) => sbGen(bt, d, [2, 3, 4], 1200);
+const hsbOct = (bt, d) => { const L = []; for (let n = 2; n <= 4; n++) for (const x of sbGen(bt, d, [1], 2400)) { const v = x.x + 1200 * Math.log2(n); if (Math.abs(v) <= 2400) L.push({ x: v, lab: "×" + n + " " + x.lab, cx: x.cx * 10 + n }); } return L; };
+// ---------- new microtone sets: each one divides the Range (the slider span, centred on the tuning's own value) into steps ----------
+// generators get (bt, d, lo, hi, own) with lo..hi the absolute cent range and return {c, lab, cx}; cx = complexity (simplest are chosen first)
+const L3 = Math.log2(3), L5 = Math.log2(5), L7 = Math.log2(7), JPOOL = new Map();
+function justBase(limit, maxH) {   // just ratios 3^a 5^b (7^c) folded into [0,1200), with their Tenney height as complexity
+  const key = limit + "|" + maxH; if (JPOOL.has(key)) return JPOOL.get(key);
+  const L = [], seen = new Set(), cm = limit >= 7 ? 6 : 0, bm = limit >= 5 ? 8 : 0;
+  for (let a = -14; a <= 14; a++) for (let b = -bm; b <= bm; b++) for (let c7 = -cm; c7 <= cm; c7++) {
+    const l2 = a * L3 + b * L5 + c7 * L7, e2 = -Math.floor(l2 + 1e-9), h = Math.abs(e2) + Math.abs(a) * L3 + Math.abs(b) * L5 + Math.abs(c7) * L7;
+    if (h > maxH) continue; const c = 1200 * (l2 + e2); if (c < -1e-6 || c >= 1200 - 1e-6) continue;
+    const q = Math.round(c * 1000); if (seen.has(q)) continue; seen.add(q);
+    let num = 1, den = 1; [[2, e2], [3, a], [5, b], [7, c7]].forEach(([pr, e]) => { if (e > 0) num *= Math.pow(pr, e); else if (e < 0) den *= Math.pow(pr, -e); });
+    L.push({ c: Math.max(0, c), lab: num + "/" + den, cx: h });
+  }
+  JPOOL.set(key, L); return L;
+}
+function withOct(base, lo, hi) {   // copies of each folded value in every octave that lies inside lo..hi
+  const out = [];
+  for (const x of base) for (let k = Math.ceil((lo - x.c) / 1200); x.c + 1200 * k < hi; k++) out.push({ c: x.c + 1200 * k, lab: x.lab + (k ? (k > 0 ? " +" : " −") + Math.abs(k) + "oct" : ""), cx: x.cx + Math.abs(k) * .3 });
+  return out;
+}
+const HU = [];   // harmonics H(n) and undertones U(n), odd n up to 127, folded into the octave
+for (let n = 1; n <= 511; n += 2) { const pw = Math.pow(2, Math.floor(Math.log2(n))), q = pw === n ? n : pw * 2; HU.push({ h: { c: 1200 * Math.log2(n / pw), lab: "H" + n, cx: n }, u: { c: (1200 * Math.log2(q / n)) % 1200, lab: "U" + n, cx: n } }); }
+const hH = (R, a, b, c) => R >= 400 ? a : R >= 150 ? b : c, hN = R => R >= 400 ? 127 : R >= 150 ? 255 : 511;   // narrower range: allow more complex ratios so there are still options
+const eqPitch = N => (bt, d, lo, hi, own) => { const st = (hi - lo) / N, L = []; for (let j = 1; own.c + j * st < hi; j++) L.push({ c: own.c + j * st, lab: "+" + j + "/" + N, cx: j }); for (let j = 1; own.c - j * st > lo; j++) L.push({ c: own.c - j * st, lab: "−" + j + "/" + N, cx: j + .01 }); return L; };
+const linHz = N => (bt, d, lo, hi, own) => {   // equal steps in frequency (Hz), anchored at the tuning's own value
+  const rh = Math.pow(2, (hi - own.c) / 1200), rl = Math.pow(2, (lo - own.c) / 1200), st = (rh - rl) / N, L = [];
+  for (let j = 1; 1 + j * st < rh; j++) L.push({ c: own.c + 1200 * Math.log2(1 + j * st), lab: "+" + j + " Hz-step", cx: j });
+  for (let j = 1; 1 - j * st > rl; j++) L.push({ c: own.c + 1200 * Math.log2(1 - j * st), lab: "−" + j + " Hz-step", cx: j + .01 });
+  return L;
+};
+const sbRange = (bt, d, lo, hi, own) => sbGen(bt, d, [1, 2, 4, 8, 16, 32, 64], Math.max(hi - own.c, own.c - lo)).map(x => ({ c: own.c + x.x, lab: x.lab, cx: x.cx }));
+const sbNearJust = (bt, d, lo, hi, own) => {   // sidebands (modulators from low octaves too) that land within 12 cents of a just chord tone of the key
+  const jb = justBase(7, 10), out = [];
+  for (const x of sbRange(bt, d, lo, hi, own)) {
+    const m = ((x.c % 1200) + 1200) % 1200; let dev = 1e9, nb = null;
+    for (const b of jb) for (const w of [-1200, 0, 1200]) { const e = Math.abs(m - (b.c + w)); if (e < dev) { dev = e; nb = b; } }
+    if (dev <= 12) out.push({ c: x.c, lab: x.lab + " ≈ " + nb.lab, cx: dev });
+  }
+  return out;
+};
+const squeezedH = N => (bt, d, lo, hi) => { const L = []; for (let n = 2; n < N; n++) L.push({ c: lo + (hi - lo) * Math.log(n) / Math.log(N), lab: "H" + n + "/" + N, cx: n }); return L; };   // partials 1..N squeezed into the range: 1 at the bottom, N at the top, spaced as in the harmonic series
+const constNearJust = (bt, d, lo, hi, own) => {   // constants (folded into octaves) that land within 12 cents of a just chord tone of the key
+  const jb = justBase(7, 10), out = [];
+  for (const x of withOct(poolFor(7, bt), lo, hi)) {
+    const m = ((x.c % 1200) + 1200) % 1200; let dev = 1e9, nb = null;
+    for (const b of jb) for (const w of [-1200, 0, 1200]) { const e = Math.abs(m - (b.c + w)); if (e < dev) { dev = e; nb = b; } }
+    if (dev <= 12) out.push({ c: x.c, lab: x.lab + " \u2248 " + nb.lab, cx: dev });
+  }
+  return out;
+};
+const constNearEqual = (bt, d, lo, hi, own) => {   // constants (folded into octaves) that land close to a step of the range divided into 19 equal pitch steps
+  const st = (hi - lo) / 19, out = [];
+  for (const x of withOct(poolFor(7, bt), lo, hi)) {
+    const k = Math.round((x.c - own.c) / st), dev = Math.abs(x.c - (own.c + k * st));
+    if (k !== 0 && dev <= st * .2) out.push({ c: x.c, lab: x.lab + " \u2248 " + (k > 0 ? "+" : "\u2212") + Math.abs(k) + "/19", cx: dev / st + Math.abs(k) * .001 });
+  }
+  return out;
+};
+const nearEqual = (items, lo, hi, own) => {   // keep items close to a step of the range divided into 19 equal pitch steps
+  const st = (hi - lo) / 19, out = [];
+  for (const x of items) { const k = Math.round((x.c - own.c) / st), dev = Math.abs(x.c - (own.c + k * st)); if (k !== 0 && dev <= st * .2) out.push({ c: x.c, lab: x.lab + " \u2248 " + (k > 0 ? "+" : "\u2212") + Math.abs(k) + "/19", cx: dev / st + Math.abs(k) * .001 }); }
+  return out;
+};
+const sbNearEqual = (bt, d, lo, hi, own) => nearEqual(sbRange(bt, d, lo, hi, own), lo, hi, own);
+const fold1 = v => { const e = Math.log2(v); return 1200 * (e - Math.floor(e + 1e-12)); };
+const FIBS = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233];
+const FIBP = (() => { const L = [], seen = new Set(); for (let a = 0; a < FIBS.length; a++) for (let b = 0; b < a; b++) { const c = fold1(FIBS[a] / FIBS[b]), q = Math.round(c * 100); if (c > .01 && !seen.has(q)) { seen.add(q); L.push({ c, lab: "F" + FIBS[a] + "/" + FIBS[b], cx: a + b }); } } return L; })();
+const CIRP = (() => { const L = [], seen = new Set(); for (let n = 3; n <= 24; n++) for (let k = 1; k <= n / 2; k++) for (const inv of [false, true]) { const v = 2 * Math.sin(Math.PI * k / n), c = fold1(inv ? 1 / v : v), q = Math.round(c * 100); if (c > .01 && !seen.has(q)) { seen.add(q); L.push({ c, lab: "chord " + k + "/" + n + (inv ? " inv" : ""), cx: n + k + (inv ? .5 : 0) }); } } return L; })();
+const BESSEL = [[0, 2.404826, 5.520078, 8.653728, 11.791534], [1, 3.831706, 7.015587, 10.173468, 13.323692], [2, 5.135622, 8.417244, 11.619841], [3, 6.380162, 9.761023, 13.015201], [4, 7.588342, 11.064709], [5, 8.771484, 12.338604], [6, 9.936110, 13.589290], [7, 11.086370], [8, 12.225092], [9, 13.354300]];
+const DRUMP = (() => { const L = [], seen = new Set(); BESSEL.forEach(row => { for (let n = 1; n < row.length; n++) { const c = fold1(row[n] / 2.404826), q = Math.round(c * 100); if (c > .01 && !seen.has(q)) { seen.add(q); L.push({ c, lab: "drum (" + row[0] + "," + n + ")", cx: row[n] }); } } }); return L; })();
+// shapes: modes of a sphere, a cylinder and a bar, as frequency ratios folded into octaves
+const foldPool = (vals, ref) => { const L = [], seen = new Set(); vals.forEach(([v, lab, cx]) => { const c = fold1(v / ref), q = Math.round(c * 100); if (c > .01 && !seen.has(q)) { seen.add(q); L.push({ c, lab, cx }); } }); return L; };
+const sphJ = (l, x) => { const s0 = Math.sin(x) / x; if (l === 0) return s0; let a = s0, b = Math.sin(x) / (x * x) - Math.cos(x) / x; for (let n = 1; n < l; n++) { const c = (2 * n + 1) / x * b - a; a = b; b = c; } return b; };
+const SPHP = (() => {   // zeros of the spherical Bessel functions j_l (a sphere's radial modes) over the first, plus the surface modes sqrt(l(l+1))
+  const V = []; for (let l = 0; l <= 12; l++) { let prev = sphJ(l, .5 + l), x0 = .5 + l, k = 0; for (let x = x0 + .01; x < 40 && k < 6; x += .01) { const cur = sphJ(l, x); if (prev * cur < 0) { let a = x - .01, b2 = x; for (let i = 0; i < 40; i++) { const m = (a + b2) / 2; if (sphJ(l, a) * sphJ(l, m) <= 0) b2 = m; else a = m; } V.push([(a + b2) / 2, "sphere (" + l + "," + (k + 1) + ")", l + k]); k++; } prev = cur; } }
+  for (let l = 1; l <= 24; l++) V.push([Math.sqrt(l * (l + 1)), "sphere surface l=" + l, l]);
+  return foldPool(V, Math.PI);
+})();
+const CYLZ = [[0, 3.8317, 7.0156, 10.1735], [1, 1.8412, 5.3314, 8.5363, 11.7060], [2, 3.0542, 6.7061, 9.9695], [3, 4.2012, 8.0152, 11.3459], [4, 5.3176, 9.2824], [5, 6.4156, 10.5199], [6, 7.5013], [7, 8.5778], [8, 9.6474]];
+const CYLP = (() => {   // modes of a rigid cylinder twice as long as it is wide: sqrt(j'(m,n)^2 + (k pi a/L)^2) over the lowest
+  const V = []; for (let k = 0; k <= 8; k++) { if (k) V.push([k * Math.PI / 2, "cylinder (0,0,k" + k + ")", k]); CYLZ.forEach(row => { for (let n = 1; n < row.length; n++) V.push([Math.sqrt(row[n] * row[n] + (k * Math.PI / 2) ** 2), "cylinder (" + row[0] + "," + n + ",k" + k + ")", row[n] + k]); }); }
+  return foldPool(V, Math.PI / 2);
+})();
+const BARP = (() => { const V = []; for (let n = 1; n <= 40; n++) { const b = n === 1 ? 4.7300407 : n === 2 ? 7.8532046 : (n + .5) * Math.PI; V.push([(b / 4.7300407) ** 2, "bar mode " + n, n]); } return foldPool(V, 1); })();
+const beatGen = (bt, d, lo, hi, own) => {   // just partners of the key, detuned so the beat against them is a round rate in Hz (exact in the middle octave; doubles per octave up)
+  const f0 = 261.6256 * Math.pow(2, S.key / 12), out = [];
+  for (const j of withOct(justBase(5, 9), lo - 60, hi + 60)) for (const hz of [.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10]) for (const sg of [1, -1]) {
+    const fj = f0 * Math.pow(2, j.c / 1200); out.push({ c: j.c + 1200 * Math.log2(1 + sg * hz / fj), lab: j.lab + (sg > 0 ? " +" : " \u2212") + hz + " Hz", cx: hz + j.cx * .1 });
+  }
+  return out;
+};
+// intermodulation: sums and differences of pairs of the tuning's degrees (f1+f2, f1-f2, 2f1-f2, 2f2-f1, 2f1+f2, f1+2f2), folded into octaves
+const imGen = (bt, d, lo, hi, own) => {
+  const r = tuningSteps(bt).map(x => Math.pow(2, x.c / 1200)), base = [], seen = new Set();
+  for (let j = 0; j < 12; j++) if (j !== d) for (const [a, b, lab] of [[1, 1, "f1+f2"], [1, -1, "f1\u2212f2"], [2, -1, "2f1\u2212f2"], [-1, 2, "2f2\u2212f1"], [2, 1, "2f1+f2"], [1, 2, "f1+2f2"]]) {
+    const v = Math.abs(a * r[d] + b * r[j]); if (!(v > 1e-6)) continue; const c = fold1(v), q = Math.round(c * 100);
+    if (c > .01 && !seen.has(q)) { seen.add(q); base.push({ c, lab: "IM " + lab + " (" + d + "," + j + ")", cx: Math.abs(a) + Math.abs(b) + j * .01 }); }
+  }
+  return withOct(base, lo, hi);
+};
+// Consonance morph: the knob slides through families, just ratios and harmonics (consonant) -> constants, circle, shapes (in between) -> beats, intermodulation, sidebands (dissonant)
+const MORPH = [
+  ["Fifths", 0, (bt, d, lo, hi) => withOct(justBase(3, hH(hi - lo, 14, 20, 26)), lo, hi)],
+  ["Squeezed H", .03, squeezedH(16)],
+  ["Just 5", .06, (bt, d, lo, hi) => withOct(justBase(5, hH(hi - lo, 16, 21, 26)), lo, hi)],
+  ["Just 7", .1, (bt, d, lo, hi) => withOct(justBase(7, hH(hi - lo, 15, 20, 25)), lo, hi)],
+  ["Harm + Under", .14, (bt, d, lo, hi) => withOct(HU.filter(x => x.h.cx <= hN(hi - lo)).flatMap(x => [x.h, x.u]), lo, hi)],
+  ["Spaced H", .2, (bt, d, lo, hi) => withOct(SPACEDP, lo, hi)],
+  ["Const near just", .3, constNearJust],
+  ["Fibonacci", .33, (bt, d, lo, hi) => withOct(FIBP, lo, hi)],
+  ["Circle chords", .4, (bt, d, lo, hi) => withOct(CIRP, lo, hi)],
+  ["Sphere", .48, (bt, d, lo, hi) => withOct(SPHP, lo, hi)],
+  ["Constants", .5, (bt, d, lo, hi) => withOct(poolFor(7, bt), lo, hi)],
+  ["Drum", .55, (bt, d, lo, hi) => withOct(DRUMP, lo, hi)],
+  ["Cylinder", .6, (bt, d, lo, hi) => withOct(CYLP, lo, hi)],
+  ["SB near just", .68, sbNearJust],
+  ["Beats", .75, beatGen],
+  ["Sum/diff", .78, (bt, d, lo, hi) => withOct(SUMDP, lo, hi)],
+  ["Intermod", .85, imGen],
+  ["Sidebands", .95, sbRange],
+];
+const morphGen = (bt, d, lo, hi, own) => {
+  const k = S.dis, out = [], capM = 8 + 10 * k;   // roughness above capM pushes an option down the list, so the dissonant end stays usable
+  for (const [nm, t, g] of MORPH) { const dist = Math.abs(t - k); if (dist > .35) continue; for (const x of g(bt, d, lo, hi, own)) out.push({ c: x.c, lab: x.lab, cx: dist * 10 + Math.min(1, (x.cx || 0) / 60) * 2 + Math.max(0, consScore(x.c) - capM) * .6 }); }
+  return out;
+};
+const morphNames = () => { const k = S.dis; return MORPH.slice().sort((a, b) => Math.abs(a[1] - k) - Math.abs(b[1] - k)).slice(0, 2).map(x => x[0]).join(" + "); };
+// webchord-style algorithms: whole numbers that start at `start` with a first gap that grows by n each step (ratios to the first number), their mirror (undertones), and sum/difference sidebands of chord ratios
+const spacedNums = (start, gap, n, count) => { const a = [start]; for (let j = 0; j < count - 1; j++) a.push(a[j] + gap + n * j); return a; };
+const SPACEDP = [], MIRRP = [], SUMDP = [];
+(() => {
+  const sp = new Set(), mp = new Set(), sd = new Set();
+  for (let st = 1; st <= 16; st++) for (let gap = 1; gap <= 3; gap++) for (let g = 0; g <= 2; g++) {
+    const a = spacedNums(st, gap, g, 8);
+    for (let k = 1; k < a.length; k++) {
+      let c = fold1(a[k] / a[0]), q = Math.round(c * 100); if (c > .01 && !sp.has(q)) { sp.add(q); SPACEDP.push({ c, lab: "spaced " + st + ":" + gap + ":" + g + " #" + k, cx: st + gap + g + k }); }
+      c = fold1(a[0] / a[k]); q = Math.round(c * 100); if (c > .01 && !mp.has(q)) { mp.add(q); MIRRP.push({ c, lab: "mirror " + st + ":" + gap + ":" + g + " #" + k, cx: st + gap + g + k }); }
+    }
+  }
+  [[1, 5 / 4, 3 / 2], [1, 6 / 5, 3 / 2], [1, 5 / 4, 3 / 2, 7 / 4], [1, 6 / 5, 3 / 2, 9 / 5], [1, 5 / 4, 3 / 2, 15 / 8], [1, 6 / 5, 7 / 5, 5 / 3], [1, 9 / 8, 3 / 2], [1, 4 / 3, 3 / 2], [1, 5 / 4, 6 / 5, 3 / 2, 7 / 4, 2]].forEach((R, ci) => {
+    for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) for (const [v, op] of [[R[i] + R[j], "+"], [Math.abs(R[i] - R[j]), "\u2212"]]) {
+      if (v < .01) continue; const c = fold1(v), q = Math.round(c * 100); if (c > .01 && !sd.has(q)) { sd.add(q); SUMDP.push({ c, lab: "sum/diff " + op + " " + i + "," + j + " (chord " + (ci + 1) + ")", cx: 6 + ci + i + j }); }
+    }
+  });
+})();
+const SPEC = [
+  { short: "Morph", name: "Consonance morph: the Consonance knob slides from just ratios and harmonics, through constants, circle and shape modes, to beats, intermodulation and sidebands", gen: morphGen, morph: true },
+  { short: "Just 5", name: "Just ratios to the key, 5-limit (3/2, 5/4, 6/5, 16/15, 81/80 …), simplest first", gen: (bt, d, lo, hi) => withOct(justBase(5, hH(hi - lo, 16, 21, 26)), lo, hi) },
+  { short: "Just 7", name: "Just ratios to the key, 7-limit (adds 7/4, 7/6, 8/7, 64/63 …), simplest first", gen: (bt, d, lo, hi) => withOct(justBase(7, hH(hi - lo, 15, 20, 25)), lo, hi) },
+  { short: "Equal ÷7", name: "Range divided into 7 equal pitch steps", gen: eqPitch(7) },
+  { short: "Equal ÷12", name: "Range divided into 12 equal pitch steps", gen: eqPitch(12) },
+  { short: "Equal ÷19", name: "Range divided into 19 equal pitch steps (19-EDO at 12 semitones)", gen: eqPitch(19) },
+  { short: "Equal ÷24", name: "Range divided into 24 equal pitch steps (quarter tones at 12 semitones)", gen: eqPitch(24) },
+  { short: "Harm + Under", name: "Harmonics and undertones of the key combined (3/2, 4/3, 5/4, 8/5, 7/4, 8/7 \u2026), simplest first", gen: (bt, d, lo, hi) => withOct(HU.filter(x => x.h.cx <= hN(hi - lo)).flatMap(x => [x.h, x.u]), lo, hi) },
+  { short: "Squeezed H", name: "Harmonics 1\u201316 squeezed into the range: partial 1 at the bottom, 16 at the top, wide steps low and tight steps high", gen: squeezedH(16) },
+  { short: "Linear Hz", name: "Range divided into 16 equal steps of frequency (Hz), so steps shrink in pitch going up", gen: linHz(16) },
+  { short: "SB near just", name: "Sidebands (modulators from low octaves too) that land within 12¢ of a just chord tone", gen: sbNearJust },
+  { short: "SB near equal", name: "Sidebands that land close to a step of the range divided into 19 equal pitch steps", gen: sbNearEqual },
+  { short: "Const near just", name: "Constants (folded into octaves) that land within 12\u00a2 of a just chord tone", gen: constNearJust },
+  { short: "Const near equal", name: "Constants (folded into octaves) that land close to a step of the range divided into 19 equal pitch steps", gen: constNearEqual },
+  { short: "Sidebands", name: "All sidebands of the tuning's degrees inside the range", gen: sbRange },
+  { short: "Fibonacci", name: "Fibonacci ratios F(a)/F(b) (3/2, 5/3, 8/5, 13/8 \u2026 towards the golden ratio), folded into octaves", gen: (bt, d, lo, hi) => withOct(FIBP, lo, hi) },
+  { short: "Circle chords", name: "Chord lengths of regular polygons on a circle (2 sin(\u03c0k/n)) and their reciprocals, folded into octaves", gen: (bt, d, lo, hi) => withOct(CIRP, lo, hi) },
+  { short: "Drum", name: "Circular drum-head modes (Bessel zeros over the first), folded into octaves", gen: (bt, d, lo, hi) => withOct(DRUMP, lo, hi) },
+  { short: "Sphere", name: "Modes of a sphere: spherical Bessel zeros and surface modes sqrt(l(l+1)), folded into octaves", gen: (bt, d, lo, hi) => withOct(SPHP, lo, hi) },
+  { short: "Cylinder", name: "Modes of a cylinder twice as long as wide (Bessel and length modes), folded into octaves", gen: (bt, d, lo, hi) => withOct(CYLP, lo, hi) },
+  { short: "Bar", name: "Bending modes of a free bar (1, 2.76, 5.40, 8.93 \u2026), folded into octaves", gen: (bt, d, lo, hi) => withOct(BARP, lo, hi) },
+  { short: "Beats", name: "Just partners of the key detuned so the beat is a round rate: 0.5 to 10 Hz (exact in the middle octave, doubles per octave up)", gen: beatGen },
+  { short: "Spaced H", name: "Spaced whole numbers (start, first gap, growing gap) as ratios to the first, folded into octaves", gen: (bt, d, lo, hi) => withOct(SPACEDP, lo, hi) },
+  { short: "Mirror U", name: "The mirror of the spaced numbers (undertone versions), folded into octaves", gen: (bt, d, lo, hi) => withOct(MIRRP, lo, hi) },
+  { short: "Sum/diff", name: "Sums and differences of the ratios in common chords (sideband arithmetic on chords), folded into octaves", gen: (bt, d, lo, hi) => withOct(SUMDP, lo, hi) },
+  { short: "Constants", name: "Mathematical constants as ratios, folded into octaves", gen: (bt, d, lo, hi) => withOct(poolFor(7, bt), lo, hi) },
+];
+
+const NSETS = SPEC.length;
+const MSET_NAMES = SPEC.map(x => x.name), MSET_SHORT = SPEC.map(x => x.short);
+const SEP = (() => { try { return +(localStorage.getItem("rexaudio.sep")) || 0.3; } catch (e) { return 0.3; } })();   // minimum spacing in cents between options of different sets (and within a set)
+const MSC = new Map(), NMIN = 20, NMAX = 28;
+// Range: the slider span in cents (just interval nearest each semitone count), centred on the tuning's own value. Never off.
+const RANGE_BASE = [[50, "½ st"], [100, "1 st"], [150, "1½ st"], [1000 / 6, "166.7¢"], [203.91, "2 st · 9/8"], [250, "250¢"], [315.64, "3 st · 6/5"], [1000 / 3, "333.3¢"], [386.31, "4 st · 5/4"], [498.04, "5 st · 4/3"], [701.96, "7 st · 3/2"], [1200, "12 st · 2/1"], [1901.96, "19 st · 3/1"], [1200 * Math.log2(10 / 3), "10/3 ratio 2084¢"], [2400, "24 st · 4/1"]];
+const RANGE_K = [["φ", (1 + Math.sqrt(5)) / 2], ["√2", Math.SQRT2], ["√3", Math.sqrt(3)], ["√5", Math.sqrt(5)], ["e", Math.E], ["π", Math.PI], ["γ", .5772156649], ["ln2", Math.LN2], ["ln3", Math.log(3)], ["∛2", Math.cbrt(2)], ["ζ3", 1.2020569032], ["φ²", ((1 + Math.sqrt(5)) / 2) ** 2], ["e²", Math.E ** 2], ["π²", Math.PI ** 2], ["2π", 2 * Math.PI], ["ln10", Math.LN10], ["√10", Math.sqrt(10)], ["G", .9159655942]];
+// ranges from mathematical constants, only those that fall between semitones (at least 8 cents from any whole semitone): K x 100 cents, and the ratio K in cents
+const RANGE_ALL = (() => {
+  const L = RANGE_BASE.slice();
+  for (const [nm, K] of RANGE_K) for (const [c, lab] of [[100 * K, nm + " ×100 "], [K > 1 ? 1200 * Math.log2(K) : 0, nm + " ratio "]]) {
+    if (c < 50 || c > 2400 || Math.abs(c - 100 * Math.round(c / 100)) < 8 || L.some(x => Math.abs(x[0] - c) < 3)) continue;
+    L.push([c, lab + Math.round(c) + "¢"]);
+  }
+  return L.sort((a, b) => a[0] - b[0]);
+})();
+const PERIODS = RANGE_ALL.map(x => x[0]), PERIOD_NAMES = RANGE_ALL.map(x => x[1]);
+S.rng = clampI(S.rng == null ? 0 : S.rng, PERIODS.length);
+const disMul = () => S.dis <= .5 ? Math.pow(2, (S.dis - .5) * 2) : 1 + (S.dis - .5) * .8;   // the Consonance knob also scales the chosen Range: x0.5 at the consonant end, x1 in the middle, x1.4 at the dissonant end
+const PRANGE = (set, bt, d) => { const o = tuningSteps(bt)[d].c, h = PERIODS[S.rng] / 2 * disMul(); return [o - h, o + h]; };
+function setCands(set, d) {   // options for this slider in this set, inside the Range; the tuning's own value is the centre; simplest first, then gaps are filled
+  const bt = baseTun(), key = bt + "|" + set + "|" + d + "|" + S.rng + "|" + Math.round(S.dis * 40); if (MSC.has(key)) return MSC.get(key);
+  const own = tuningSteps(bt)[d], [lo, hi] = PRANGE(set, bt, d), R = hi - lo, minSp = Math.max(.3, R / 120), out = [];
+  const near = c => out.some(o => Math.abs(o.c - c) < minSp);
+  const push = x => { if (x.c > lo + .01 && x.c < hi - .01 && !near(x.c)) { out.push({ c: x.c, lab: x.lab, cx: x.cx || 0 }); return true; } return false; };
+  out.push({ c: own.c, lab: own.lab, center: true });
+  const inr = SPEC[set].gen(bt, d, lo, hi, own).filter(x => x.c > lo + .01 && x.c < hi - .01).sort((x, y) => (x.cx || 0) - (y.cx || 0) || x.c - y.c);
+  for (const x of inr) { if (out.length >= 9) break; push(x); }
+  const closed = new Set(), gapMax = R / 22;
+  while (out.length < NMAX) {
+    out.sort((x, y) => x.c - y.c);
+    const pts = [lo].concat(out.map(o => o.c), [hi]); let gi = -1, gb = 0;
+    for (let i = 0; i + 1 < pts.length; i++) { const g = pts[i + 1] - pts[i]; if (g > gb && !closed.has(pts[i] + "|" + pts[i + 1])) { gb = g; gi = i; } }
+    if (gi < 0 || (out.length >= NMIN && gb <= gapMax)) break;
+    const a = pts[gi], b2 = pts[gi + 1]; let best = null;
+    for (const x of inr) if (x.c > a + gb * .25 && x.c < b2 - gb * .25 && !near(x.c) && (!best || (x.cx || 0) < (best.cx || 0))) best = x;
+    if (!best) for (const x of inr) if (x.c > a + minSp && x.c < b2 - minSp && !near(x.c) && (!best || Math.abs(x.c - (a + b2) / 2) < Math.abs(best.c - (a + b2) / 2))) best = x;
+    if (!best || !push(best)) closed.add(a + "|" + b2);
+  }
+  // Consonance macro: below the middle only the options closest to simple just ratios of the key stay; above it sidebands are added
+  let res = out;
+  if (SPEC[set].morph) { /* the Morph set already follows the knob */ }
+  else if (S.dis < .5 - 1e-9) { const rest = out.filter(x => !x.center).map(x => ({ x, s: consScore(x.c) })).sort((a, b) => a.s - b.s), keep = Math.max(2, Math.round(rest.length * disKeep())); res = [out.find(x => x.center)].concat(rest.slice(0, keep).map(r => r.x)); }
+  else if (S.dis > .5 + 1e-9) {
+    const want = disAdd(), have = out.slice(); let added = 0;
+    const cap = disCap(); for (const x of sbRange(bt, d, lo, hi, own).filter(x => x.c > lo + .01 && x.c < hi - .01).map(x => ({ x, s: consScore(x.c) })).filter(r => r.s <= cap).sort((a, b) => a.s - b.s).map(r => r.x)) { if (added >= want) break; if (!have.some(o => Math.abs(o.c - x.c) < minSp)) { have.push({ c: x.c, lab: x.lab, cx: x.cx || 0 }); added++; } }
+    res = have;
+  }
+  res.sort((x, y) => x.c - y.c); MSC.set(key, res); return res;
+}
+const disKeep = () => .12 + (S.dis / .5) * .88, disAdd = () => Math.round((S.dis - .5) / .5 * 14), disCap = () => 7 + (S.dis - .5) * 2 * 6;   // at most 14 sidebands, and only the milder ones (roughness score up to 7..13)
+const disInfo = () => { const r = " \u00b7 \u00d7" + disMul().toFixed(1); return SPEC[S.mset].morph ? morphNames() + r : disInfo0() + r; };
+const disInfo0 = () => S.dis < .5 - 1e-9 ? "sparse \u00b7 " + Math.round(disKeep() * 100) + "%" : S.dis > .5 + 1e-9 ? "+" + disAdd() + " sidebands" : "as the set is";
+let CONSB = null; const CONSC = new Map();
+function consScore(c) {   // how close a pitch (cents above the key) is to a simple just ratio: Tenney height plus a penalty for each cent of mistuning; lower = more consonant
+  const q = Math.round(((c % 1200) + 1200) % 1200 * 10); if (CONSC.has(q)) return CONSC.get(q);
+  const m = q / 10, jb = CONSB || (CONSB = justBase(7, 12)); let best = 1e9;
+  for (const b of jb) for (const w of [-1200, 0, 1200]) { const sc = b.cx + .6 * Math.abs(m - (b.c + w)); if (sc < best) best = sc; }
+  CONSC.set(q, best); return best;
+}
+function applyPeriod(i) {
+  i = clampI(i, PERIODS.length); if (i === S.rng) return;
+  act(() => { S.rng = i; if (S.sl === 0) refreshDeg(); });
+  bendTC = .06; render(); bendTC = .01; save();
+}
+const LIKED = [1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 24, 25];
+const likedPos = m => { let b = 0; LIKED.forEach((x, k) => { if (Math.abs(x - m) < Math.abs(LIKED[b] - m)) b = k; }); return b; };
+const likedStep = dir => LIKED[(likedPos(S.mset) + dir + LIKED.length) % LIKED.length];
+const LIKED_RANGES = ["\u00bd st", "1 st", "1\u00bd st", "\u221a5 \u00d7100 224\u00a2", "ln2 \u00d7100 69\u00a2", "250\u00a2", "333.3\u00a2", "166.7\u00a2", "\u03c6\u00b2 \u00d7100 262\u00a2", "e \u00d7100 272\u00a2"].map(n => PERIOD_NAMES.findIndex(x => x.indexOf(n) === 0 || x === n)).filter(k => k >= 0);
+function applyMset(i) {   // change set: each slider keeps its place on screen; its pitch is the same place in the new set, and held notes bend there
+  i = clampI(i, NSETS); if (i === S.mset) return;
+  act(() => { S.mset = i; if (S.sl === 0) refreshDeg(); });
+  bendTC = .06; render(); bendTC = .01; save();
+}
+const LIST = () => MIC;
+const cands = d => setCands(S.mset, d);
+const sRange = d => S.sl === 0 ? range2(d) : [100 * d - 50, 100 * d + 50];
+// each slider keeps a position 0..1 (0.5 = the tuning selected on the left); its pitch is that position in the current set
+function pitchAt(d, p) {
+  const own = tuningSteps(baseTun())[d];
+  if (Math.abs(p - .5) < 1e-4) return { c: own.c, lab: own.lab };
+  const [lo, hi] = PRANGE(S.mset, baseTun(), d), target = p < .5 ? lo + (p / .5) * (own.c - lo) : own.c + ((p - .5) / .5) * (hi - own.c);
+  const L = cands(d).filter(x => !x.center && Math.abs(x.c - own.c) > .01);
+  if (!L.length) return { c: own.c, lab: own.lab };
+  if (SPEC[S.mset].map === "rank") {   // one step per harmonic / sideband: nearest first above the centre, then below
+    const up = L.filter(x => x.c > own.c).sort((a, b) => a.c - b.c), dn = L.filter(x => x.c < own.c).sort((a, b) => b.c - a.c);
+    if (p > .5) { if (!up.length) return { c: own.c, lab: own.lab }; const i = Math.min(up.length - 1, Math.floor((p - .5) / .5 * up.length)); return { c: up[i].c, lab: up[i].lab }; }
+    if (!dn.length) return { c: own.c, lab: own.lab }; const i = Math.min(dn.length - 1, Math.floor((.5 - p) / .5 * dn.length)); return { c: dn[i].c, lab: dn[i].lab };
+  }
+  const nx = L.reduce((a, b) => Math.abs(b.c - target) < Math.abs(a.c - target) ? b : a);
+  return { c: nx.c, lab: nx.lab };
+}
+function refreshDeg() {
+  if (S.sl !== 0) return;
+  for (let d = 1; d <= 11; d++) S.deg[d] = pitchAt(d, S.pos[d]);
+  const off = S.pos.some((p, d) => d > 0 && Math.abs(p - .5) > 1e-4);
+  if (!off) { S.tun = S.lastTun; S.deg = tuningSteps(S.tun); }   // every slider centred: the tuning selected on the left
+  else if (S.tun >= 0) { S.lastTun = S.tun; S.tun = -1; }
+}
+function setPitchPos(d, q) {
+  S.pos[d] = Math.max(0, Math.min(1, Math.round(q * 400) / 400));
+  if (S.sl === 1) { const off = (S.pos[d] - .5) * 100; S.deg[d] = { c: 100 * d + off, lab: (off >= 0 ? "+" : "") + off.toFixed(1) + "\u00a2" }; if (S.tun >= 0) { S.lastTun = S.tun; S.tun = -1; } }
+  else refreshDeg();
+}
+
+function sliderPos(k) {
+  if (!isPitch()) return S.vol[k.i];
+  const d = degOf(k.m); if (d === 0) return .5;
+  return S.pos[d];
+}
+function valText(k) {
+  if (!isPitch()) { const q = chordPartner(k.m, cfgNow(), S.vol[k.i]); return q ? q.lab : "off"; }
+  const d = degOf(k.m); if (d === 0) return "1/1 (key)";
+  const st = S.deg[d], off = st.c - 100 * d;
+  return S.sl === 1 ? (off >= 0 ? "+" : "") + off.toFixed(1) + "¢" : st.lab;
+}
+let flashT = 0, flashTxt = "";
+
+// ---------- Tunings / Scales / Arps pad modes: each pad holds one setting; tap it, then change that setting on the left screen to set the pad ----------
+const isSeqMode = () => S.pmode === "tun" || S.pmode === "scale" || S.pmode === "arp";
+function ensureSeqv(md) {
+  if (S.seqv[md]) return;
+  const n = md === "tun" ? TUNINGS.length : md === "scale" ? SCALES.length : ARPS.length, cur = md === "tun" ? (S.tun < 0 ? S.lastTun : S.tun) : md === "scale" ? S.scale : S.arp;
+  S.seqv[md] = [0, 1, 2, 3].map(o => (cur + o) % n);
+}
+function applyPad(i) {
+  if (!isSeqMode()) { S.sel = null; return; }
+  const md = S.pmode; ensureSeqv(md); S.sel = i; const v = S.seqv[md][i];
+  if (md === "tun") { if (S.tun !== v) setTuning(v); } else if (md === "scale") S.scale = v; else S.arp = v;
+}
+function syncSel() {
+  if (S.sel == null || !isSeqMode()) return;
+  const md = S.pmode; ensureSeqv(md); S.seqv[md][S.sel] = md === "tun" ? (S.tun < 0 ? S.lastTun : S.tun) : md === "scale" ? S.scale : S.arp;
+}
+// ---------- render ----------
+function syncPartner(h) {   // the Chords knob adds, moves or removes the extra note on keys that are already sounding
+  const root = h.notes.find(n => n.hp == null); if (!root || !root.v || h.notes.some(n => n.hp == null && n !== root)) return;
+  const pn = h.notes.find(n => n.hp != null), q = chordPartner(root.m, cfgNow(), S.chk);
+  if (q && !pn) h.notes.push({ f: q.f, m: root.m, hp: 1, v: startVoice(q.f, volFor(root.m) * h.vel * .7) });
+  else if (!q && pn) { stopVoice(pn.v); h.notes.splice(h.notes.indexOf(pn), 1); }
+  else if (q && pn && pn.v && Math.abs(q.f - pn.f) > .001) { pn.f = q.f; setVoiceFreq(pn.v, q.f); }
+}
+function retuneLive() {   // sounding keyboard / MIDI notes follow slider, tuning and key changes immediately
+  held.forEach((h, id) => { if (h.arp || !/^(?:[mqkh]|pv|dm)/.test(id)) return; h.notes.forEach(n => { if (n.hp != null) return; const cf = cfgNow(), f = n.c0 != null ? freqOf(n.rm, { key: cf.key, deg: cf.rootDeg }) * 2 ** ((n.c0 + labDev(cf, n.dm)) / 1200) : freqOf(n.m, n.r ? { key: cf.key, deg: cf.rootDeg } : cf); if (n.v && Math.abs(f - n.f) > .001) { n.f = f; setVoiceFreq(n.v, f); } }); syncPartner(h); });
+}
+// top corner panels: output mode, Audio out (left, default) or MPE MIDI out (right); the chosen one is highlighted like a selected screen
+const tpL = $("#tpL"), tpR = $("#tpR");
+function renderOut() {
+  const mpe = S.out === "mpe";
+  tpL.classList.add("active"); tpL.firstElementChild.textContent = mpe ? "MIDI out" : "Audio out"; tpL.setAttribute("aria-label", "Output: " + (mpe ? "MIDI out" : "Audio out") + ". Click to switch.");
+  document.querySelectorAll("#dOut button").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.o === "mpe") === mpe)));
+}
+const setOut = o => { S.out = o; renderOut(); save(); };
+tpL.addEventListener("click", () => setOut(S.out === "mpe" ? "audio" : "mpe"));
+function render() {
+  syncSel(); retuneLive();
+  if (typeof layoutKeys === "function" && keyEls.length === 12) layoutKeys();
+  const mod = $("#mod"); mod.classList.remove("vol", "har");
+  renderOut();
+  modeButtons[0].label.innerHTML = "Microtones<small class=\"mset-name\">" + (likedPos(S.mset) + 1) + "</small>"; modeButtons[0].title = "Microtone set " + (likedPos(S.mset) + 1);
+  modeButtons[PER_I].label.innerHTML = "Range<small class=\"mset-name\">" + PERIOD_NAMES[S.rng] + "</small>"; modeButtons[PER_I].title = "Range: " + PERIOD_NAMES[S.rng];
+  B.key.b.textContent = keyName(S.key); B.anchor.b.textContent = ANCH[S.anchor][0]; pmodeSel.value = S.pmode; B.tun.b.textContent = tuneName(); B.scale.b.textContent = SCALES[S.scale][0]; tmPaint(); if (window.BIGSL) window.BIGSL();
+ 
+  { const t = modeButtons[VOL_I], pct = Math.round(S.knob * 100), md = disInfo() + (S.ext > .02 ? " · +" + Math.round(S.ext * 100) + "% harmony" : "");
+    t.label.innerHTML = "Consonance<small class=\"mset-name\">" + md + "</small>"; t.title = "Consonance: drag left for fewer, more consonant options; right for more options with sidebands added";
+    t.style.setProperty("background-image", "linear-gradient(90deg, rgba(120,72,30,.38) " + pct + "%, rgba(0,0,0,0) " + pct + "%), linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e)", "important"); }
+  { const t = modeButtons[1], pc = Math.round(qualV() * 100); t.label.innerHTML = "Chord<small class='mset-name'>" + LAB_MORPH[Math.min(5, Math.floor(qualV() * 6))] + "</small>"; t.title = "Chord quality: major, 9ths, 7ths, minor";
+    t.style.setProperty("background-image", "linear-gradient(90deg, rgba(120,72,30,.38) " + pc + "%, rgba(0,0,0,0) " + pc + "%), linear-gradient(135deg,#f0d1a0,#d9b17b 55%,#c5965e)", "important"); }
+  modeButtons.forEach((b, i) => {
+    const active = i === VOL_I ? false : (!volumeSelected && i === selectedBaseMode);
+    b.classList.toggle("active", active); b.classList.remove("dim-active");
+    b.classList.remove("border-style-0", "border-style-1", "border-style-2", "border-style-3");
+    if (active) b.classList.add("border-style-" + selectedBorderStyle);
+    b.title = active ? "Selected" : "Select screen";
+    b.setAttribute("aria-pressed", String(active));
+  });
+  holdTop.textContent = HOLD ? "Hold: On" : "Hold";
+  { const up = document.getElementById("bUp"), dn = document.getElementById("bDown"), cp = document.getElementById("bCopyRate");
+    if (up && dn && cp) { const v = RATINGS[rateId()]; up.style.outline = v === 1 ? "2px solid #2a7a3b" : ""; dn.style.outline = v === -1 ? "2px solid #a33" : ""; const n = Object.keys(RATINGS).length; cp.textContent = "Copy" + (n ? " (" + n + ")" : ""); cp.title = "Copy the liked and disliked lists to the clipboard"; up.title = "Like this set at this Range"; dn.title = "Dislike this set at this Range"; } }
+  { const rb = document.getElementById("bRand"); if (rb) { rb.textContent = "\ud83c\udfb2"; rb.title = "Random microtones: " + Math.round(RND_LEVELS[rndI] * 100) + "%"; rb.style.fontSize = "20px"; } }
+  { const cs = document.getElementById("chSel"); if (cs) cs.value = S.chord; }
+  const demoB = document.getElementById("bDemo"); if (demoB) demoB.textContent = DEMO ? "■ Stop" : "▶ Auto play";
+  $("#bUndo").disabled = !hist.length;
+  B.edit.b.textContent = S.edit === 3 ? "Synth: " + SYNTHS[S.synth][0] : EDITS[S.edit];
+  B.sl.b.textContent = flashT > Date.now() ? flashTxt : (S.sl === 2 ? "Chords" : modeNames[selectedBaseMode]);
+  const sc = SCALES[S.scale][1];
+  keyEls.forEach(k => {
+    const m = k.m, d = degOf(m), fix = isPitch() && d === 0;
+    k.el.classList.remove("ton", "out", "on");
+    // Fade notes outside the chosen scale and/or chord, relative to the selected tonic.
+    const relPc = ((k.pc - S.key) % 12 + 12) % 12;
+    const activeScale = SCALES[S.scale][1];
+    const activeChord = null;   // chord screen removed: the keyboard plays single notes
+    const outsideScale = !!activeScale && !activeScale.includes(relPc);
+    const outsideChord = !!activeChord && !activeChord.some(n => ((n % 12) + 12) % 12 === relPc);
+    if (outsideScale || outsideChord) k.el.classList.add("out");
+    const lp = (LBASE() + k.i) % 12;   // labels follow the layout: anchored to A the keys read A B C D E F G, whatever key is playing
+    if (k.lb) k.lb.textContent = k.i === 0 ? SHARP[lp] + (Math.floor(m / 12) - 1) : SHARP[lp];
+    k.fd.classList.toggle("fix", fix);
+    k.th.style.bottom = "calc(" + sliderPos(k).toFixed(4) + " * (100% - " + HS() + "px))";
+    k.fd.querySelector(".fc").style.top = S.sl === 0 && d > 0 ? "calc(" + (1 - Math.max(0, Math.min(1, (100 * d - range2(d)[0]) / (range2(d)[1] - range2(d)[0])))).toFixed(4) + " * (100% - " + HS() + "px) + " + HS() / 2 + "px)" : isPitch() ? "50%" : "calc(" + (1 - .8).toFixed(3) + " * (100% - " + HS() + "px) + " + HS() / 2 + "px)";
+    const t = SHARP[k.pc] + ": " + valText(k); k.fd.title = fix ? SHARP[k.pc] + ": key note (fixed)" : t; k.fd.setAttribute("aria-valuetext", valText(k));
+  });
+  $("#octUpTop").disabled = S.oct >= 3; $("#octDnTop").disabled = S.oct <= -3;
+  renderPads();
+}
+
+// ---------- sliders ----------
+function snapC(d, raw) {
+  if (S.sl === 1) return { c: Math.round(raw * 10) / 10, lab: "" };
+  const L = cands(d); if (!L.length) return { c: raw, lab: "" };
+  return L.reduce((a, b) => Math.abs(b.c - raw) < Math.abs(a.c - raw) ? b : a);
+}
+function slSetP(k, p) {
+  p = Math.max(0, Math.min(1, p));
+  if (!isPitch()) { const v = Math.round(p * 100) / 100; if (v === S.vol[k.i]) return; S.vol[k.i] = v; }
+  else {
+    const d = degOf(k.m); if (d === 0) return;
+    if (Math.abs(Math.round(p * 400) / 400 - S.pos[d]) < 1e-9) return;
+    setPitchPos(d, p);
+  }
+  flashTxt = SHARP[k.pc] + "  " + valText(k); flashT = Date.now() + 1400; setTimeout(render, 1450);
+  render(); save();
+}
+keyEls.forEach(k => {
+  k.fd.addEventListener("keydown", e => {
+    const d = e.key === "ArrowUp" ? 1 : e.key === "ArrowDown" ? -1 : 0; if (!d) return; e.preventDefault(); const b0 = snap(); setTimeout(() => commit(b0), 0);
+    if (!isPitch()) S.vol[k.i] = Math.max(0, Math.min(1, Math.round((S.vol[k.i] + d * .05) * 100) / 100));
+    else { const dg = degOf(k.m); if (!dg) return; setPitchPos(dg, S.pos[dg] + d * (S.sl === 1 ? .01 : .02)); }
+    flashTxt = SHARP[k.pc] + "  " + valText(k); flashT = Date.now() + 1400; setTimeout(render, 1450); render(); save();
+  });
+});
+
+// ---------- keys: tap to play; on a slider, drag up/down to set it (from where you grabbed it); drag sideways out onto a pad to store it ----------
+let lastM = null; const ptr = new Map(), ghost = $("#ghost");
+function padAt(x, y) { const e = document.elementFromPoint(x, y); return e && e.closest ? e.closest(".cb") : null; }
+const visScale = () => (modEl.getBoundingClientRect().width / 668) || 1;
+keyEls.forEach(k => {
+  k.el.addEventListener("pointerdown", e => {
+    if (e.button > 0) return; e.preventDefault(); ensureAudio();
+    const onFd = !!e.target.closest(".fd"), m = k.m; lastM = m;
+    const s = { k, m, id: null, pv: null, was: HOLD && latched.has(m), x0: e.clientX, y0: e.clientY, p0: sliderPos(k), onFd, mode: "press", over: null, v: null, b0: null };
+    if (!HOLD) { s.id = "k" + e.pointerId; noteOn(s.id, chordNotes(m, cfgNow())); }
+    else if (!s.was) { s.pv = "pv" + e.pointerId; noteOn(s.pv, chordNotes(m, cfgNow())); }   // sounds now; kept only if it's a tap
+    ptr.set(e.pointerId, s);
+    try { k.el.setPointerCapture(e.pointerId); } catch (x) {}
+  });
+  k.el.addEventListener("pointermove", e => {
+    const s = ptr.get(e.pointerId); if (!s) return;
+    const sc = visScale(), dx = (e.clientX - s.x0) / sc, dy = (e.clientY - s.y0) / sc;
+    if (s.mode === "press") {
+      const canSlide = false;   // vertical key sliders are enabled
+      if (canSlide && Math.abs(dy) > 5 && Math.abs(dy) > Math.abs(dx)) {
+        // sliding never changes the hold latch: it only sounds the key while you drag
+        s.mode = "slide"; if (s.pv) { noteOff(s.pv); s.pv = null; } if (s.id) { noteOff(s.id); s.id = null; }
+        s.b0 = snap(); k.fd.classList.add("drag"); light([s.m], true); s.v = startVoice(freqOf(s.m, cfgNow()), volFor(s.m));
+      } else if (Math.abs(dx) > 6 || Math.abs(dy) > 6) { s.mode = "move"; if (s.pv) { noteOff(s.pv); s.pv = null; } }
+    }
+    if (s.mode === "slide") {
+      const H = k.fd.offsetHeight - HS(); slSetP(k, s.p0 - dy / H);
+      if (s.v) { setVoiceFreq(s.v, freqOf(s.m, cfgNow())); s.v.out.gain.value = Math.min(1.5, volFor(s.m) * 1.25); }
+      return;
+    }
+    if (s.mode !== "move") return;
+    const r = dock.getBoundingClientRect(), outside = e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+    const p = outside ? padAt(e.clientX, e.clientY) : null;
+    if (s.over && s.over !== p) s.over.classList.remove("over");
+    if (outside && S.pmode !== "custom") setPMode("custom");   // dragging a key off the keyboard switches the pads to Custom chords
+    s.over = p; if (p) p.classList.add("over");
+    if (outside) { ghost.style.display = "block"; ghost.textContent = noteName(s.m) + " " + CHORDS[S.chord || 1][0]; ghost.style.left = e.clientX + "px"; ghost.style.top = e.clientY + "px"; }
+    else ghost.style.display = "none";
+  });
+  const end = e => {
+    const s = ptr.get(e.pointerId); if (!s) return; ptr.delete(e.pointerId); ghost.style.display = "none";
+    if (s.mode === "slide") {
+      k.fd.classList.remove("drag"); stopVoice(s.v); light([s.m], false);
+      if (latched.has(s.m)) { noteOff("h" + s.m); const ns = chordNotes(s.m, cfgNow()); latched.set(s.m, ns); noteOn("h" + s.m, ns); }   // retune the held chord to the new slider value
+      commit(s.b0); render(); return;
+    }
+    if (s.pv) noteOff(s.pv);
+    if (s.id) noteOff(s.id);
+    if (HOLD && e.type === "pointerup" && s.mode === "press") {   // a tap toggles the latch
+      if (s.was) { latched.delete(s.m); noteOff("h" + s.m); }
+      else { const ns = chordNotes(s.m, cfgNow()); latched.set(s.m, ns); noteOn("h" + s.m, ns); }
+    }
+    if (s.over) { s.over.classList.remove("over"); if (e.type === "pointerup") { if (S.pmode !== "custom") setPMode("custom"); storePad(+s.over.dataset.i, s.m); } }
+  };
+  k.el.addEventListener("pointerup", end); k.el.addEventListener("pointercancel", end); k.el.addEventListener("lostpointercapture", end);
+  k.el.addEventListener("contextmenu", e => e.preventDefault());
+});
+
+// ---------- chord pads + sequencer ----------
+const cg = $("#cg"), padEls = [];
+const ROM = ["I","bII","II","bIII","III","IV","#IV","V","bVI","VI","bVII","VII"];
+function storePad(i, m) {
+  const b0 = snap(), lat = [...latched.values()].flat(), seen = new Set(); let notes, root, cn;
+  if (m == null && lat.length) { notes = lat.filter(n => !seen.has(n.m + ":" + n.f) && seen.add(n.m + ":" + n.f)); root = Math.min(...notes.map(n => n.m)); cn = "Held"; }
+  else { root = m != null ? m : (lastM != null ? lastM : BASE() + S.key); const ch = S.chord || 1; notes = chordNotes(root, { key: S.key, deg: S.deg, scale: S.scale, chord: ch }); cn = CHORDS[ch][0]; }
+  S.pads[i] = { root, notes: notes.map(n => ({ f: n.f, m: n.m })), cn, tname: tuneName(), key: S.key };
+  commit(b0); const p = padEls[i]; p.classList.add("flash"); setTimeout(() => p.classList.remove("flash"), 250);
+  render(); save();
+}
+const padNotes = p => p.notes.map(n => ({ f: n.f, m: n.m }));
+// what each pad plays depends on the mode: Chord progression (I IV V vi, built live from key/scale/chord type), Key change, or stored Custom chords
+function progOffs() { const sc = SCALES[S.scale][1]; return sc && sc.length === 7 ? [0, 3, 4, 5].map(i => sc[i]) : [0, 5, 7, 9]; }
+function padChord(i) {
+  if (S.hid[S.pmode][i]) return null;   // deleted slot
+  if (isSeqMode()) {
+    const md = S.pmode; ensureSeqv(md); const v = S.seqv[md][i], ch = S.chord || 1, root = BASE() + S.key;
+    const notes = chordNotes(root, { key: S.key, deg: S.deg, scale: S.scale, chord: ch }).map(n => ({ f: n.f, m: n.m }));
+    const nm = md === "tun" ? TUNINGS[v][0] : md === "scale" ? SCALES[v][0] : ARPS[v], lab = md === "tun" ? "Tuning" : md === "scale" ? "Scale" : "Arp";
+    return { notes, small: true, main: nm, s1: lab, s2: keyName(S.key) + " " + CHORDS[ch][0], title: lab + ": " + nm };
+  }
+  if (S.pmode === "custom") { const p = S.pads[i]; return p ? { notes: padNotes(p), main: SHARP[((p.root % 12) + 12) % 12], s1: p.cn, s2: p.tname, title: (p.cn === "Held" ? p.notes.map(n => noteName(n.m)).join(" ") : noteName(p.root) + " " + p.cn) + ", " + p.tname } : null; }
+  const ch = S.chord || 1;
+  if (S.pmode === "key") {
+    if (!S.kcKeys) S.kcKeys = [0, 5, 7, 2].map(o => (S.key + o) % 12);
+    const k = S.kcKeys[i], root = BASE() + k, notes = chordNotes(root, { key: k, deg: S.deg, scale: S.scale, chord: ch }).map(n => ({ f: n.f, m: n.m }));
+    return { notes, key: k, main: keyName(k), s1: "Key change", s2: CHORDS[ch][0], title: "Change key to " + keyName(k) };
+  }
+  const off = progOffs()[i], root = BASE() + S.key + off, notes = chordNotes(root, { key: S.key, deg: S.deg, scale: S.scale, chord: ch }).map(n => ({ f: n.f, m: n.m }));
+  let rn = ROM[off]; if (notes.length > 1 && notes[1].m - notes[0].m === 3) rn = rn.replace(/[IV]+/, x => x.toLowerCase());
+  return { notes, main: rn, s1: SHARP[((root % 12) + 12) % 12] + " " + CHORDS[ch][0], s2: keyName(S.key) + " key", title: rn + " in " + keyName(S.key) + " (" + noteName(root) + " " + CHORDS[ch][0] + ")" };
+}
+function renderPads() {
+  padEls.forEach((b, i) => {
+    const p = padChord(i), cust = S.pmode === "custom"; b.classList.toggle("empty", !p); b.classList.toggle("cur", seq.on && seq.i === i); b.classList.toggle("sel", S.sel === i && isSeqMode()); b.parentNode.classList.toggle("full", !!p);
+    if (!p) { b.innerHTML = "+"; b.title = cust ? "Empty: click to store the current chord, or drag a key here" : "Deleted: click to restore this pad"; return; }
+    b.innerHTML = (p.small ? "<span class=\"mn\">" + p.main + "</span>" : p.main) + "<small>" + p.s1 + "</small><small>" + p.s2 + "</small>"; b.title = p.title;
+  });
+  const pl = $("#play"); pl.classList.toggle("on", seq.on); pl.innerHTML = seq.on ? "\u25A0&nbsp; Stop" : "\u25B6&nbsp; Play";
+}
+const padHold = new Map();
+const overScr = e => { const t = document.elementFromPoint(e.clientX, e.clientY); return !!(t && t.closest && t.closest("#lscr")); };
+function addCustomChord(notes) {
+  // keep the chord's actual tuning: each note's exact cents above its lowest note (not just the semitone shape)
+  const sorted = notes.slice().sort((x, y) => x.f - y.f), f0 = sorted[0].f, cents = [], semis = [];
+  sorted.forEach(n => { const c = Math.round(1200 * Math.log2(n.f / f0) * 100) / 100; if (!cents.length || c - cents[cents.length - 1] > .5) { cents.push(c); semis.push(Math.round(c / 100)); } });
+  const same = c => c && c.length === cents.length && c.every((v, j) => Math.abs(v - cents[j]) < .5);
+  let idx = CHORDS.findIndex(c => c[0] !== "Off" && c[0] !== "Harmonics" && (c[3] ? same(c[4]) : c[2] && same(c[2].map(x => x * 100))));
+  const b0 = snap();
+  if (idx < 0) {
+    if (S.cc.length >= 24) { S.cc.shift(); CHORDS.splice(CHORDS.findIndex(c => c[3]), 1); }
+    const name = "Custom " + (S.cc.length + 1); S.cc.push({ n: name, s: semis, c: cents }); CHORDS.push([name, null, semis, true, cents]); idx = CHORDS.length - 1;
+  }
+  allOff(); S.chord = idx; commit(b0); render(); save();
+}
+for (let i = 0; i < 4; i++) {
+  const cell = el("div", "pc", cg), b = el("button", "cb", cell); b.type = "button"; b.dataset.i = i; padEls.push(b);
+  const x = el("button", "px", cell); x.type = "button"; x.textContent = "\u00d7"; x.setAttribute("aria-label", "Clear pad " + (i + 1)); x.title = "Delete this chord";
+  x.addEventListener("pointerdown", e => e.stopPropagation());
+  x.onclick = e => {
+    e.stopPropagation();
+    if (S.pmode === "custom") { if (!S.pads[i]) return; act(() => { S.pads[i] = null; }); }
+    else { if (S.hid[S.pmode][i]) return; act(() => { S.hid[S.pmode][i] = true; }); }
+    if (S.sel === i) S.sel = null;
+    render(); save();
+  };
+  b.addEventListener("pointerdown", e => {
+    if (e.button > 0) return; e.preventDefault(); ensureAudio();
+    const cust = S.pmode === "custom";
+    if (cust && latched.size && !seq.on) { storePad(i); try { b.setPointerCapture(e.pointerId); } catch (x) {} padHold.set(e.pointerId, { id: null }); return; }
+    if (cust && !S.pads[i]) storePad(i);
+    if (!cust && S.hid[S.pmode][i]) { act(() => { S.hid[S.pmode][i] = false; }); render(); save(); }   // click a deleted pad to bring it back
+    applyPad(i); render();
+    const pc = padChord(i); if (S.pmode === "key") { act(() => { S.key = pc.key; }); render(); save(); }
+    const id = "p" + i + "_" + e.pointerId; noteOn(id, pc.notes); b.classList.add("on");
+    padHold.set(e.pointerId, { id, i, x0: e.clientX, y0: e.clientY, drag: false }); try { b.setPointerCapture(e.pointerId); } catch (x) {}
+  });
+  b.addEventListener("pointermove", e => {   // drag a pad's chord onto the left screen to make it a chord type
+    const h = padHold.get(e.pointerId); if (!h || h.i == null) return;
+    if (!h.drag) {
+      if (Math.hypot(e.clientX - h.x0, e.clientY - h.y0) / visScale() < 8) return;
+      if (!padChord(h.i)) return;
+      h.drag = true; if (h.id) { noteOff(h.id); h.id = null; } b.classList.remove("on");
+    }
+    const pc = padChord(h.i); ghost.textContent = pc.main + " " + pc.s1 + " \u2192 chord type"; ghost.style.display = "block"; ghost.style.left = e.clientX + "px"; ghost.style.top = e.clientY + "px";
+    lscr.classList.toggle("over", overScr(e));
+  });
+  const end = e => {
+    const h = padHold.get(e.pointerId); if (!h) return; padHold.delete(e.pointerId); if (h.id) noteOff(h.id); b.classList.remove("on");
+    if (h.drag) { ghost.style.display = "none"; lscr.classList.remove("over"); if (e.type === "pointerup" && overScr(e)) { const pc = padChord(h.i); if (pc) addCustomChord(pc.notes); } }
+  };
+  b.addEventListener("pointerup", end); b.addEventListener("pointercancel", end);
+  b.addEventListener("contextmenu", e => e.preventDefault());
+}
+const seq = { on: false, i: -1, t: 0, off: 0 };
+const BAR_MS = 2000;
+function seqStep() {
+  if (!seq.on) return;
+  const filled = [0, 1, 2, 3].filter(i => padChord(i));
+  if (!filled.length) { seqStop(); return; }
+  const nx = filled.find(i => i > seq.i); seq.i = nx != null ? nx : filled[0];
+  applyPad(seq.i); const pc = padChord(seq.i); if (S.pmode === "key") S.key = pc.key; render(); save();
+  noteOn("seq", pc.notes); clearTimeout(seq.off); seq.off = setTimeout(() => noteOff("seq"), BAR_MS * .92);
+  renderPads(); seq.t = setTimeout(seqStep, BAR_MS);
+}
+function seqStop() { seq.on = false; clearTimeout(seq.t); clearTimeout(seq.off); noteOff("seq"); seq.i = -1; renderPads(); }
+$("#play").onclick = () => {
+  if (seq.on) { seqStop(); return; }
+  if (![0, 1, 2, 3].some(i => padChord(i))) { padEls.forEach(p => { p.classList.add("flash"); setTimeout(() => p.classList.remove("flash"), 400); }); return; }
+  ensureAudio(); seq.on = true; seq.i = -1; seqStep();
+};
+
+// ---------- octave buttons and mod wheel (moves through the Edit list) ----------
+
+const wheel = $("#wheel"); let wy = null, wacc = 0, wpos = 0;
+const editStep = d => { act(() => [STEP.tun, STEP.scale, STEP.chord, STEP.synth][S.edit](d)); render(); save(); };
+const editLen = () => [TUNINGS.length, SCALES.length, CHORDS.length, SYNTHS.length][S.edit];
+wheel.addEventListener("pointerdown", e => { e.preventDefault(); wy = e.clientY; wacc = 0; wheel.setPointerCapture(e.pointerId); wheel.classList.add("drag"); });
+wheel.addEventListener("pointermove", e => {
+  if (wy == null) return; const sc = wheel.getBoundingClientRect().height / wheel.offsetHeight || 1, dy = (e.clientY - wy) / sc; wy = e.clientY;
+  wpos += dy; wheel.style.backgroundPositionY = wpos + "px"; wacc -= dy;
+  while (wacc >= 14) { wacc -= 14; editStep(1); } while (wacc <= -14) { wacc += 14; editStep(-1); }
+});
+const wend = () => { wy = null; wheel.classList.remove("drag"); }; wheel.addEventListener("pointerup", wend); wheel.addEventListener("pointercancel", wend);
+wheel.addEventListener("keydown", e => { const d = e.key === "ArrowUp" ? 1 : e.key === "ArrowDown" ? -1 : 0; if (d) { e.preventDefault(); editStep(d); } });
+wheel.addEventListener("wheel", e => { e.preventDefault(); editStep(e.deltaY < 0 ? 1 : -1); wpos -= Math.sign(e.deltaY) * 7; wheel.style.backgroundPositionY = wpos + "px"; }, { passive: false });
+function wheelSetAbs(v) {   // MIDI CC1: 0..127 picks a position in the list
+  const n = editLen(), target = Math.round(v / 127 * (n - 1));
+  const cur = [S.tun < 0 ? S.lastTun : S.tun, S.scale, S.chord, S.synth][S.edit];
+  if (target !== cur) editStep(target - cur);
+  wheel.style.backgroundPositionY = (v / 127 * 60) + "px";
+}
+
+// ---------- computer keyboard: A W S E D F T G Y H U J (Z / X change octave) ----------
+const KMAP = "awsedftgyhuj";
+const kDown = new Set();
+addEventListener("keydown", e => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+  const t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+  const ch = e.key.toLowerCase();
+  if (ch === "z") { $("#octDnTop").click(); return; } if (ch === "x") { $("#octUpTop").click(); return; }
+  const i = KMAP.indexOf(ch); if (i < 0 || kDown.has(ch)) return;
+  kDown.add(ch); const m = BASE() + i; lastM = m; noteOn("q" + ch, chordNotes(m, cfgNow()));
+});
+addEventListener("keyup", e => { const ch = e.key.toLowerCase(); if (kDown.delete(ch)) noteOff("q" + ch); });
+addEventListener("blur", () => { kDown.clear(); allOff(); });
+
+// ---------- MIDI keyboard (Web MIDI): notes, mod wheel CC1, pitch bend ±2 semitones ----------
+let midiAsked = false;
+function askMidi() {
+  if (midiAsked || !navigator.requestMIDIAccess) return; midiAsked = true;
+  navigator.requestMIDIAccess().then(acc => {
+    const hook = () => { const n = []; acc.inputs.forEach(inp => { inp.onmidimessage = onMidi; n.push(inp.name || "MIDI input"); }); $("#dMidi").textContent = n.length ? n.join(", ") : "No MIDI device found"; }; hook(); acc.onstatechange = hook;
+  }).catch(() => {});
+}
+let sustain = false; const sustained = new Set();
+function midiOff(a) { if (sustain) sustained.add(a); else noteOff("m" + a); }
+// ---------- MIDI CC: learn (Assign) and routing ----------
+const CCKEY = "rexaudio.cc.v1";
+let CCMAP = {}; try { const o = JSON.parse(localStorage.getItem(CCKEY) || "{}"); if (o && typeof o === "object") Object.keys(o).forEach(k => { if (/^\d+$/.test(k) && +k < 128 && ["key","anchor","tun","mset","pitch","vol"].includes(o[k])) CCMAP[k] = o[k]; }); } catch (e) {}
+const saveCC = () => { try { localStorage.setItem(CCKEY, JSON.stringify(CCMAP)); } catch (e) {} };
+let assignOn = false, pend = null;
+const TNAME = { key: "Key", anchor: "Anchor", tun: "Tuning", mset: "Microtones", pitch: "Pitch", vol: "Consonance" };
+const frac = (v, n) => Math.min(n - 1, Math.floor(v / 128 * n));
+function applyCC(tg, v) {
+  if (tg === "key") { const i = frac(v, 12); if (i !== S.key) { act(() => { allOff(); S.key = i; }); render(); save(); } }
+  else if (tg === "anchor") { const i = frac(v, 3); if (i !== S.anchor) { act(() => { allOff(); S.anchor = i; }); render(); save(); } }
+  else if (tg === "tun") { tmApply(v / 127); render(); save(); }
+  else if (tg === "mset") { const i = LIKED[Math.min(LIKED.length - 1, Math.floor(v * LIKED.length))]; if (i !== S.mset) applyMset(i); }
+  else if (tg === "pitch") { fineC = (v / 127 - .5) * 100; setBend(bendRaw); }          // master fine tune, +-50 cents
+  else if (tg === "vol") setDis(v / 127);   // the Consonance knob
+}
+function ccIn(a, b) {
+  if (assignOn && pend) { bindCC(a, pend); return; }
+  const tg = CCMAP[a]; if (tg) { applyCC(tg, b); return; }
+  if (a === 64) { sustain = b >= 64; if (!sustain) { sustained.forEach(n => noteOff("m" + n)); sustained.clear(); } }
+  else if (a === 1) wheelSetAbs(b);
+  else if (a === 120 || a === 123) { sustained.clear(); allOff(); }
+}
+const tgEls = {};
+(function () {
+  const top = (e, root) => { while (e && e.parentElement !== root) e = e.parentElement; return e; };
+  tgEls.key = top(B.key.b, lscr); tgEls.anchor = top(B.anchor.b, lscr); tgEls.tun = top(B.tun.b, lscr);
+  tgEls.mset = modeButtons[0]; tgEls.pitch = modeButtons[1]; tgEls.vol = modeButtons[3];
+})();
+function drawCC() {
+  document.querySelectorAll(".ccbadge").forEach(e => e.remove());
+  Object.keys(CCMAP).forEach(n => { const e = tgEls[CCMAP[n]]; if (e) { const b = el("span", "ccbadge", e); b.textContent = "CC " + n; } });
+  Object.keys(tgEls).forEach(k => { tgEls[k].classList.toggle("cc-pend", assignOn && pend === k); tgEls[k].classList.toggle("cc-pick", assignOn); });
+  $("#kAssign").setAttribute("aria-pressed", String(assignOn));
+  $("#kAssign").textContent = assignOn ? "Done" : "Assign";
+  const mp = $("#dMap"); mp.textContent = Object.keys(CCMAP).length ? "" : "";
+  if (!Object.keys(CCMAP).length) el("em", "", mp).textContent = "Nothing assigned yet"; else Object.keys(CCMAP).sort((a, b) => a - b).forEach(n => { el("span", "", mp).textContent = "CC " + n + " → " + TNAME[CCMAP[n]]; });
+  $("#kStatus").textContent = !assignOn ? "Assign: map a knob to a screen"
+    : pend ? "Move a knob or fader for " + TNAME[pend] : "Click the screen to control";
+}
+function bindCC(n, tg) {
+  Object.keys(CCMAP).forEach(k => { if (k === String(n) || CCMAP[k] === tg) delete CCMAP[k]; });
+  CCMAP[n] = tg; pend = null; saveCC(); drawCC();
+}
+[$("#lscr"), $("#rscr")].forEach(root => root.addEventListener("click", e => {
+  if (!assignOn) return;
+  const tg = Object.keys(tgEls).find(k => tgEls[k].contains(e.target)); if (!tg) return;
+  e.stopPropagation(); e.preventDefault(); pend = pend === tg ? null : tg; drawCC();
+}, true));
+$("#kAssign").onclick = () => { assignOn = !assignOn; pend = null; drawCC(); };
+document.querySelectorAll("#dOut button").forEach(b => b.onclick = () => setOut(b.dataset.o));
+$("#kClear").onclick = () => { CCMAP = {}; pend = null; fineC = 0; setBend(bendRaw); masterLvl = .3; if (master) master.gain.value = .3; saveCC(); drawCC(); };
+drawCC();
+
+function onMidi(ev) {
+  const [st, a, b] = ev.data, t = st & 0xf0;
+  if (t === 0x90 && b > 0) { sustained.delete(a); lastM = a; noteOn("m" + a, chordNotes(a, cfgNow()), Math.pow(b / 127, .8)); }   // any MIDI note is retuned by its place in the key (octaves all follow the same tuning)
+  else if (t === 0x80 || (t === 0x90 && b === 0)) midiOff(a);
+  else if (t === 0xb0) ccIn(a, b);
+  else if (t === 0xe0) setBend(((b << 7 | a) - 8192) / 8192 * 200);
+}
+addEventListener("pointerdown", () => { ensureAudio(); askMidi(); }, { once: true, capture: true });
+
+// ---------- fit the module to the screen ----------
+const wrap = $("#wrap"), modEl = $("#mod");
+function fit() {
+  const moduleWidth = modEl.offsetWidth || 724;
+  const s = Math.min(1.35, (document.documentElement.clientWidth - 16) / moduleWidth);
+  const h = (modEl.offsetHeight || 466), winf = $("#winf"), TOP = 50, PAD = 16, WW = 756, WH = TOP + h + PAD;
+  const s2 = Math.min(1.35, (document.documentElement.clientWidth - 16) / WW);
+  winf.style.height = WH + "px"; winf.style.transform = "scale(" + s2.toFixed(4) + ")";
+  modEl.style.left = (PAD * s2) + "px"; modEl.style.top = (TOP * s2) + "px";
+  modEl.style.transform = "scale(" + s2.toFixed(4) + ")";
+  wrap.style.width = (WW * s2) + "px"; wrap.style.height = (WH * s2) + "px";
+}
+function applyGeometry() {
+  ["keyHeight","keyWidth","keyGap"].forEach(id => {
+    const input = $("#" + id), val = Number(input.value);
+    keyGeometry[id === "keyHeight" ? "height" : id === "keyWidth" ? "width" : "gap"] = val;
+    $("#" + id + "Val").textContent = val + " px";
+  });
+  render();
+}
+["keyHeight","keyWidth","keyGap"].forEach(id => $("#" + id).addEventListener("input", applyGeometry));
+const trackLengthInput = $("#trackLength");
+trackLengthInput.addEventListener("input", () => {
+  sliderTrackLength = Number(trackLengthInput.value);
+  $("#trackLengthVal").textContent = sliderTrackLength + " px";
+  keyEls.forEach(k => { if (k.fd) k.fd.style.height = Math.min(sliderTrackLength, Math.max(30, keyGeometry.height - 20)) + "px"; });
+});
+$("#copyTrackLength").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(`sliderTrackLength=${sliderTrackLength}px`); $("#sliderCopyStatus").textContent = `Copied: sliderTrackLength=${sliderTrackLength}px`; }
+  catch (_) { const ta = document.createElement("textarea"); ta.value = `sliderTrackLength=${sliderTrackLength}px`; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); const ok=document.execCommand("copy"); ta.remove(); $("#sliderCopyStatus").textContent = ok ? `Copied: sliderTrackLength=${sliderTrackLength}px` : "Copy failed — please try again."; }
+});
+function geometryText() { return `keyHeight=${keyGeometry.height}px
+keyWidth=${keyGeometry.width}px
+keyGapWidth=${keyGeometry.gap}px`; }
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); }
+  catch (_) { const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); const ok = document.execCommand("copy"); ta.remove(); if (!ok) throw new Error("Clipboard unavailable"); }
+  $("#copyStatus").textContent = "Copied: " + text.replaceAll("\n", " · ");
+}
+document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
+  const id = b.dataset.copy, v = $("#" + id).value;
+  copyText(`${id}=${v}px`).catch(() => { $("#copyStatus").textContent = "Copy failed — please select the value manually."; });
+}));
+$("#copyAllKeys").addEventListener("click", () => copyText(geometryText()).catch(() => { $("#copyStatus").textContent = "Copy failed — please try again."; }));
+// ---------- first-visit questions: what to explore, then existing or custom. The answers are saved; the UI adapts to them later ----------
+const intro = $("#intro"), step1 = $("#step1"), step2 = $("#step2");
+step1.querySelectorAll("button").forEach(b => b.onclick = () => { S.focus = b.dataset.a; step1.hidden = true; step2.hidden = false; save(); });
+step2.querySelectorAll("button").forEach(b => b.onclick = () => { S.source = b.dataset.b; intro.hidden = true; save(); });
+S.source = "existing";   // the old "existing or custom tunings?" question is gone
+addEventListener("resize", () => { layoutKeys(); fit(); });
+HAPPY = false;
+S.tun = TM_I; S.lastTun = TM_I; TUNINGS[TM_I][1] = tmCents(S.tm || 0); MSC.clear(); refreshDeg();
+// strip the interface down: no panel, macro, thumbs, copy, auto play, Complexity or Consonance; the Scale tile moves to the right
+["bDemo", "bUp", "bDown", "bCopyRate", "lab"].forEach(id => { const e = document.getElementById(id); if (e) e.remove(); });
+B.mac.b.closest(".ks").remove(); $("#rscr").appendChild(modeButtons[1]);
+applyGeometry();
+render();
+</script>
+<script src="nav.js"></script>
+</body>
+</html>
