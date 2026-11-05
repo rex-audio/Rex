@@ -6,6 +6,7 @@
     ["drums.html", "Drums"],
     ["colours.html", "Colours"],
     ["loops.html", "Loops"],
+    ["studio.html", "DAW"],
     ["shapes.html#support", "Support"]
   ];
   // pages that belong under another menu item
