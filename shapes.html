@@ -47,7 +47,7 @@ h2 { font-size: 26px; line-height: 1.2; letter-spacing: -0.01em; text-wrap: bala
 h3 { font-size: 17px; line-height: 1.3; }
 
 
-/* Hero banner: the demo video's geometry card (flower of life on a dark ground) */
+/* Hero banner: the demo video's geometry card (geometric pattern on a dark ground) */
 .hero { position: relative; margin: 26px 36px 0; height: 330px; border-radius: 12px; overflow: hidden; background: #070b0f; border: 1px solid #1f2e3b; color: #dbe9f5; text-align: center; }
 .hero svg.fol { position: absolute; left: 50%; top: 50%; width: 470px; height: 470px; margin: -235px 0 0 -235px; overflow: visible; animation: folspin 90s linear infinite; }
 .hero svg.fol circle { fill: none; stroke: #6fd3ff; stroke-width: 1.4; opacity: .5; stroke-dasharray: 1; stroke-dashoffset: 1; animation: foldraw 2.4s cubic-bezier(.4,0,.2,1) forwards; }
@@ -243,7 +243,7 @@ footer nav { display: flex; gap: 18px; }
       <div class="hmark">rex<b>audio</b></div>
       <h2>Shapes</h2>
       <p class="hsub">Geometric synthesizer</p>
-      <div class="htag" aria-hidden="true"><span>Shape your sound.</span><span>Enter new dimensions.</span><span>Sacred geometry in motion.</span></div>
+      <div class="htag" aria-hidden="true"><span>Shape your sound.</span><span>Enter new dimensions.</span><span>Geometry in motion.</span></div>
     </div>
   </section>
 
@@ -263,9 +263,9 @@ footer nav { display: flex; gap: 18px; }
 
 
   <section class="sec" id="how">
-    <span class="label">Inspired by sacred geometry</span>
+    <span class="label">Inspired by geometry</span>
     <h2 style="margin-bottom:12px">Geometry, turned into sound</h2>
-    <p>Shapes is inspired by sacred geometry, an art form of geometric patterns that appear in nature, science, art, religious symbols and cultures throughout history. This plugin turns those patterns into sound.</p>
+    <p>Shapes is inspired by geometry, an art form of geometric patterns that appear in nature, science, art and cultures throughout history. This plugin turns those patterns into sound.</p>
     <h2 style="margin-top:36px">How it works</h2>
     <dl class="specs">
       <div><dt>The display</dt><dd>The large display in the middle is a visualiser for the oscillators.</dd></div>
@@ -589,7 +589,7 @@ footer nav { display: flex; gap: 18px; }
   var scenes = [
     { tab: 'Shape your sound', title: 'Shape your sound.', build: scOsc, text: '' },
     { tab: 'Enter new dimensions', title: 'Enter new dimensions.', build: scBend, text: '' },
-    { tab: 'Sacred geometry in motion', title: 'Sacred geometry in motion.', build: scMod, text: '' }
+    { tab: 'Geometry in motion', title: 'Geometry in motion.', build: scMod, text: '' }
   ];
   var stage = document.getElementById('bstage');
   scenes.forEach(function (s) { var o = s.build(); s.root = o.root; s.update = o.update; s.still = o.still; s.titleFn = o.titleFn; stage.appendChild(o.root); });
