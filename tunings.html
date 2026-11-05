@@ -607,5 +607,6 @@ const fit = () => { const w = $(".demo").clientWidth - 24; $("#app").style.zoom 
 const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); fit(); };
 refresh(); fitSite(); addEventListener("resize", fitSite);
 </script>
+<script src="nav.js"></script>
 </body>
 </html>

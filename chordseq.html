@@ -669,5 +669,6 @@ $("#bpm").oninput = e => { S.bpm = +e.target.value; bpmLabels(); };
 $("#master").oninput = e => { mnode.gain.setTargetAtTime(+e.target.value, ctx.currentTime, .02); $("#masterV").textContent = (+e.target.value).toFixed(2); };
 S.bpm = 130; bpmLabels(); loadPreset(0); fitSite(); addEventListener("resize", fitSite);
 </script>
+<script src="nav.js"></script>
 </body>
 </html>
