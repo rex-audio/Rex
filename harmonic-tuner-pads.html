@@ -100,32 +100,32 @@
   .tbtn[aria-pressed="true"] { color:#fff3d9; border-color:#e9b878; box-shadow:0 0 8px rgba(240,209,155,.45),0 2px 0 #211309; }
   .tbtn:disabled { opacity:.45; cursor:default; }
 
-  /* black and white hardware: rubber chord pads on plain keys */
-  #mod { background:#1b1b1d; border-color:#4a4a4e; background-image:none; }
+  /* blue hardware, in the colours of the Tunings plugin: deep blue panel, plain white and black keys, grey pads that glow round the edge when picked */
+  #mod { background:#0f2236; border-color:#2f5b86; background-image:none; }
   #mod::before { display:none; }
-  .tpanel.brand, #mtitle, .tbtn { background:#2b2b2e; background-image:none; border-color:#4a4a4e; color:#ececec; text-shadow:none; box-shadow:0 2px 0 #0b0b0c, inset 0 1px 0 rgba(255,255,255,.12); }
-  .tpanel.brand b { background:none; -webkit-background-clip:border-box; background-clip:border-box; color:#fff; }
-  #mtitle { color:#ececec; }
-  .tbtn:hover { color:#fff; border-color:#8a8a90; } .tbtn[aria-pressed="true"] { color:#fff; border-color:#fff; box-shadow:0 0 8px rgba(255,255,255,.35),0 2px 0 #0b0b0c; }
-  #dock { background:#2a2a2d; border-color:#4a4a4e; box-shadow:inset 0 2px 8px rgba(0,0,0,.5); }
+  .tpanel.brand, #mtitle, .tbtn { background:#16324d; background-image:none; border-color:#2f5b86; color:#dbe9f5; text-shadow:none; box-shadow:0 2px 0 #07121d, inset 0 1px 0 rgba(160,210,255,.14); }
+  .tpanel.brand b { background:none; -webkit-background-clip:border-box; background-clip:border-box; color:#6fd3ff; }
+  #mtitle { color:#dbe9f5; }
+  .tbtn:hover { color:#fff; border-color:#6fd3ff; } .tbtn[aria-pressed="true"] { color:#fff; border-color:#6fd3ff; box-shadow:0 0 8px rgba(111,211,255,.5),0 2px 0 #07121d; }
+  #dock { background:#0d1b2b; border-color:#2f5b86; box-shadow:inset 0 2px 8px rgba(0,0,0,.55); }
   #dock::before { display:none; }
-  .rl, .rl.r { color:#8d8d94; }
-  .key.w { background:linear-gradient(100deg,#fafafa,#d9d9dc 50%,#f3f3f5); border:1px solid #8d8d94; box-shadow:0 2px 3px rgba(0,0,0,.5); }
-  .key.b { background:linear-gradient(100deg,#2c2c2f,#0d0d0e 50%,#303033); border:1px solid #000; box-shadow:0 3px 6px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.12); }
-  .key.w .lb { color:#2a2a2d; } .key.b .lb { color:#ececec; }
-  .key.down { box-shadow:0 0 0 2px #fff, 0 0 12px rgba(255,255,255,.7); }
-  .key.has .lb::after { background:#ff9f2e; box-shadow:0 0 5px rgba(255,159,46,.9); }
-  .rail { background:#4a4a4e; box-shadow:inset 0 0 0 1px #6a6a70; } .rail.on { box-shadow:inset 0 0 0 1px #fff, 0 0 7px rgba(255,255,255,.5); }
-  .tk { background:#9a9aa0; box-shadow:none; }
-  /* the pads: black on the white keys, white on the black keys; a lit pad glows orange like a hardware LED */
+  .rl, .rl.r { color:#6f879b; }
+  .key.w { background:linear-gradient(100deg,#f4f8fb,#d3dde6 50%,#eef3f7); border:1px solid #7f93a6; box-shadow:0 2px 3px rgba(0,0,0,.55); }
+  .key.b { background:linear-gradient(100deg,#1a232c,#05080b 50%,#1c2630); border:1px solid #000; box-shadow:0 3px 6px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.1); }
+  .key.w .lb { color:#1b2a38; } .key.b .lb { color:#dbe9f5; }
+  .key.down { box-shadow:0 0 0 2px #6fd3ff, 0 0 14px rgba(111,211,255,.8); }
+  .key.has .lb::after { background:#6fd3ff; box-shadow:0 0 5px rgba(111,211,255,.9); }
+  .rail { background:#3b4650; box-shadow:inset 0 0 0 1px #566472; } .rail.on { box-shadow:inset 0 0 0 1px #6fd3ff, 0 0 7px rgba(111,211,255,.55); }
+  .tk { background:#7f93a6; box-shadow:none; }
+  /* the pads: light grey on the white keys, dark grey on the black keys; a picked pad is ringed with light */
   .kn, .kn.root { width:32px; height:20px; margin:-10px 0 0 -16px; border-radius:5px; font:700 9px/1 Arial; }
-  .key.w .kn { border:1px solid #000; background:linear-gradient(180deg,#3a3a3e,#111 55%,#050505); box-shadow:0 2px 0 #000, inset 0 1px 0 rgba(255,255,255,.22); }
-  .key.b .kn { border:1px solid #9a9aa0; background:linear-gradient(180deg,#ffffff,#e4e4e8 60%,#c8c8cd); box-shadow:0 2px 0 #55555a, inset 0 1px 0 #fff; }
-  .key .kn:not(.on):hover::before { inset:1px; border-radius:4px; background:rgba(255,159,46,.35); opacity:1; }
+  .key.w .kn { border:1px solid #6b7782; background:linear-gradient(180deg,#d4dbe1,#b3bcc5 60%,#9aa5af); box-shadow:0 2px 0 #5d6872, inset 0 1px 0 rgba(255,255,255,.7); }
+  .key.b .kn { border:1px solid #000; background:linear-gradient(180deg,#4a545e,#363f48 60%,#2a323a); box-shadow:0 2px 0 #000, inset 0 1px 0 rgba(255,255,255,.18); }
+  .key .kn:not(.on):hover::before { inset:1px; border-radius:4px; background:rgba(111,211,255,.35); opacity:1; }
   .key .kn:active { transform:translateY(1px); box-shadow:none; }
-  .key.w .kn.on { transform:none; color:#ffb347; border-color:#ff9f2e; background:linear-gradient(180deg,#4a3a22,#1d1409 60%,#0b0805); box-shadow:0 2px 0 #000, 0 0 10px 1px rgba(255,159,46,.75), inset 0 0 8px rgba(255,159,46,.35); text-shadow:0 0 4px rgba(255,159,46,.9); }
-  .key.b .kn.on { transform:none; color:#8a4a00; border-color:#ff9f2e; background:linear-gradient(180deg,#fff2dc,#ffd9a0 60%,#ffc068); box-shadow:0 2px 0 #7a4a10, 0 0 10px 1px rgba(255,159,46,.8); text-shadow:none; }
-  .key .kn.on.xen { color:#ff6a3a; } .key.b .kn.on.xen { color:#b2330a; }
+  .key .kn.on { transform:none; color:#06273a; border-color:#d6f3ff; text-shadow:none; box-shadow:0 2px 0 rgba(0,0,0,.6), 0 0 0 2px #6fd3ff, 0 0 12px 3px rgba(111,211,255,.85); }
+  .key.b .kn.on { color:#eaf8ff; }
+  .key .kn.on.xen { color:#b2330a; } .key.b .kn.on.xen { color:#ffb29a; }
 </style>
 </head>
 <body>
