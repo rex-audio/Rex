@@ -190,6 +190,7 @@
   .hkc { height:30px; padding:0 12px; border:1px solid #2c3d4a; border-radius:999px; background:#0d141b; color:#b7c8d6; font:600 12px Arial, sans-serif; cursor:pointer; }
   .hkc:hover { border-color:#6fd3ff; color:#fff; } .hkc[aria-pressed="true"] { background:#dbe9f5; color:#0b1217; border-color:#dbe9f5; }
   .sitefoot { display:none; }
+  .hkmake { border-color:#6fd3ff; color:#dff4ff; } .hkshape { font:700 12px Arial, sans-serif; color:#6fd3ff; padding:0 4px; } .hkcopy { margin-left:auto; font:10px Arial, sans-serif; color:#4f6a7c; }
   @media (max-height:520px) { .top { padding:4px 12px 0 !important; } .top .brand { font-size:16px; } .top nav { font-size:12px; } .top .hkr { font-size:10px; } #hkbar { padding:3px 12px 5px; } .hkc { height:26px; font-size:11px; padding:0 9px; } }
 </style>
 </head>
@@ -531,10 +532,12 @@ function fit() { const w = Math.min(document.documentElement.clientWidth, 960), 
 addEventListener("resize", fit); fit(); paint();
 </script>
 <script>
-// ---------- Harmonikeys: the chord pads full screen, the 12 keys in one row on a wide screen, fewer pads per key if you like, and the sequencer beside them ----------
+// ---------- Harmonikeys: the chord pads full screen, the 12 keys in one row on a wide screen, fewer pads per key if you like, the sequencer with them,
+// and Make chord: the lit pads become a chord shape that every key then plays from itself ----------
 (function () {
-  const d = document, de = d.documentElement, bar = d.getElementById("hkbar"), top = d.querySelector(".top");
-  let rows = "all", seqOn = false; try { rows = localStorage.getItem("harmonikeys-rows") || "all"; seqOn = localStorage.getItem("harmonikeys-seq") === "1"; } catch (e) {}
+  const d = document, de = d.documentElement, bar = d.getElementById("hkbar"), top = d.querySelector(".top"), LAND = !!window.HK_LAND;
+  const K = LAND ? "harmonikeys-land-" : "harmonikeys-";
+  let rows = "all", seqOn = LAND; try { rows = localStorage.getItem(K + "rows") || "all"; const q = localStorage.getItem(K + "seq"); if (q !== null) seqOn = q === "1"; } catch (e) {}
   const MODES = [["all", "All 14", null], ["h8", "8 harmonics", [8, 7, 6, 5, 4, 3, 2, 1]], ["u8", "8 undertones", [1, -2, -3, -4, -5, -6, -7, -8]], ["hu4", "4 + 4", [4, 3, 2, 1, -2, -3, -4, -5]], ["hu3", "3 + 3", [3, 2, 1, -2, -3, -4]]];
   const RV0 = RV.map(a => a.slice());
   // a Progression row in the sequencer, like the Harmonic Grid's: each bar's chord moved by a step of the key
@@ -544,7 +547,43 @@ addEventListener("resize", fit); fit(); paint();
   const sv = sqVoice; sqVoice = function (ms, i) { return sv(ms, i).map(x => x + (SQ.prg[i] || 0)); };
   const sr = sqRender; sqRender = function () { sr(); try { localStorage.setItem("harmonikeys-prg", JSON.stringify(SQ.prg)); } catch (e) {} };
   d.getElementById("sqClear").addEventListener("click", () => { SQ.prg.fill(0); sqRender(); });
-  // after every repaint: only the rows in use, spread over the key, bigger
+
+  // ---- Make chord: the lit pads become a shape (its notes measured from the key of the first lit column); the pads empty; each key now plays the shape from itself ----
+  let SHAPE = null, lastChord = null; try { const o = JSON.parse(localStorage.getItem(K + "shape")); if (o && Array.isArray(o.off) && o.off.length) SHAPE = o; } catch (e) {}
+  const keyPitch = c => notesOf(c, [1])[0];
+  function makeChord() {
+    const ms = withSnap(snapNow(), () => chordMidis(false)), c0 = S.sel.findIndex(ks => ks.filter(vis).length);
+    if (!ms.length || c0 < 0) { d.getElementById("read").textContent = "Light some pads first, then press Make chord"; return; }
+    const base = keyPitch(c0); SHAPE = { off: ms.map(p => p - base), name: ms.map(p => nameOf(p)).filter((x, i, a) => a.indexOf(x) === i).join(" "), from: NAMES[pcOf(c0)] };
+    const b0 = snap(); S.sel = blank(); commit(b0); paint(); save();
+    try { localStorage.setItem(K + "shape", JSON.stringify(SHAPE)); } catch (e) {} drawBar();
+    d.getElementById("read").textContent = "Chord shape " + SHAPE.name + " (from " + SHAPE.from + "): every key plays it now";
+  }
+  function clearShape() { SHAPE = null; try { localStorage.removeItem(K + "shape"); } catch (e) {} drawBar(); }
+  const down0 = down;
+  down = function (id, c, vel, oc = 0) {
+    delete S.__ms;
+    if (!SHAPE) { down0(id, c, vel, oc); lastChord = keyNotes(c, S.sel[c]).map(p => p + 12 * oc); return; }
+    audio();
+    if (S.hold && latched.has(c)) { latched.delete(c); stopCol(c); return; }
+    up(id, true); const b = keyPitch(c) + 12 * oc, ps = SHAPE.off.map(o => b + o); lastChord = ps.slice();
+    held.set(id, { c, vs: ps.map(p => voice(p, vel, ps.length)) }); setDown(c, 1);
+    d.getElementById("read").textContent = NAMES[pcOf(c)] + ": " + ps.map(p => nameOf(p)).filter((x, i, a) => a.indexOf(x) === i).join(" ");
+    if (S.hold) latched.add(c);
+  };
+  // the sequencer can store a chord played from a shape: the bar keeps the notes themselves
+  const cm0 = chordMidis; chordMidis = function (fb) { return Array.isArray(S.__ms) ? S.__ms.slice() : cm0(fb); };
+  const ws0 = withSnap; withSnap = function (sn, fn) { const had = S.__ms; try { return ws0(sn, fn); } finally { if (had === undefined) delete S.__ms; else S.__ms = had; } };
+  const tg0 = toggle; toggle = function (c, k) { delete S.__ms; return tg0(c, k); };
+  d.getElementById("sqLane").addEventListener("click", e => {
+    const b = e.target.closest(".sqBar"); if (!b || e.target.classList.contains("x")) return; const i = [...b.parentNode.children].indexOf(b);
+    if (SQ.bars[i] || !SHAPE) return;   // an empty bar while a shape is on: store the chord you played last
+    e.stopPropagation(); e.preventDefault();
+    if (!lastChord || !lastChord.length) { d.getElementById("read").textContent = "Play a key first, then click a bar to store its chord"; return; }
+    SQ.bars[i] = Object.assign(snapNow(), { __ms: lastChord.slice() }); try { localStorage.setItem("rex-harmonic-pads-seq-v1", JSON.stringify({ n: SQ.n, bpm: SQ.bpm, bars: SQ.bars, key: SQ.key, oct: SQ.oct, voi: SQ.voi })); } catch (x) {} sqRender();
+  }, true);
+
+  // ---- after every repaint: only the rows in use, spread over the key, bigger ----
   let rowY = ri => 24 + ri * 22, nRows = 14;
   function post() {
     const n = S.view < 3 ? RV[S.view].length : 14, gap = n > 1 ? 286 / (n - 1) : 0, ph = Math.round(Math.max(20, Math.min(40, gap - 6)));
@@ -557,14 +596,27 @@ addEventListener("resize", fit); fit(); paint();
     st.textContent = n < 14 ? ".key .kn, .key .kn.root { height:" + ph + "px; margin-top:" + (-ph / 2) + "px; font-size:" + Math.min(13, 9 + (ph - 20) / 4) + "px; } .rl { font-size:" + Math.min(12, 8.5 + (ph - 20) / 5) + "px; }" : "";
   }
   const pt = paint; paint = function () { pt(); post(); };
-  function setRows(k) { rows = k; try { localStorage.setItem("harmonikeys-rows", k); } catch (e) {} const R = (MODES.find(x => x[0] === k) || MODES[0])[2]; if (R) { RV[0] = R.slice(); RV[1] = R.slice(); RV[2] = R.slice(); if (S.view > 2) S.view = 2; } else RV0.forEach((a, i) => { RV[i] = a.slice(); }); paint(); fit(); drawBar(); }
-  // fill the screen under the bar
+  function setRows(k) { rows = k; try { localStorage.setItem(K + "rows", k); } catch (e) {} const R = (MODES.find(x => x[0] === k) || MODES[0])[2]; if (R) { RV[0] = R.slice(); RV[1] = R.slice(); RV[2] = R.slice(); if (S.view > 2) S.view = 2; } else RV0.forEach((a, i) => { RV[i] = a.slice(); }); paint(); fit(); drawBar(); }
+
+  // ---- landscape always (the file of just this view): everything sits on a landscape stage, turned on a phone held upright ----
+  let stage = null, SW = 0, SH = 720;
+  if (LAND) {
+    stage = d.createElement("div"); stage.id = "hkstage"; [bar, d.getElementById("wrap"), d.getElementById("sq")].forEach(x => x && stage.appendChild(x)); d.body.appendChild(stage);
+    if (top) top.style.display = "none";
+  }
+  function fitStage() {
+    const vw = window.innerWidth, vh = window.innerHeight, turn = vh > vw, L = Math.max(vw, vh), Sh = Math.min(vw, vh), s = Sh / SH; SW = Math.round(L / s);
+    Object.assign(stage.style, { width: SW + "px", height: SH + "px", transform: turn ? "translate(" + vw + "px,0) rotate(90deg) scale(" + s + ")" : "scale(" + s + ")" });
+  }
+
+  // ---- fill the screen ----
   const keys = [...d.querySelectorAll("#dock .key")], rls = [...d.querySelectorAll("#dock .rl")], O = { keys: keys.map(k => [k.style.left, k.style.top]), rls: rls.map(l => l.className) };
   fit = function () {
-    const W = de.clientWidth, Hh = window.innerHeight - (top ? top.offsetHeight : 0) - (bar ? bar.offsetHeight : 0), T0 = window.innerHeight - Hh;
-    const sq = d.getElementById("sq"), sb = d.getElementById("sqBody"), side = seqOn && W / Math.max(1, Hh) > 1.3, sw = Math.round(Math.min(560, Math.max(320, W * .4))), sh = Math.round(Math.min(Hh * .5, Math.max(230, Hh * .42)));
+    if (LAND) fitStage();
+    const W = LAND ? SW : de.clientWidth, TB = (LAND ? 0 : (top ? top.offsetHeight : 0)) + (bar ? bar.offsetHeight : 0), Hh = (LAND ? SH : window.innerHeight) - TB, T0 = TB;
+    const sq = d.getElementById("sq"), sb = d.getElementById("sqBody"), side = !LAND && seqOn && W / Math.max(1, Hh) > 1.3, sw = Math.round(Math.min(560, Math.max(320, W * .4))), sh = LAND && seqOn ? (() => { Object.assign(sq.style, { display: "block", position: "absolute", height: "auto", top: "auto", width: SW + "px" }); sb.hidden = false; d.getElementById("sqHead").style.display = "none"; return Math.round(Math.min(Hh * .5, sq.scrollHeight + 4)); })() : Math.round(Math.min(Hh * .5, Math.max(230, Hh * .42)));
     const AW = side ? W - sw : W, AH = seqOn && !side ? Hh - sh : Hh, mod = d.getElementById("mod"), dock = d.getElementById("dock"), winf = d.getElementById("winf"), bot = d.getElementById("bot1"), mt = d.getElementById("mtitle");
-    const wide = AW / Math.max(1, AH) > 1.05; let DW, DH;
+    const wide = LAND || AW / Math.max(1, AH) > 1.05; let DW, DH;
     if (wide) {
       const tDW = (AW / AH) * 562 / 1.15, sp = Math.max(56, Math.min(110, Math.floor((tDW - 118) / 12))), kw = Math.min(sp - 10, 96), pw = Math.round(Math.min(kw - 10, 70));
       keys.forEach((k, c) => { k.style.left = (34 + c * sp) + "px"; k.style.top = "12px"; k.style.width = kw + "px"; });
@@ -579,20 +631,24 @@ addEventListener("resize", fit); fit(); paint();
     rls.forEach((l, i) => { const ri = i % 14, y0 = wide || i >= 14 ? 12 : 380; l.style.top = (y0 + rowY(ri)) + "px"; l.style.display = ri < nRows ? "" : "none"; });
     winf.style.width = DW + "px"; winf.style.height = DH + "px";
     if (seqOn) {
-      Object.assign(sq.style, { display: "block", position: "fixed", maxWidth: "none", margin: "0", padding: "6px 8px", overflowY: "auto", zIndex: "6", background: "#070b0f", boxSizing: "border-box", left: side ? "auto" : "0", right: "0", bottom: "0", top: side ? T0 + "px" : "auto", width: side ? sw + "px" : "auto", height: side ? "auto" : sh + "px" });
+      Object.assign(sq.style, { display: "block", position: LAND ? "absolute" : "fixed", maxWidth: "none", margin: "0", padding: LAND ? "0 10px 8px" : "6px 8px", overflowY: "auto", zIndex: "6", background: "#070b0f", boxSizing: "border-box", left: side ? "auto" : "0", right: "0", bottom: "0", top: side ? T0 + "px" : "auto", width: side ? sw + "px" : "auto", height: side ? "auto" : sh + "px" });
       sb.hidden = false; sb.style.marginTop = "0"; d.getElementById("sqHead").style.display = "none";
     } else sq.style.display = "none";
     let sx = AW / DW, sy = AH / DH; if (sx > sy) sx = Math.min(sx, sy * 1.3); else sy = Math.min(sy, sx * 1.3);
     const sc = d.getElementById("scene"); sc.style.width = DW + "px"; sc.style.height = DH + "px"; sc.style.transform = "scale(" + sx + "," + sy + ")";
-    const wr = d.getElementById("wrap"); Object.assign(wr.style, { position: "fixed", margin: "0", zIndex: "5", width: DW * sx + "px", height: DH * sy + "px", left: Math.max(0, (AW - DW * sx) / 2) + "px", top: T0 + Math.max(0, (AH - DH * sy) / 2) + "px" });
+    const wr = d.getElementById("wrap"); Object.assign(wr.style, { position: LAND ? "absolute" : "fixed", margin: "0", zIndex: "5", width: DW * sx + "px", height: DH * sy + "px", left: Math.max(0, (AW - DW * sx) / 2) + "px", top: T0 + Math.max(0, (AH - DH * sy) / 2) + "px" });
   };
-  addEventListener("resize", () => fit());
+  addEventListener("resize", () => fit()); addEventListener("orientationchange", () => setTimeout(fit, 120));
+
   function drawBar() {
     bar.textContent = "";
-    const chip = (t, on, fn, title) => { const b = d.createElement("button"); b.type = "button"; b.className = "hkc"; b.textContent = t; b.setAttribute("aria-pressed", String(!!on)); b.onclick = fn; if (title) b.title = title; return b; };
+    const chip = (t, on, fn, title, cls) => { const b = d.createElement("button"); b.type = "button"; b.className = "hkc" + (cls ? " " + cls : ""); b.textContent = t; b.setAttribute("aria-pressed", String(!!on)); b.onclick = fn; if (title) b.title = title; return b; };
     const g = d.createElement("div"); g.className = "hkg"; g.setAttribute("role", "group"); g.setAttribute("aria-label", "Pads per key"); MODES.forEach(([k, n]) => g.appendChild(chip(n, rows === k, () => setRows(k)))); bar.appendChild(g);
-    bar.appendChild(chip("Sequencer", seqOn, () => { seqOn = !seqOn; try { localStorage.setItem("harmonikeys-seq", seqOn ? "1" : "0"); } catch (e) {} drawBar(); fit(); }, "Store chords from the pads in bars, with key, progression, octave and voicing rows"));
+    bar.appendChild(chip("Make chord", false, makeChord, "Turn the lit pads into a chord shape: the pads empty, and every key plays that shape from its own note", "hkmake"));
+    if (SHAPE) { const s = d.createElement("span"); s.className = "hkshape"; s.textContent = "Shape: " + SHAPE.name + " (from " + SHAPE.from + ") on every key"; bar.appendChild(s); bar.appendChild(chip("× Clear shape", false, clearShape, "Back to playing the lit pads")); }
+    if (!LAND) bar.appendChild(chip("Sequencer", seqOn, () => { seqOn = !seqOn; try { localStorage.setItem(K + "seq", seqOn ? "1" : "0"); } catch (e) {} drawBar(); fit(); }, "Store chords from the pads in bars, with key, progression, octave and voicing rows"));
     bar.appendChild(chip("MIDI keyboard", d.getElementById("midiBtn").getAttribute("aria-pressed") === "true", () => { d.getElementById("midiBtn").click(); setTimeout(drawBar, 400); }, "Play the pads from a MIDI keyboard"));
+    if (LAND) { const c = d.createElement("span"); c.className = "hkcopy"; c.innerHTML = '&copy; 2026 Rex Audio. All rights reserved.'; bar.appendChild(c); }
   }
   d.getElementById("below").style.display = "none"; d.querySelectorAll(".hint").forEach(h => h.style.display = "none");
   drawBar(); if (rows !== "all") setRows(rows); else { paint(); fit(); }
