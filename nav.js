@@ -14,6 +14,7 @@
     "harmonic-keyboard-tuner.html": "music-theory-tools.html",
     "harmonic-tuner-microtonal-layout.html": "music-theory-tools.html",
     "harmonic-tuner-pads.html": "music-theory-tools.html",
+    "harmonikeys.html": "music-theory-tools.html",
     "harmonic-grid.html": "music-theory-tools.html",
     "harmonic-circle.html": "music-theory-tools.html",
     "harmonics.html": "music-theory-tools.html",
