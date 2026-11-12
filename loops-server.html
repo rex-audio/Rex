@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Layer loops of drums, pads, chords, leads, arps and bass and play them together.">
+<title>Loops (server test) | Rex Audio</title>
+<style>
+/* Same page frame as the other pages: a 720px "desktop" page scaled to the window. */
+:root {
+  --bg: #e4e7e9;
+  --panel: #f3f4f5;
+  --fg: #15181a;
+  --muted: #5a6166;
+  --line: #c3c9cc;
+  --focus: #c8321e;
+  --sans: Arial, Helvetica, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; overflow-x: hidden; padding-bottom: 100px; }
+#site { width: 720px; margin: 0 auto; zoom: 0.54; }
+a { color: inherit; }
+a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, p { margin: 0; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 26px 36px 0; }
+.brand { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+.top nav a:hover, .top nav a[aria-current] { border-bottom-color: var(--fg); }
+
+.intro { text-align: center; padding: 36px 36px 0; }
+.intro h1 { font-size: 58px; line-height: 1; letter-spacing: -0.04em; margin-top: 10px; }
+.sec { padding: 36px 36px 0; }
+footer { margin-top: 72px; padding: 24px 36px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--muted); }
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; } footer a { text-decoration: none; } footer a:hover { color: var(--fg); }
+
+.topplay { display: flex; justify-content: center; margin-bottom: 26px; }
+.go2 { width: 62px; height: 62px; padding: 0; border: 0; border-radius: 50%; background: var(--fg); color: var(--panel); cursor: pointer; display: grid; place-items: center; }
+.go2:hover { background: #000; }
+.go2:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.go2 svg { width: 30px; height: 30px; }
+.go2 .i-stop, .go2[aria-pressed="true"] .i-play { display: none; } .go2[aria-pressed="true"] .i-stop { display: block; }
+
+/* the loops: just names that pile up, each one filling as its loop plays */
+#loops { display: grid; gap: 10px; }
+.loop { --lc: #2f86b8; position: relative; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 12px 0 20px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+.loop.pads { --lc: #7b6cd0; }
+.loop.bass { --lc: #c8672a; } .loop.chords { --lc: #2a9d6f; } .loop.arp { --lc: #b8920f; } .loop.leads { --lc: #d0507a; }
+.lpat { flex: none; height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 14px; background: transparent; color: var(--fg); font: 600 12px var(--sans); cursor: pointer; } .lpat:hover { border-color: var(--fg); } .lpat[hidden] { display: none; } .lpat:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.la { flex: none; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--fg); cursor: pointer; display: grid; place-items: center; }
+.la svg { width: 20px; height: 20px; } .la:hover { background: rgba(21, 24, 26, .08); } .la:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.lm { text-align: center; } .lt { min-width: 68px; }
+#types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; } #types[hidden] { display: none; }
+.ty { --lc: #2f86b8; height: 52px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--fg); font: 600 16px var(--sans); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.ty i { width: 12px; height: 12px; border-radius: 50%; background: var(--lc); } .ty:hover { border-color: var(--fg); } .ty:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ty.pads { --lc: #7b6cd0; } .ty.bass { --lc: #c8672a; } .ty.chords { --lc: #2a9d6f; } .ty.arp { --lc: #b8920f; } .ty.leads { --lc: #d0507a; }
+.lbar { position: absolute; inset: 0; background: color-mix(in srgb, var(--lc) 24%, transparent); transform-origin: left; transform: scaleX(0); }
+.loop > :not(.lbar) { position: relative; }
+.ld { flex: none; width: 14px; height: 14px; border-radius: 50%; background: var(--lc); }
+.lt { flex: none; font-size: 17px; }
+.lm { flex: 1; min-width: 0; font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lx { flex: none; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 24px; line-height: 1; cursor: pointer; }
+.lx:hover { color: var(--fg); background: rgba(21, 24, 26, .08); }
+.lx:focus-visible, .addrow button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.loop.wait { border-style: dashed; border-color: var(--lc); animation: pulse .9s ease-in-out infinite alternate; }
+@keyframes pulse { from { background: var(--panel); } to { background: color-mix(in srgb, var(--lc) 14%, var(--panel)); } }
+#empty { text-align: center; color: var(--muted); font-size: 15px; padding: 18px 0; }
+.addrow { display: flex; gap: 12px; margin-top: 14px; }
+.addrow #add { flex: 1; height: 60px; border: 2px dashed var(--line); border-radius: 14px; background: transparent; color: var(--fg); font: 700 16px var(--sans); cursor: pointer; }
+.addrow #add:hover:not(:disabled) { border-color: var(--fg); } .addrow #add:disabled { opacity: .45; cursor: default; }
+.addrow #pick { flex: none; height: 60px; padding: 0 20px; border: 2px solid var(--line); border-radius: 14px; background: transparent; color: var(--fg); font: 700 15px var(--sans); cursor: pointer; } .addrow #pick:hover:not(:disabled) { border-color: var(--fg); } .addrow #pick:disabled { opacity: .45; cursor: default; }
+.addrow #clear { flex: none; height: 60px; padding: 0 20px; border: 0; background: transparent; color: var(--muted); font: 600 15px var(--sans); cursor: pointer; }
+.addrow #clear:hover { color: var(--fg); } .addrow #clear[hidden] { display: none; }
+
+/* the play bar: large and minimal, fills the bottom of the window and never moves */
+#bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; }
+#bar .pill { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px max(16px, calc((100% - 680px) / 2)) calc(12px + env(safe-area-inset-bottom)); background: var(--fg); color: var(--panel); box-shadow: 0 -6px 24px rgba(0, 0, 0, .18); }
+#bar button { flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .14); color: inherit; cursor: pointer; display: grid; place-items: center; }
+#bar button svg { width: 26px; height: 26px; }
+#bar button:hover { background: rgba(255, 255, 255, .26); }
+#bar button:focus-visible { outline: 2px solid var(--panel); outline-offset: 2px; }
+#bar .go { width: 62px; height: 62px; background: var(--panel); color: var(--fg); }
+#bar .go:hover { background: #fff; }
+#bar .go svg { width: 30px; height: 30px; }
+#bar .go .i-stop, #bar .go[aria-pressed="true"] .i-play { display: none; } #bar .go[aria-pressed="true"] .i-stop { display: block; }
+#bar .name { flex: 1; min-width: 0; padding: 0 8px; text-align: center; font: 600 13px/1.3 var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+</style>
+</head>
+<body>
+<div id="site">
+  <header class="top">
+    <a class="brand" href="index.html">Rex Audio</a>
+    <nav aria-label="Main">
+      <a href="shapes.html">Shapes</a>
+      <a href="tunings.html">Tunings</a>
+      <a href="drums.html">Drums</a>
+      <a href="colours.html">Colours</a>
+      <a href="loops.html" aria-current="page">Loops</a>
+    </nav>
+  </header>
+
+  <section class="intro">
+    <p class="label">Layers</p>
+    <h1>Loops</h1>
+  </section>
+
+  <section class="sec">
+    <div class="topplay"><button class="go2" id="playTop" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button></div>
+    <div id="loops"></div>
+    <p id="empty" hidden>Add a loop</p>
+    <div class="addrow"><button id="add" type="button">+ Add a loop</button><button id="pick" type="button">Choose type</button><button id="clear" type="button">Clear</button></div>
+    <div id="types"></div>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 Rex Audio</span>
+    <nav><a href="drums/COPYRIGHT.txt">Drum recordings: copyright notice</a><a href="colours/COPYRIGHT.txt">Pad recordings: copyright notice</a><a href="loops/COPYRIGHT.txt">Loop recordings: copyright notice</a></nav>
+  </footer>
+</div>
+<div id="bar"><div class="pill" role="group" aria-label="Player">
+  <button id="bp" type="button" aria-label="Previous key" title="Previous key"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button class="go" id="playBtn" type="button" aria-pressed="false" aria-label="Play" title="Play / stop (Space)"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg></button>
+  <button id="bn" type="button" aria-label="Next key" title="Next key"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <span class="name" id="barName" aria-live="polite"></span>
+</div></div>
+<script>
+// Loops, server test version: the music data and the sound engine are on the Rex Audio server. This page shows the choices,
+// asks the server for the four-bar loop of the chosen layers as one sound, and plays that sound on repeat.
+const $ = s => document.querySelector(s);
+const API = (new URLSearchParams(location.search).get("api") || "https://vercel-omega-woad-23.vercel.app").replace(/\/$/, "");
+const TPB = 32, TICK = 3.2 / TPB, LOOP_S = 12.8;   // 75 BPM: a bar is 3.2 s, the length of one pad chord. The loop is four bars.
+let ctx; try { ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100, latencyHint: "playback" }); } catch (e) { ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+const S = { playing: false, t0: 0, name: "" };
+let layers = [], uid = 0, hi = 0, META = null, cur = null, token = 0, timer = 0;
+const setName = t => { $("#barName").textContent = t; };
+const isLive = l => l.v < (META.live[l.type] || 0);
+const itemsOf = l => META.items[l.type][hi];
+const loopTicks = l => l.type === "drums" ? l.item.ticks : TPB * 4;
+
+// ---------- the sound: one mix from the server ----------
+const b64 = s => btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const mixUrl = () => API + "/api/mix?s=" + b64(JSON.stringify({ k: hi, l: layers.map(l => [l.type, l.v, isLive(l) ? l.pi : 0, l.id]) }));
+const mixes = new Map();
+function getMix(u) {
+  if (!mixes.has(u)) mixes.set(u, fetch(u).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(a => ctx.decodeAudioData(a)).catch(e => { mixes.delete(u); throw e; }));
+  if (mixes.size > 12) mixes.delete(mixes.keys().next().value);
+  return mixes.get(u);
+}
+function start(buf, at, phase) {   // the new mix comes in at the same place in the loop, so the beat carries on
+  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = buf; s.loop = true; s.connect(g); g.connect(ctx.destination);
+  g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(1, at + .03); s.start(at, phase);
+  return { s, g };
+}
+function stopNow(c, at) { if (!c) return; c.g.gain.setValueAtTime(c.g.gain.value, at); c.g.gain.linearRampToValueAtTime(0, at + .03); try { c.s.stop(at + .05); } catch (e) {} }
+async function remix(first) {
+  if (!layers.length) { stopNow(cur, ctx.currentTime); cur = null; if (S.playing) setName("Add a loop first"); return; }
+  const u = mixUrl(), mine = ++token; if (!first && cur && cur.url === u) return;
+  setName("Mixing on the server...");
+  try {
+    const buf = await getMix(u); if (mine !== token || !S.playing) return;
+    const at = ctx.currentTime + (first ? .08 : .04);
+    if (first) S.t0 = at;
+    const phase = ((at - S.t0) % LOOP_S + LOOP_S) % LOOP_S, c = start(buf, at, phase); c.url = u;
+    stopNow(cur, at); cur = c; setName(S.name);
+  } catch (e) { if (mine === token) setName("Could not get the sound from the server"); if (first) { S.playing = false; setPlaying(false); } }
+}
+function changed() { if (S.playing) { clearTimeout(timer); timer = setTimeout(() => remix(false), 250); } }
+async function play() {
+  if (S.playing) return;
+  if (!layers.length) { setName("Add a loop first"); setTimeout(() => setName(S.name), 1800); return; }
+  await ctx.resume(); S.playing = true; setPlaying(true); requestAnimationFrame(anim); remix(true);
+}
+function stop() {
+  S.playing = false; token++; clearTimeout(timer); setPlaying(false); stopNow(cur, ctx.currentTime); cur = null; setName(S.name); showProgress();
+}
+function setPlaying(on) { [$("#playBtn"), $("#playTop")].forEach(b => { b.setAttribute("aria-pressed", on); b.setAttribute("aria-label", on ? "Stop" : "Play"); }); }
+[$("#playBtn"), $("#playTop")].forEach(b => { b.onclick = () => S.playing ? stop() : play(); });
+function showProgress() {   // each loop shows where it is in its own cycle
+  const tk = S.playing && cur ? (ctx.currentTime - S.t0) / TICK : -1;
+  layers.forEach(l => { l.bar.style.transform = "scaleX(" + (tk >= 0 ? (tk % loopTicks(l)) / loopTicks(l) : 0) + ")"; });
+}
+function anim() { if (!S.playing) return; showProgress(); requestAnimationFrame(anim); }
+
+// ---------- the loops on the page: add a loop of a type, then click through the recordings of that type ----------
+const pile = $("#loops");
+const TYPES = [["drums", "Drums"], ["pads", "Pads"], ["chords", "Chords"], ["leads", "Leads"], ["arp", "Arp"], ["bass", "Bass"]];
+const HARM = ["A minor", "C major", "D minor", "E minor", "B♭ major"];   // the key of each set of recordings: every pad, chord, lead, arp and bass of one key fits together
+function applyItem(l, keep) {
+  const it = l.item = itemsOf(l)[l.v];
+  l.el.querySelector(".lm").textContent = it.n;
+  const pc = l.el.querySelector(".lpat"); pc.hidden = !isLive(l);
+  if (isLive(l)) {   // every sound brings its own pattern and melody; the button then changes just the pattern
+    const names = META.pat[l.type];
+    if (!keep || l.pi === undefined) l.pi = (l.v * META.stride[l.type]) % names.length;
+    pc.textContent = names[l.pi % names.length];
+  }
+  changed();
+}
+function pick(l, v) { const list = itemsOf(l); l.v = (v + list.length) % list.length; applyItem(l); }   // the arrows: switch this loop to another recording of its type
+function build(l) {
+  const el = document.createElement("div"); el.className = "loop " + l.type; l.el = el;
+  el.innerHTML = '<div class="lbar"></div><i class="ld"></i><b class="lt"></b><button class="la lp" type="button" aria-label="Previous recording" title="Previous"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="lm"></span><button class="la ln" type="button" aria-label="Next recording" title="Next"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="lpat" type="button" title="Change the pattern" hidden></button><button class="lx" type="button" aria-label="Remove this loop" title="Remove">&times;</button>';
+  el.querySelector(".lt").textContent = TYPES.find(t => t[0] === l.type)[1]; l.bar = el.querySelector(".lbar");
+  el.querySelector(".lpat").onclick = () => { l.pi = (l.pi + 1) % META.pat[l.type].length; applyItem(l, true); };
+  el.querySelector(".lp").onclick = () => pick(l, l.v - 1); el.querySelector(".ln").onclick = () => pick(l, l.v + 1);
+  el.querySelector(".lx").onclick = () => { layers = layers.filter(q => q !== l); el.remove(); refresh(); changed(); };
+  pile.appendChild(el); applyItem(l);
+}
+const DEFAULT = [["drums", 0], ["pads", 0], ["drums", 8], ["pads", 1], ["drums", 10]];   // the usual order: break, pad, hats, another pad, percussion
+function addNext() {
+  if (!META) return;
+  const k = DEFAULT.findIndex((_, i) => !layers.some(l => l.k === i));
+  if (k < 0) { $("#types").hidden = !$("#types").hidden; return; }
+  addLoop(DEFAULT[k][0], DEFAULT[k][1], k);
+}
+function addLoop(type, v, k) {   // each new one begins on a different recording
+  const same = layers.filter(l => l.type === type).length;
+  const l = { id: ++uid, type, v: v === undefined ? same * (type === "drums" ? 5 : 1) : v, k };
+  layers.push(l); build(l); refresh(); return l;
+}
+function refresh() { const full = layers.length >= META.maxLoops; $("#add").disabled = full; $("#add").textContent = full ? "That is plenty of loops" : "+ Add a loop"; $("#pick").disabled = full; $("#empty").hidden = layers.length > 0; $("#clear").hidden = layers.length === 0; }
+function clear() { layers.forEach(l => l.el.remove()); layers = []; }
+$("#add").onclick = addNext;
+$("#pick").onclick = () => { $("#types").hidden = !$("#types").hidden; };
+$("#types").innerHTML = TYPES.map(t => '<button type="button" class="ty ' + t[0] + '" data-t="' + t[0] + '"><i></i>' + t[1] + '</button>').join("");
+$("#types").onclick = e => { const b = e.target.closest("button"); if (b && META) { addLoop(b.dataset.t); } };
+$("#clear").onclick = () => { if (S.playing) stop(); clear(); refresh(); };
+addEventListener("keydown", e => {
+  if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.code === "Space" && e.target.tagName !== "BUTTON") { e.preventDefault(); S.playing ? stop() : play(); }
+  if (e.code === "Escape") $("#types").hidden = true;
+});
+function setHarm(i) {   // the bar arrows: every pad, chord, lead, arp and bass moves to the same recording in the next key
+  if (!META) return;
+  hi = (i + HARM.length) % HARM.length; S.name = "Key: " + HARM[hi]; setName(S.name);
+  layers.forEach(l => { l.v = l.v % itemsOf(l).length; applyItem(l, true); });
+}
+$("#bp").onclick = () => setHarm(hi - 1); $("#bn").onclick = () => setHarm(hi + 1);
+[$("#bar"), $(".topplay"), $(".addrow")].forEach(el => el.addEventListener("click", e => { const b = e.target.closest("button"); if (b && e.detail) b.blur(); }));
+
+const fitSite = () => { const w = document.documentElement.clientWidth || window.innerWidth; $("#site").style.zoom = Math.min(Math.max(w / 720, 0.3), 1.5); };
+fitSite(); addEventListener("resize", fitSite);
+S.name = "Key: " + HARM[hi]; setName("Loading...");
+fetch(API + "/api/mix?what=meta").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(m => {
+  META = m; setName(S.name); DEFAULT.forEach(() => addNext());   // opens with the usual five loops, and the types ready to add more
+}).catch(() => setName("Could not reach the server"));
+</script>
+</body>
+</html>
